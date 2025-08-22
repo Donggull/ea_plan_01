@@ -54,6 +54,54 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
+  const fetchUserProfile = useCallback(async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', userId)
+        .single()
+
+      if (error) {
+        if (error.code === 'PGRST116') {
+          // 사용자 프로필이 없으면 생성
+          const user = await supabase.auth.getUser()
+          if (!user.data.user) return
+
+          const { data: newProfile, error: createError } = await supabase
+            .from('users')
+            .insert({
+              id: userId,
+              email: user.data.user.email!,
+              name:
+                user.data.user.user_metadata?.name ||
+                user.data.user.email!.split('@')[0],
+              subscription_tier: 'free' as const,
+            })
+            .select()
+            .single()
+
+          if (createError) {
+            console.error('Error creating user profile:', createError)
+            setError('사용자 프로필을 생성하는 중 오류가 발생했습니다.')
+            return
+          }
+
+          setUserProfile(newProfile)
+        } else {
+          console.error('Error fetching user profile:', error)
+          setError('사용자 프로필을 가져오는 중 오류가 발생했습니다.')
+        }
+        return
+      }
+
+      setUserProfile(data)
+    } catch (err) {
+      console.error('Error in fetchUserProfile:', err)
+      setError('사용자 프로필을 가져오는 중 오류가 발생했습니다.')
+    }
+  }, [])
+
   useEffect(() => {
     let isMounted = true
 
@@ -121,63 +169,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
       subscription.unsubscribe()
     }
   }, [fetchUserProfile])
-
-  const fetchUserProfile = useCallback(async (userId: string) => {
-    try {
-      const { data, error } = await supabase
-        .from('users')
-        .select('*')
-        .eq('id', userId)
-        .single()
-
-      if (error) {
-        if (error.code === 'PGRST116') {
-          // 사용자 프로필이 없으면 생성
-          await createUserProfile(userId)
-        } else {
-          console.error('Error fetching user profile:', error)
-          setError('사용자 프로필을 가져오는 중 오류가 발생했습니다.')
-        }
-        return
-      }
-
-      setUserProfile(data)
-    } catch (err) {
-      console.error('Error in fetchUserProfile:', err)
-      setError('사용자 프로필을 가져오는 중 오류가 발생했습니다.')
-    }
-  }, [])
-
-  const createUserProfile = async (userId: string) => {
-    try {
-      const user = await supabase.auth.getUser()
-      if (!user.data.user) return
-
-      const { data, error } = await supabase
-        .from('users')
-        .insert({
-          id: userId,
-          email: user.data.user.email!,
-          name:
-            user.data.user.user_metadata?.name ||
-            user.data.user.email!.split('@')[0],
-          subscription_tier: 'free' as const,
-        })
-        .select()
-        .single()
-
-      if (error) {
-        console.error('Error creating user profile:', error)
-        setError('사용자 프로필을 생성하는 중 오류가 발생했습니다.')
-        return
-      }
-
-      setUserProfile(data)
-    } catch (err) {
-      console.error('Error in createUserProfile:', err)
-      setError('사용자 프로필을 생성하는 중 오류가 발생했습니다.')
-    }
-  }
 
   const signUp = async (
     email: string,
