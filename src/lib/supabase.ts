@@ -185,6 +185,7 @@ export type Database = {
       documents: {
         Row: {
           id: string
+          user_id: string
           project_id: string | null
           file_name: string
           file_path: string
@@ -199,6 +200,7 @@ export type Database = {
         }
         Insert: {
           id?: string
+          user_id: string
           project_id?: string | null
           file_name: string
           file_path: string
