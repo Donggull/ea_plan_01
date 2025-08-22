@@ -2,8 +2,10 @@ import { supabase } from '@/lib/supabase'
 import type { Database } from '@/lib/supabase'
 
 type GeneratedImage = Database['public']['Tables']['generated_images']['Row']
-type GeneratedImageInsert = Database['public']['Tables']['generated_images']['Insert']
-type GeneratedImageUpdate = Database['public']['Tables']['generated_images']['Update']
+type GeneratedImageInsert =
+  Database['public']['Tables']['generated_images']['Insert']
+type GeneratedImageUpdate =
+  Database['public']['Tables']['generated_images']['Update']
 
 export interface CreateImageData {
   project_id?: string
@@ -65,31 +67,36 @@ export interface ImageGenerationResult {
 }
 
 export class ImageService {
-  static async generateImages(request: ImageGenerationRequest): Promise<ImageServiceResponse<ImageGenerationResult>> {
+  static async generateImages(
+    request: ImageGenerationRequest
+  ): Promise<ImageServiceResponse<ImageGenerationResult>> {
     try {
-      const { data: { user }, error: authError } = await supabase.auth.getUser()
-      
+      const {
+        data: { user },
+        error: authError,
+      } = await supabase.auth.getUser()
+
       if (authError || !user) {
         return {
           data: null,
           error: 'User must be authenticated to generate images',
-          success: false
+          success: false,
         }
       }
 
       const startTime = Date.now()
-      
+
       // Determine the best model based on request
       const model = request.model || this.selectOptimalModel(request)
-      
+
       // Generate images using the selected model
       const generationResult = await this.callImageGenerationAPI(request, model)
-      
+
       if (!generationResult.success) {
         return {
           data: null,
-          error: generationResult.error,
-          success: false
+          error: generationResult.error || null,
+          success: false,
         }
       }
 
@@ -97,8 +104,8 @@ export class ImageService {
 
       // Save generated images to database
       const savedImages: CreateImageData[] = []
-      
-      for (const imageUrl of generationResult.images) {
+
+      for (const imageUrl of generationResult.images || []) {
         const imageData: CreateImageData = {
           project_id: request.project_id,
           prompt: request.prompt,
@@ -113,15 +120,15 @@ export class ImageService {
             generation_date: new Date().toISOString(),
             style: request.style,
             size: request.size,
-            has_reference: !!request.reference_image
-          }
+            has_reference: !!request.reference_image,
+          },
         }
 
         const createResult = await this.createImage(imageData)
         if (createResult.success && createResult.data) {
           savedImages.push({
             ...imageData,
-            image_url: createResult.data.image_url
+            image_url: createResult.data.image_url,
           })
         }
       }
@@ -131,37 +138,42 @@ export class ImageService {
         prompt: request.prompt,
         model_used: model,
         count: savedImages.length,
-        total_cost: generationResult.cost
+        total_cost: generationResult.cost,
       })
 
       return {
         data: {
           images: savedImages,
-          total_cost: generationResult.cost,
+          total_cost: generationResult.cost || 0,
           generation_time: generationTime,
-          model_used: model
+          model_used: model,
         },
         error: null,
-        success: true
+        success: true,
       }
     } catch (error) {
       return {
         data: null,
         error: `Unexpected error: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        success: false
+        success: false,
       }
     }
   }
 
-  static async createImage(imageData: CreateImageData): Promise<ImageServiceResponse<GeneratedImage>> {
+  static async createImage(
+    imageData: CreateImageData
+  ): Promise<ImageServiceResponse<GeneratedImage>> {
     try {
-      const { data: { user }, error: authError } = await supabase.auth.getUser()
-      
+      const {
+        data: { user },
+        error: authError,
+      } = await supabase.auth.getUser()
+
       if (authError || !user) {
         return {
           data: null,
           error: 'User must be authenticated to create image',
-          success: false
+          success: false,
         }
       }
 
@@ -175,7 +187,7 @@ export class ImageService {
         size: imageData.size,
         is_favorite: imageData.is_favorite || false,
         tags: imageData.tags || [],
-        metadata: imageData.metadata || {}
+        metadata: imageData.metadata || {},
       }
 
       const { data: newImage, error: insertError } = await supabase
@@ -188,33 +200,38 @@ export class ImageService {
         return {
           data: null,
           error: `Failed to create image: ${insertError.message}`,
-          success: false
+          success: false,
         }
       }
 
       return {
         data: newImage,
         error: null,
-        success: true
+        success: true,
       }
     } catch (error) {
       return {
         data: null,
         error: `Unexpected error: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        success: false
+        success: false,
       }
     }
   }
 
-  static async getImageById(imageId: string): Promise<ImageServiceResponse<ImageWithStats>> {
+  static async getImageById(
+    imageId: string
+  ): Promise<ImageServiceResponse<ImageWithStats>> {
     try {
-      const { data: { user }, error: authError } = await supabase.auth.getUser()
-      
+      const {
+        data: { user },
+        error: authError,
+      } = await supabase.auth.getUser()
+
       if (authError || !user) {
         return {
           data: null,
           error: 'User must be authenticated',
-          success: false
+          success: false,
         }
       }
 
@@ -229,7 +246,7 @@ export class ImageService {
         return {
           data: null,
           error: `Failed to fetch image: ${imageError.message}`,
-          success: false
+          success: false,
         }
       }
 
@@ -237,38 +254,44 @@ export class ImageService {
       const imageWithStats: ImageWithStats = {
         ...image,
         download_count: image.metadata?.download_count || 0,
-        usage_count: image.metadata?.usage_count || 0
+        usage_count: image.metadata?.usage_count || 0,
       }
 
       return {
         data: imageWithStats,
         error: null,
-        success: true
+        success: true,
       }
     } catch (error) {
       return {
         data: null,
         error: `Unexpected error: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        success: false
+        success: false,
       }
     }
   }
 
-  static async updateImage(imageId: string, updates: UpdateImageData): Promise<ImageServiceResponse<GeneratedImage>> {
+  static async updateImage(
+    imageId: string,
+    updates: UpdateImageData
+  ): Promise<ImageServiceResponse<GeneratedImage>> {
     try {
-      const { data: { user }, error: authError } = await supabase.auth.getUser()
-      
+      const {
+        data: { user },
+        error: authError,
+      } = await supabase.auth.getUser()
+
       if (authError || !user) {
         return {
           data: null,
           error: 'User must be authenticated to update image',
-          success: false
+          success: false,
         }
       }
 
       const updateData: GeneratedImageUpdate = {
         ...updates,
-        updated_at: new Date().toISOString()
+        updated_at: new Date().toISOString(),
       }
 
       const { data: updatedImage, error: updateError } = await supabase
@@ -283,39 +306,44 @@ export class ImageService {
         return {
           data: null,
           error: `Failed to update image: ${updateError.message}`,
-          success: false
+          success: false,
         }
       }
 
       // Log the activity
-      await this.logImageActivity(user.id, 'image_updated', { 
-        image_id: imageId, 
-        updates 
+      await this.logImageActivity(user.id, 'image_updated', {
+        image_id: imageId,
+        updates,
       })
 
       return {
         data: updatedImage,
         error: null,
-        success: true
+        success: true,
       }
     } catch (error) {
       return {
         data: null,
         error: `Unexpected error: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        success: false
+        success: false,
       }
     }
   }
 
-  static async deleteImage(imageId: string): Promise<ImageServiceResponse<boolean>> {
+  static async deleteImage(
+    imageId: string
+  ): Promise<ImageServiceResponse<boolean>> {
     try {
-      const { data: { user }, error: authError } = await supabase.auth.getUser()
-      
+      const {
+        data: { user },
+        error: authError,
+      } = await supabase.auth.getUser()
+
       if (authError || !user) {
         return {
           data: null,
           error: 'User must be authenticated to delete image',
-          success: false
+          success: false,
         }
       }
 
@@ -340,7 +368,7 @@ export class ImageService {
         // Log the deletion before actually deleting
         await this.logImageActivity(user.id, 'image_deleted', {
           image_id: imageId,
-          prompt: image.prompt
+          prompt: image.prompt,
         })
       }
 
@@ -354,33 +382,38 @@ export class ImageService {
         return {
           data: null,
           error: `Failed to delete image: ${deleteError.message}`,
-          success: false
+          success: false,
         }
       }
 
       return {
         data: true,
         error: null,
-        success: true
+        success: true,
       }
     } catch (error) {
       return {
         data: null,
         error: `Unexpected error: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        success: false
+        success: false,
       }
     }
   }
 
-  static async listImages(filters: ImageListFilters = {}): Promise<ImageServiceResponse<ImageWithStats[]>> {
+  static async listImages(
+    filters: ImageListFilters = {}
+  ): Promise<ImageServiceResponse<ImageWithStats[]>> {
     try {
-      const { data: { user }, error: authError } = await supabase.auth.getUser()
-      
+      const {
+        data: { user },
+        error: authError,
+      } = await supabase.auth.getUser()
+
       if (authError || !user) {
         return {
           data: null,
           error: 'User must be authenticated',
-          success: false
+          success: false,
         }
       }
 
@@ -420,7 +453,10 @@ export class ImageService {
       }
 
       if (filters.offset) {
-        query = query.range(filters.offset, filters.offset + (filters.limit || 10) - 1)
+        query = query.range(
+          filters.offset,
+          filters.offset + (filters.limit || 10) - 1
+        )
       }
 
       // Order by created_at descending
@@ -432,7 +468,7 @@ export class ImageService {
         return {
           data: null,
           error: `Failed to fetch images: ${imagesError.message}`,
-          success: false
+          success: false,
         }
       }
 
@@ -440,56 +476,64 @@ export class ImageService {
       const imagesWithStats: ImageWithStats[] = (images || []).map(image => ({
         ...image,
         download_count: image.metadata?.download_count || 0,
-        usage_count: image.metadata?.usage_count || 0
+        usage_count: image.metadata?.usage_count || 0,
       }))
 
       return {
         data: imagesWithStats,
         error: null,
-        success: true
+        success: true,
       }
     } catch (error) {
       return {
         data: null,
         error: `Unexpected error: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        success: false
+        success: false,
       }
     }
   }
 
-  static async toggleFavorite(imageId: string): Promise<ImageServiceResponse<GeneratedImage>> {
+  static async toggleFavorite(
+    imageId: string
+  ): Promise<ImageServiceResponse<GeneratedImage>> {
     try {
       const imageResult = await this.getImageById(imageId)
-      
+
       if (!imageResult.success || !imageResult.data) {
         return {
           data: null,
           error: imageResult.error || 'Image not found',
-          success: false
+          success: false,
         }
       }
 
       return this.updateImage(imageId, {
-        is_favorite: !imageResult.data.is_favorite
+        is_favorite: !imageResult.data.is_favorite,
       })
     } catch (error) {
       return {
         data: null,
         error: `Unexpected error: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        success: false
+        success: false,
       }
     }
   }
 
-  static async addImageTag(imageId: string, tag: string): Promise<ImageServiceResponse<GeneratedImage>> {
+  static async addImageTag(
+    imageId: string,
+    tag: string
+  ): Promise<ImageServiceResponse<GeneratedImage>> {
     try {
-      const { data: { user }, error: authError } = await supabase.auth.getUser()
-      
+      const {
+        data: { user },
+        error: authError,
+      } = await supabase.auth.getUser()
+
       if (authError || !user) {
         return {
           data: null,
           error: 'User must be authenticated',
-          success: false
+          success: false,
         }
       }
 
@@ -505,7 +549,7 @@ export class ImageService {
         return {
           data: null,
           error: `Failed to fetch image: ${fetchError.message}`,
-          success: false
+          success: false,
         }
       }
 
@@ -522,20 +566,26 @@ export class ImageService {
       return {
         data: null,
         error: `Unexpected error: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        success: false
+        success: false,
       }
     }
   }
 
-  static async removeImageTag(imageId: string, tag: string): Promise<ImageServiceResponse<GeneratedImage>> {
+  static async removeImageTag(
+    imageId: string,
+    tag: string
+  ): Promise<ImageServiceResponse<GeneratedImage>> {
     try {
-      const { data: { user }, error: authError } = await supabase.auth.getUser()
-      
+      const {
+        data: { user },
+        error: authError,
+      } = await supabase.auth.getUser()
+
       if (authError || !user) {
         return {
           data: null,
           error: 'User must be authenticated',
-          success: false
+          success: false,
         }
       }
 
@@ -551,36 +601,44 @@ export class ImageService {
         return {
           data: null,
           error: `Failed to fetch image: ${fetchError.message}`,
-          success: false
+          success: false,
         }
       }
 
       const currentTags = image.tags || []
-      const updatedTags = currentTags.filter(t => t !== tag)
-      
+      const updatedTags = currentTags.filter((t: string) => t !== tag)
+
       return this.updateImage(imageId, { tags: updatedTags })
     } catch (error) {
       return {
         data: null,
         error: `Unexpected error: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        success: false
+        success: false,
       }
     }
   }
 
-  static async getFavoriteImages(): Promise<ImageServiceResponse<ImageWithStats[]>> {
+  static async getFavoriteImages(): Promise<
+    ImageServiceResponse<ImageWithStats[]>
+  > {
     return this.listImages({ is_favorite: true })
   }
 
-  static async getImagesByProject(projectId: string): Promise<ImageServiceResponse<ImageWithStats[]>> {
+  static async getImagesByProject(
+    projectId: string
+  ): Promise<ImageServiceResponse<ImageWithStats[]>> {
     return this.listImages({ project_id: projectId })
   }
 
-  static async getImagesByModel(model: string): Promise<ImageServiceResponse<ImageWithStats[]>> {
+  static async getImagesByModel(
+    model: string
+  ): Promise<ImageServiceResponse<ImageWithStats[]>> {
     return this.listImages({ model_used: model })
   }
 
-  static async searchImages(searchTerm: string): Promise<ImageServiceResponse<ImageWithStats[]>> {
+  static async searchImages(
+    searchTerm: string
+  ): Promise<ImageServiceResponse<ImageWithStats[]>> {
     return this.listImages({ search: searchTerm })
   }
 
@@ -600,16 +658,23 @@ export class ImageService {
   }
 
   private static async callImageGenerationAPI(
-    request: ImageGenerationRequest, 
+    request: ImageGenerationRequest,
     model: string
-  ): Promise<{ success: boolean; images?: string[]; cost?: number; error?: string }> {
+  ): Promise<{
+    success: boolean
+    images?: string[]
+    cost?: number
+    error?: string
+  }> {
     try {
       // Mock API call - replace with actual image generation service
-      const mockImages = Array.from({ length: request.count || 1 }, (_, i) => 
-        `https://example.com/generated-image-${Date.now()}-${i}.jpg`
+      const mockImages = Array.from(
+        { length: request.count || 1 },
+        (_, i) => `https://example.com/generated-image-${Date.now()}-${i}.jpg`
       )
 
-      const mockCost = (request.count || 1) * (model === 'imagen3' ? 0.05 : 0.003)
+      const mockCost =
+        (request.count || 1) * (model === 'imagen3' ? 0.05 : 0.003)
 
       // Simulate API delay
       await new Promise(resolve => setTimeout(resolve, 2000))
@@ -617,12 +682,12 @@ export class ImageService {
       return {
         success: true,
         images: mockImages,
-        cost: mockCost
+        cost: mockCost,
       }
     } catch (error) {
       return {
         success: false,
-        error: `Image generation failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+        error: `Image generation failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
       }
     }
   }
@@ -633,15 +698,13 @@ export class ImageService {
     metadata: Record<string, unknown> = {}
   ): Promise<void> {
     try {
-      await supabase
-        .from('activity_logs')
-        .insert({
-          user_id: userId,
-          action,
-          metadata,
-          ip_address: 'unknown',
-          user_agent: 'unknown'
-        })
+      await supabase.from('activity_logs').insert({
+        user_id: userId,
+        action,
+        metadata,
+        ip_address: 'unknown',
+        user_agent: 'unknown',
+      })
     } catch (error) {
       console.error('Failed to log image activity:', error)
     }

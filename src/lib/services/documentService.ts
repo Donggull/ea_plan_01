@@ -10,7 +10,8 @@ export interface CreateDocumentData {
   file_name: string
   file_type: string
   file_size: number
-  file_url: string
+  file_path?: string
+  file_url?: string
   extracted_content?: string
   analysis_result?: Record<string, unknown>
   metadata?: Record<string, unknown>
@@ -18,6 +19,8 @@ export interface CreateDocumentData {
 
 export interface UpdateDocumentData {
   file_name?: string
+  file_path?: string
+  file_url?: string
   extracted_content?: string
   analysis_result?: Record<string, unknown>
   metadata?: Record<string, unknown>
@@ -149,6 +152,7 @@ export class DocumentService {
         user_id: user.id,
         project_id: documentData.project_id || null,
         file_name: documentData.file_name,
+        file_path: documentData.file_path || '',
         file_type: documentData.file_type,
         file_size: documentData.file_size,
         file_url: documentData.file_url,

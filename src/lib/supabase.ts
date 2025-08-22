@@ -39,7 +39,7 @@ export type Database = {
           name: string
           description?: string
           category: 'proposal' | 'development' | 'operation'
-          status: 'active' | 'completed' | 'archived'
+          status: 'active' | 'completed' | 'archived' | 'paused'
           metadata: Record<string, unknown>
           created_at: string
           updated_at: string
@@ -50,7 +50,7 @@ export type Database = {
           name: string
           description?: string
           category: 'proposal' | 'development' | 'operation'
-          status?: 'active' | 'completed' | 'archived'
+          status?: 'active' | 'completed' | 'archived' | 'paused'
           metadata?: Record<string, unknown>
           created_at?: string
           updated_at?: string
@@ -59,7 +59,7 @@ export type Database = {
           name?: string
           description?: string
           category?: 'proposal' | 'development' | 'operation'
-          status?: 'active' | 'completed' | 'archived'
+          status?: 'active' | 'completed' | 'archived' | 'paused'
           metadata?: Record<string, unknown>
           updated_at?: string
         }
@@ -162,24 +162,32 @@ export type Database = {
         Row: {
           id: string
           user_id: string
+          project_id: string | null
           prompt: string
           model_used: string
           image_url: string
+          is_favorite: boolean
           metadata: Record<string, unknown>
           created_at: string
+          updated_at: string
         }
         Insert: {
           id?: string
           user_id: string
+          project_id?: string | null
           prompt: string
           model_used: string
           image_url: string
+          is_favorite?: boolean
           metadata?: Record<string, unknown>
           created_at?: string
+          updated_at?: string
         }
         Update: {
           prompt?: string
+          is_favorite?: boolean
           metadata?: Record<string, unknown>
+          updated_at?: string
         }
       }
       documents: {
@@ -191,6 +199,7 @@ export type Database = {
           file_path: string
           file_type: string
           file_size: number
+          file_url?: string
           extracted_content?: string
           analysis_result?: Record<string, unknown>
           notes?: string
@@ -206,6 +215,7 @@ export type Database = {
           file_path: string
           file_type: string
           file_size: number
+          file_url?: string
           extracted_content?: string
           analysis_result?: Record<string, unknown>
           notes?: string
@@ -216,6 +226,8 @@ export type Database = {
         Update: {
           project_id?: string | null
           file_name?: string
+          file_path?: string
+          file_url?: string
           extracted_content?: string
           analysis_result?: Record<string, unknown>
           notes?: string
