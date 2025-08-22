@@ -704,7 +704,7 @@ export class ChatService {
       }
 
       const currentTags = conversation.tags || []
-      const updatedTags = currentTags.filter(t => t !== tag)
+      const updatedTags = currentTags.filter((t: string) => t !== tag)
 
       return this.updateConversation(conversationId, { tags: updatedTags })
     } catch (error) {
