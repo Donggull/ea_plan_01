@@ -40,6 +40,7 @@ export type Database = {
           description?: string
           category: 'proposal' | 'development' | 'operation'
           status: 'active' | 'completed' | 'archived' | 'paused'
+          tags: string[]
           metadata: Record<string, unknown>
           created_at: string
           updated_at: string
@@ -51,6 +52,7 @@ export type Database = {
           description?: string
           category: 'proposal' | 'development' | 'operation'
           status?: 'active' | 'completed' | 'archived' | 'paused'
+          tags?: string[]
           metadata?: Record<string, unknown>
           created_at?: string
           updated_at?: string
@@ -60,6 +62,7 @@ export type Database = {
           description?: string
           category?: 'proposal' | 'development' | 'operation'
           status?: 'active' | 'completed' | 'archived' | 'paused'
+          tags?: string[]
           metadata?: Record<string, unknown>
           updated_at?: string
         }
@@ -166,7 +169,10 @@ export type Database = {
           prompt: string
           model_used: string
           image_url: string
+          style: string
+          size: string
           is_favorite: boolean
+          tags: string[]
           metadata: Record<string, unknown>
           created_at: string
           updated_at: string
@@ -178,14 +184,20 @@ export type Database = {
           prompt: string
           model_used: string
           image_url: string
+          style?: string
+          size?: string
           is_favorite?: boolean
+          tags?: string[]
           metadata?: Record<string, unknown>
           created_at?: string
           updated_at?: string
         }
         Update: {
           prompt?: string
+          style?: string
+          size?: string
           is_favorite?: boolean
+          tags?: string[]
           metadata?: Record<string, unknown>
           updated_at?: string
         }

@@ -22,6 +22,7 @@ export interface CreateImageData {
 export interface UpdateImageData {
   prompt?: string
   style?: string
+  size?: string
   is_favorite?: boolean
   tags?: string[]
   metadata?: Record<string, unknown>

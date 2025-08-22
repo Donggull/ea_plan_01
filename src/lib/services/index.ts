@@ -1,62 +1,69 @@
 // Service Layer Exports
 // Main service classes for the planning platform
 
-export { UserService, default as userService } from './userService'
-export type { 
-  CreateUserProfileData, 
-  UpdateUserProfileData, 
-  UserServiceResponse 
+import { UserService } from './userService'
+import { ProjectService } from './projectService'
+import { ChatService } from './chatService'
+import { DocumentService } from './documentService'
+import { ImageService } from './imageService'
+import { CustomBotService } from './customBotService'
+
+export { UserService } from './userService'
+export type {
+  CreateUserProfileData,
+  UpdateUserProfileData,
+  UserServiceResponse,
 } from './userService'
 
-export { ProjectService, default as projectService } from './projectService'
-export type { 
-  CreateProjectData, 
-  UpdateProjectData, 
-  ProjectListFilters, 
-  ProjectServiceResponse, 
-  ProjectWithStats 
+export { ProjectService } from './projectService'
+export type {
+  CreateProjectData,
+  UpdateProjectData,
+  ProjectListFilters,
+  ProjectServiceResponse,
+  ProjectWithStats,
 } from './projectService'
 
-export { ChatService, default as chatService } from './chatService'
-export type { 
-  CreateConversationData, 
-  CreateMessageData, 
-  UpdateConversationData, 
-  ConversationListFilters, 
-  ChatServiceResponse, 
-  ConversationWithMessages, 
-  ConversationSummary 
+export { ChatService } from './chatService'
+export type {
+  CreateConversationData,
+  CreateMessageData,
+  UpdateConversationData,
+  ConversationListFilters,
+  ChatServiceResponse,
+  ConversationWithMessages,
+  ConversationSummary,
 } from './chatService'
 
-export { DocumentService, default as documentService } from './documentService'
-export type { 
-  CreateDocumentData, 
-  UpdateDocumentData, 
-  DocumentListFilters, 
-  DocumentServiceResponse, 
-  DocumentWithAnalysis 
+export { DocumentService } from './documentService'
+export type {
+  CreateDocumentData,
+  UpdateDocumentData,
+  DocumentListFilters,
+  DocumentServiceResponse,
+  DocumentWithAnalysis,
 } from './documentService'
 
-export { ImageService, default as imageService } from './imageService'
-export type { 
-  CreateImageData, 
-  UpdateImageData, 
-  ImageGenerationRequest, 
-  ImageListFilters, 
-  ImageServiceResponse, 
-  ImageWithStats, 
-  ImageGenerationResult 
+export { ImageService } from './imageService'
+export type {
+  CreateImageData,
+  UpdateImageData,
+  ImageGenerationRequest,
+  ImageListFilters,
+  ImageServiceResponse,
+  ImageWithStats,
+  ImageGenerationResult,
 } from './imageService'
 
-export { CustomBotService, default as customBotService } from './customBotService'
-export type { 
-  CreateCustomBotData, 
-  UpdateCustomBotData, 
-  CustomBotListFilters, 
-  CustomBotServiceResponse, 
-  CustomBotWithStats, 
-  KnowledgeBaseDocument, 
-  BotConversation 
+export { CustomBotService } from './customBotService'
+export type {
+  CreateCustomBotData,
+  UpdateCustomBotData,
+  CustomBotListFilters,
+  CustomBotServiceResponse,
+  CustomBotWithStats,
+  KnowledgeBaseDocument,
+  BotConversation,
 } from './customBotService'
 
 // Consolidated service interface for easy access
@@ -80,7 +87,7 @@ export type ServiceResponse<T = unknown> = {
 export const handleServiceError = (error: unknown): ServiceResponse => ({
   data: null,
   error: error instanceof Error ? error.message : 'Unknown error occurred',
-  success: false
+  success: false,
 })
 
 // Service health check utility
@@ -88,7 +95,7 @@ export const checkServiceHealth = async () => {
   const results = {
     database: false,
     storage: false,
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   }
 
   try {
