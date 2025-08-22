@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
 import PasswordReset from '@/components/auth/PasswordReset'
@@ -10,7 +10,7 @@ import { Card } from '@/components/ui/Card'
 import { Loading } from '@/components/ui/Loading'
 import { supabase } from '@/lib/supabase'
 
-export default function ResetPasswordPage() {
+function ResetPasswordContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const { user, loading } = useAuth()
@@ -63,14 +63,14 @@ export default function ResetPasswordPage() {
 
   const handlePasswordUpdate = async (e: React.FormEvent) => {
     e.preventDefault()
-    
+
     if (!validatePasswords()) return
 
     setError('')
 
     try {
       const { error: updateError } = await supabase.auth.updateUser({
-        password: newPassword
+        password: newPassword,
       })
 
       if (updateError) {
@@ -79,12 +79,13 @@ export default function ResetPasswordPage() {
       }
 
       setSuccess(true)
-      
+
       // 3초 후 로그인 페이지로 이동
       setTimeout(() => {
-        router.replace('/auth/login?message=비밀번호가%20성공적으로%20변경되었습니다.')
+        router.replace(
+          '/auth/login?message=비밀번호가%20성공적으로%20변경되었습니다.'
+        )
       }, 3000)
-
     } catch (err) {
       console.error('Password update error:', err)
       setError('비밀번호 업데이트 중 오류가 발생했습니다.')
@@ -110,8 +111,18 @@ export default function ResetPasswordPage() {
         <Card className="w-full max-w-md">
           <Card.Body className="text-center py-8">
             <div className="w-16 h-16 mx-auto mb-4 bg-green-100 rounded-full flex items-center justify-center">
-              <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              <svg
+                className="w-8 h-8 text-green-600"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M5 13l4 4L19 7"
+                />
               </svg>
             </div>
             <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-50 mb-2">
@@ -121,7 +132,9 @@ export default function ResetPasswordPage() {
               새로운 비밀번호로 로그인해주세요.
             </p>
             <Loading size="sm" />
-            <p className="text-xs text-slate-500 mt-2">잠시 후 로그인 페이지로 이동합니다...</p>
+            <p className="text-xs text-slate-500 mt-2">
+              잠시 후 로그인 페이지로 이동합니다...
+            </p>
           </Card.Body>
         </Card>
       </div>
@@ -149,15 +162,25 @@ export default function ResetPasswordPage() {
                 type="password"
                 placeholder="••••••••"
                 value={newPassword}
-                onChange={(e) => {
+                onChange={e => {
                   setNewPassword(e.target.value)
                   if (error) setError('')
                 }}
                 showPasswordToggle
                 helperText="영문, 숫자 포함 6자 이상"
                 leftIcon={
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                  <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+                    />
                   </svg>
                 }
                 required
@@ -168,14 +191,24 @@ export default function ResetPasswordPage() {
                 type="password"
                 placeholder="••••••••"
                 value={confirmPassword}
-                onChange={(e) => {
+                onChange={e => {
                   setConfirmPassword(e.target.value)
                   if (error) setError('')
                 }}
                 showPasswordToggle
                 leftIcon={
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
                   </svg>
                 }
                 required
@@ -214,5 +247,19 @@ export default function ResetPasswordPage() {
         />
       </div>
     </div>
+  )
+}
+
+export default function ResetPasswordPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900">
+          <Loading size="lg" />
+        </div>
+      }
+    >
+      <ResetPasswordContent />
+    </Suspense>
   )
 }

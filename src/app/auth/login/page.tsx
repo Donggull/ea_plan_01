@@ -1,12 +1,12 @@
 'use client'
 
-import React, { useEffect } from 'react'
+import React, { useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
 import LoginForm from '@/components/auth/LoginForm'
 import { Loading } from '@/components/ui/Loading'
 
-export default function LoginPage() {
+function LoginContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const { user, loading } = useAuth()
@@ -41,7 +41,7 @@ export default function LoginPage() {
             {decodeURIComponent(message)}
           </div>
         )}
-        
+
         <LoginForm
           redirectTo={redirectTo}
           onSuccess={() => {
@@ -50,5 +50,19 @@ export default function LoginPage() {
         />
       </div>
     </div>
+  )
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900">
+          <Loading size="lg" />
+        </div>
+      }
+    >
+      <LoginContent />
+    </Suspense>
   )
 }

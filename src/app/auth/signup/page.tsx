@@ -1,12 +1,12 @@
 'use client'
 
-import React, { useEffect } from 'react'
+import React, { useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
 import SignupForm from '@/components/auth/SignupForm'
 import { Loading } from '@/components/ui/Loading'
 
-export default function SignupPage() {
+function SignupContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const { user, loading } = useAuth()
@@ -38,10 +38,26 @@ export default function SignupPage() {
         <SignupForm
           redirectTo="/auth/login?message=회원가입이%20완료되었습니다.%20이메일%20인증%20후%20로그인해주세요."
           onSuccess={() => {
-            router.replace('/auth/login?message=회원가입이%20완료되었습니다.%20이메일%20인증%20후%20로그인해주세요.')
+            router.replace(
+              '/auth/login?message=회원가입이%20완료되었습니다.%20이메일%20인증%20후%20로그인해주세요.'
+            )
           }}
         />
       </div>
     </div>
+  )
+}
+
+export default function SignupPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900">
+          <Loading size="lg" />
+        </div>
+      }
+    >
+      <SignupContent />
+    </Suspense>
   )
 }
