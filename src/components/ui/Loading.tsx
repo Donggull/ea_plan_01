@@ -280,4 +280,4 @@ export const TableSkeleton: React.FC<TableSkeletonProps> = ({
   </div>
 )
 
-export { spinnerVariants }
+export { spinnerVariants, Spinner as Loading, Skeleton as LoadingSkeleton }

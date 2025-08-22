@@ -151,6 +151,33 @@ const InteractiveCard = React.forwardRef<HTMLDivElement, InteractiveCardProps>(
 )
 InteractiveCard.displayName = 'InteractiveCard'
 
+// Card Header
+const CardHeaderCompound: React.FC<React.HTMLAttributes<HTMLDivElement>> = ({
+  className,
+  children,
+  ...props
+}) => (
+  <div
+    className={cn('flex flex-col space-y-1.5 p-6', className)}
+    {...props}
+  >
+    {children}
+  </div>
+)
+CardHeaderCompound.displayName = 'CardHeaderCompound'
+
+// Card Body
+const CardBody: React.FC<React.HTMLAttributes<HTMLDivElement>> = ({
+  className,
+  children,
+  ...props
+}) => (
+  <div className={cn('p-6 pt-0', className)} {...props}>
+    {children}
+  </div>
+)
+CardBody.displayName = 'CardBody'
+
 // Stats Card
 interface StatsCardProps {
   title: string
@@ -214,9 +241,24 @@ const StatsCard: React.FC<StatsCardProps> = ({
   </Card>
 )
 
+// Attach compound components to Card
+const CardWithCompounds = Card as typeof Card & {
+  Header: typeof CardHeaderCompound
+  Body: typeof CardBody
+  Content: typeof CardContent
+  Footer: typeof CardFooter
+}
+
+CardWithCompounds.Header = CardHeaderCompound
+CardWithCompounds.Body = CardBody
+CardWithCompounds.Content = CardContent
+CardWithCompounds.Footer = CardFooter
+
 export {
-  Card,
+  CardWithCompounds as Card,
   CardHeader,
+  CardHeaderCompound,
+  CardBody,
   CardFooter,
   CardTitle,
   CardDescription,

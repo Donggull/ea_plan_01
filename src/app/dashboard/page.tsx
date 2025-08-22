@@ -1,6 +1,8 @@
 'use client'
 
 import { motion } from 'framer-motion'
+import { ProtectedRoute } from '@/components/auth/ProtectedRoute'
+import { useAuth } from '@/contexts/AuthContext'
 import {
   ChartBarIcon,
   FolderIcon,
@@ -12,6 +14,8 @@ import {
 } from '@heroicons/react/24/outline'
 
 export default function DashboardPage() {
+  const { userProfile } = useAuth()
+
   const stats = [
     {
       title: '총 프로젝트',
@@ -95,7 +99,8 @@ export default function DashboardPage() {
   ]
 
   return (
-    <div className="p-6 space-y-6">
+    <ProtectedRoute>
+      <div className="p-6 space-y-6">
       {/* Welcome Header */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -105,7 +110,7 @@ export default function DashboardPage() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-300 bg-clip-text text-transparent">
-              대시보드
+              안녕하세요, {userProfile?.name || '사용자'}님! 👋
             </h1>
             <p className="text-gray-600 dark:text-gray-400 mt-2">
               프로젝트 현황과 AI 어시스턴트 활동을 한눈에 확인하세요
@@ -330,6 +335,7 @@ export default function DashboardPage() {
           </div>
         </motion.div>
       </div>
-    </div>
+      </div>
+    </ProtectedRoute>
   )
 }
