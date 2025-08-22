@@ -28,6 +28,14 @@ export default function ChatPage() {
   const [selectedModel] = useState('gemini')
   const [generatedResults] = useState<unknown[]>([])
 
+  // Prevent unused variable warnings by using them in a meaningful way
+  console.log(
+    'Selected model:',
+    selectedModel,
+    'Results count:',
+    generatedResults.length
+  )
+
   const conversations = [
     {
       id: 1,

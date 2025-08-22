@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import Image from 'next/image'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   PhotoIcon,
@@ -401,9 +402,11 @@ export default function ImagesPage() {
             >
               <div className="relative">
                 <div className="aspect-w-4 aspect-h-3 bg-gray-200 dark:bg-gray-700">
-                  <img
+                  <Image
                     src={image.url}
                     alt={image.title}
+                    width={400}
+                    height={300}
                     className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
                   />
                 </div>
