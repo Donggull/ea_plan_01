@@ -22,7 +22,7 @@ export function ProtectedRoute({
 }: ProtectedRouteProps) {
   const router = useRouter()
   const pathname = usePathname()
-  const { user, userProfile, loading, session } = useAuth()
+  const { user, userProfile, loading } = useAuth()
 
   useEffect(() => {
     if (loading) return // 로딩 중이면 대기

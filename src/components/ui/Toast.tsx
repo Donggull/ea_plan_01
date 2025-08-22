@@ -287,17 +287,17 @@ const ToastContainer: React.FC<ToastContainerProps> = ({ toasts, onClose }) => {
 
 // Simple toast function for quick usage - placeholder for future implementation
 export const toast = {
-  success: (_message: string, _options?: Partial<Toast>) => {
+  success: () => {
     // This would need to be implemented with a global toast context
     // console.log('Success:', message, options)
   },
-  error: (_message: string, _options?: Partial<Toast>) => {
+  error: () => {
     // console.log('Error:', message, options)
   },
-  warning: (_message: string, _options?: Partial<Toast>) => {
+  warning: () => {
     // console.log('Warning:', message, options)
   },
-  info: (_message: string, _options?: Partial<Toast>) => {
+  info: () => {
     // console.log('Info:', message, options)
   },
 }

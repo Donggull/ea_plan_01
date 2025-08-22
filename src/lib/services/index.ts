@@ -70,14 +70,14 @@ export const services = {
 }
 
 // Service response type utility
-export type ServiceResponse<T = any> = {
+export type ServiceResponse<T = unknown> = {
   data: T | null
   error: string | null
   success: boolean
 }
 
 // Common service error handling utility
-export const handleServiceError = (error: any): ServiceResponse => ({
+export const handleServiceError = (error: unknown): ServiceResponse => ({
   data: null,
   error: error instanceof Error ? error.message : 'Unknown error occurred',
   success: false
@@ -93,7 +93,7 @@ export const checkServiceHealth = async () => {
 
   try {
     // Test database connection
-    const userResult = await UserService.getCurrentUser()
+    await UserService.getCurrentUser()
     results.database = true // If no error thrown, database is accessible
   } catch (error) {
     console.error('Database health check failed:', error)

@@ -13,21 +13,21 @@ export interface CreateConversationData {
   title: string
   model_used: string
   tags?: string[]
-  metadata?: Record<string, any>
+  metadata?: Record<string, unknown>
 }
 
 export interface CreateMessageData {
   conversation_id: string
   role: 'user' | 'assistant' | 'system'
   content: string
-  metadata?: Record<string, any>
+  metadata?: Record<string, unknown>
 }
 
 export interface UpdateConversationData {
   title?: string
   model_used?: string
   tags?: string[]
-  metadata?: Record<string, any>
+  metadata?: Record<string, unknown>
 }
 
 export interface ConversationListFilters {
@@ -39,7 +39,7 @@ export interface ConversationListFilters {
   offset?: number
 }
 
-export interface ChatServiceResponse<T = any> {
+export interface ChatServiceResponse<T = unknown> {
   data: T | null
   error: string | null
   success: boolean
@@ -130,7 +130,7 @@ export class ChatService {
         }
       }
 
-      const { data: conversation, error: conversationError } = await supabase
+      const { error: conversationError } = await supabase
         .from('conversations')
         .select('*')
         .eq('id', conversationId)
@@ -214,7 +214,7 @@ export class ChatService {
       }
 
       // Verify conversation belongs to user
-      const { data: conversation, error: conversationError } = await supabase
+      const { error: conversationError } = await supabase
         .from('conversations')
         .select('id')
         .eq('id', messageData.conversation_id)
@@ -490,7 +490,7 @@ export class ChatService {
       }
 
       // Verify conversation belongs to user
-      const { data: conversation, error: conversationError } = await supabase
+      const { error: conversationError } = await supabase
         .from('conversations')
         .select('id')
         .eq('id', conversationId)
@@ -646,7 +646,7 @@ export class ChatService {
     conversationId: string,
     userId: string,
     action: string,
-    metadata: Record<string, any> = {}
+    metadata: Record<string, unknown> = {}
   ): Promise<void> {
     try {
       await supabase

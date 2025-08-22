@@ -21,12 +21,12 @@ export const useChatStore = create<ChatState>(set => ({
   messages: [],
   isLoading: false,
   selectedModel: 'gemini',
-  setConversations: conversations => set({ conversations }),
-  setCurrentConversation: conversation =>
+  setConversations: (conversations) => set({ conversations }),
+  setCurrentConversation: (conversation) =>
     set({ currentConversation: conversation }),
-  setMessages: messages => set({ messages }),
-  addMessage: message =>
+  setMessages: (messages) => set({ messages }),
+  addMessage: (message) =>
     set(state => ({ messages: [...state.messages, message] })),
-  setLoading: loading => set({ isLoading: loading }),
-  setSelectedModel: model => set({ selectedModel: model }),
+  setLoading: (loading) => set({ isLoading: loading }),
+  setSelectedModel: (model) => set({ selectedModel: model }),
 }))

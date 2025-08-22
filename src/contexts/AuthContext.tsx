@@ -1,7 +1,7 @@
 'use client'
 
-import React, { createContext, useContext, useEffect, useState } from 'react'
-import { User, Session, AuthError, AuthResponse } from '@supabase/supabase-js'
+import React, { createContext, useContext, useEffect, useState, useCallback } from 'react'
+import { User, Session, AuthError } from '@supabase/supabase-js'
 import { supabase, Database } from '@/lib/supabase'
 
 export type UserProfile = Database['public']['Tables']['users']['Row']
@@ -12,8 +12,8 @@ export interface AuthContextType {
   session: Session | null
   loading: boolean
   error: string | null
-  signUp: (email: string, password: string, name: string) => Promise<any>
-  signIn: (email: string, password: string) => Promise<any>
+  signUp: (email: string, password: string, name: string) => Promise<{ data: { user: User | null; session: Session | null }; error: AuthError | null }>
+  signIn: (email: string, password: string) => Promise<{ data: { user: User | null; session: Session | null }; error: AuthError | null }>
   signOut: () => Promise<{ error: AuthError | null }>
   resetPassword: (email: string) => Promise<{ error: AuthError | null }>
   updateProfile: (updates: Partial<UserProfile>) => Promise<{ error: Error | null }>
@@ -54,7 +54,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
             await fetchUserProfile(session.user.id)
           }
         }
-      } catch (err) {
+      } catch {
         console.error('Error in getInitialSession:', err)
         if (isMounted) {
           setError('세션을 가져오는 중 오류가 발생했습니다.')
@@ -96,9 +96,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
       isMounted = false
       subscription.unsubscribe()
     }
-  }, [])
+  }, [fetchUserProfile])
 
-  const fetchUserProfile = async (userId: string) => {
+  const fetchUserProfile = useCallback(async (userId: string) => {
     try {
       const { data, error } = await supabase
         .from('users')
@@ -122,7 +122,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       console.error('Error in fetchUserProfile:', err)
       setError('사용자 프로필을 가져오는 중 오류가 발생했습니다.')
     }
-  }
+  }, [])
 
   const createUserProfile = async (userId: string) => {
     try {
@@ -147,13 +147,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
       }
 
       setUserProfile(data)
-    } catch (err) {
+    } catch {
       console.error('Error in createUserProfile:', err)
       setError('사용자 프로필을 생성하는 중 오류가 발생했습니다.')
     }
   }
 
-  const signUp = async (email: string, password: string, name: string): Promise<any> => {
+  const signUp = async (email: string, password: string, name: string): Promise<{ data: { user: User | null; session: Session | null }; error: AuthError | null }> => {
     setLoading(true)
     setError(null)
 
@@ -173,19 +173,19 @@ export function AuthProvider({ children }: AuthProviderProps) {
       }
 
       return { data, error }
-    } catch (err) {
+    } catch {
       const errorMessage = '회원가입 중 오류가 발생했습니다.'
       setError(errorMessage)
       return { 
         data: { user: null, session: null },
-        error: new Error(errorMessage) as any
+        error: new Error(errorMessage) as AuthError
       }
     } finally {
       setLoading(false)
     }
   }
 
-  const signIn = async (email: string, password: string): Promise<any> => {
+  const signIn = async (email: string, password: string): Promise<{ data: { user: User | null; session: Session | null }; error: AuthError | null }> => {
     setLoading(true)
     setError(null)
 
@@ -200,12 +200,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
       }
 
       return { data, error }
-    } catch (err) {
+    } catch {
       const errorMessage = '로그인 중 오류가 발생했습니다.'
       setError(errorMessage)
       return { 
         data: { user: null, session: null },
-        error: new Error(errorMessage) as any
+        error: new Error(errorMessage) as AuthError
       }
     } finally {
       setLoading(false)
@@ -228,7 +228,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       }
 
       return { error }
-    } catch (err) {
+    } catch {
       const errorMessage = '로그아웃 중 오류가 발생했습니다.'
       setError(errorMessage)
       return { error: { message: errorMessage } as AuthError }
@@ -251,7 +251,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       }
 
       return { error }
-    } catch (err) {
+    } catch {
       const errorMessage = '비밀번호 재설정 중 오류가 발생했습니다.'
       setError(errorMessage)
       return { error: { message: errorMessage } as AuthError }
@@ -276,7 +276,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         .update({ 
           ...updates, 
           updated_at: new Date().toISOString() 
-        } as any)
+        })
         .eq('id', user.id)
         .select()
         .single()
@@ -288,7 +288,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
       setUserProfile(data)
       return { error: null }
-    } catch (err) {
+    } catch {
       const errorMessage = '프로필 업데이트 중 오류가 발생했습니다.'
       setError(errorMessage)
       return { error: new Error(errorMessage) }

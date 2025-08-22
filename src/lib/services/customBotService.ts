@@ -13,7 +13,7 @@ export interface CreateCustomBotData {
   is_public?: boolean
   is_active?: boolean
   tags?: string[]
-  metadata?: Record<string, any>
+  metadata?: Record<string, unknown>
 }
 
 export interface UpdateCustomBotData {
@@ -24,7 +24,7 @@ export interface UpdateCustomBotData {
   is_public?: boolean
   is_active?: boolean
   tags?: string[]
-  metadata?: Record<string, any>
+  metadata?: Record<string, unknown>
 }
 
 export interface CustomBotListFilters {
@@ -36,7 +36,7 @@ export interface CustomBotListFilters {
   offset?: number
 }
 
-export interface CustomBotServiceResponse<T = any> {
+export interface CustomBotServiceResponse<T = unknown> {
   data: T | null
   error: string | null
   success: boolean
@@ -53,7 +53,7 @@ export interface KnowledgeBaseDocument {
   id: string
   title: string
   content: string
-  metadata?: Record<string, any>
+  metadata?: Record<string, unknown>
 }
 
 export interface BotConversation {
@@ -712,7 +712,7 @@ export class CustomBotService {
     botId: string,
     userId: string,
     action: string,
-    metadata: Record<string, any> = {}
+    metadata: Record<string, unknown> = {}
   ): Promise<void> {
     try {
       await supabase

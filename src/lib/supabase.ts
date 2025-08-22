@@ -40,7 +40,7 @@ export type Database = {
           description?: string
           category: 'proposal' | 'development' | 'operation'
           status: 'active' | 'completed' | 'archived'
-          metadata: Record<string, any>
+          metadata: Record<string, unknown>
           created_at: string
           updated_at: string
         }
@@ -51,7 +51,7 @@ export type Database = {
           description?: string
           category: 'proposal' | 'development' | 'operation'
           status?: 'active' | 'completed' | 'archived'
-          metadata?: Record<string, any>
+          metadata?: Record<string, unknown>
           created_at?: string
           updated_at?: string
         }
@@ -60,7 +60,7 @@ export type Database = {
           description?: string
           category?: 'proposal' | 'development' | 'operation'
           status?: 'active' | 'completed' | 'archived'
-          metadata?: Record<string, any>
+          metadata?: Record<string, unknown>
           updated_at?: string
         }
       }
@@ -93,7 +93,7 @@ export type Database = {
           conversation_id: string
           role: 'user' | 'assistant' | 'system'
           content: string
-          metadata: Record<string, any>
+          metadata: Record<string, unknown>
           created_at: string
         }
         Insert: {
@@ -101,12 +101,12 @@ export type Database = {
           conversation_id: string
           role: 'user' | 'assistant' | 'system'
           content: string
-          metadata?: Record<string, any>
+          metadata?: Record<string, unknown>
           created_at?: string
         }
         Update: {
           content?: string
-          metadata?: Record<string, any>
+          metadata?: Record<string, unknown>
         }
       }
       custom_bots: {
@@ -145,7 +145,7 @@ export type Database = {
           prompt: string
           model_used: string
           image_url: string
-          metadata: Record<string, any>
+          metadata: Record<string, unknown>
           created_at: string
         }
         Insert: {
@@ -154,12 +154,12 @@ export type Database = {
           prompt: string
           model_used: string
           image_url: string
-          metadata?: Record<string, any>
+          metadata?: Record<string, unknown>
           created_at?: string
         }
         Update: {
           prompt?: string
-          metadata?: Record<string, any>
+          metadata?: Record<string, unknown>
         }
       }
       documents: {
@@ -171,9 +171,9 @@ export type Database = {
           file_type: string
           file_size: number
           extracted_content?: string
-          analysis_result?: Record<string, any>
+          analysis_result?: Record<string, unknown>
           notes?: string
-          metadata: Record<string, any>
+          metadata: Record<string, unknown>
           created_at: string
           updated_at: string
         }
@@ -185,26 +185,28 @@ export type Database = {
           file_type: string
           file_size: number
           extracted_content?: string
-          analysis_result?: Record<string, any>
+          analysis_result?: Record<string, unknown>
           notes?: string
-          metadata?: Record<string, any>
+          metadata?: Record<string, unknown>
           created_at?: string
           updated_at?: string
         }
         Update: {
           file_name?: string
           extracted_content?: string
-          analysis_result?: Record<string, any>
+          analysis_result?: Record<string, unknown>
           notes?: string
-          metadata?: Record<string, any>
+          metadata?: Record<string, unknown>
           updated_at?: string
         }
       }
     }
     Views: {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       [_ in never]: never
     }
     Functions: {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       [_ in never]: never
     }
     Enums: {

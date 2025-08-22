@@ -17,10 +17,10 @@ export interface UpdateUserProfileData {
   avatar_url?: string
   subscription_tier?: 'free' | 'pro' | 'enterprise'
   bio?: string
-  preferences?: Record<string, any>
+  preferences?: Record<string, unknown>
 }
 
-export interface UserServiceResponse<T = any> {
+export interface UserServiceResponse<T = unknown> {
   data: T | null
   error: string | null
   success: boolean
@@ -390,7 +390,7 @@ export class UserService {
   private static async logUserActivity(
     userId: string, 
     action: string, 
-    metadata: Record<string, any> = {}
+    metadata: Record<string, unknown> = {}
   ): Promise<void> {
     try {
       await supabase

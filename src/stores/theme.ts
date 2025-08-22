@@ -17,7 +17,7 @@ export const useThemeStore = create<ThemeState>(set => ({
       }
       return { isDarkMode: newMode }
     }),
-  setTheme: isDark =>
+  setTheme: (isDark) =>
     set(() => {
       if (typeof window !== 'undefined') {
         document.documentElement.classList.toggle('dark', isDark)

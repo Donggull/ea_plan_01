@@ -12,15 +12,15 @@ export interface CreateDocumentData {
   file_size: number
   file_url: string
   extracted_content?: string
-  analysis_result?: Record<string, any>
-  metadata?: Record<string, any>
+  analysis_result?: Record<string, unknown>
+  metadata?: Record<string, unknown>
 }
 
 export interface UpdateDocumentData {
   file_name?: string
   extracted_content?: string
-  analysis_result?: Record<string, any>
-  metadata?: Record<string, any>
+  analysis_result?: Record<string, unknown>
+  metadata?: Record<string, unknown>
 }
 
 export interface DocumentListFilters {
@@ -31,7 +31,7 @@ export interface DocumentListFilters {
   offset?: number
 }
 
-export interface DocumentServiceResponse<T = any> {
+export interface DocumentServiceResponse<T = unknown> {
   data: T | null
   error: string | null
   success: boolean
@@ -40,7 +40,7 @@ export interface DocumentServiceResponse<T = any> {
 export interface DocumentWithAnalysis extends Document {
   analysisStatus?: 'pending' | 'completed' | 'failed'
   keyInsights?: string[]
-  extractedEntities?: Record<string, any>
+  extractedEntities?: Record<string, unknown>
 }
 
 export class DocumentService {
@@ -62,7 +62,7 @@ export class DocumentService {
       const filePath = `documents/${user.id}/${projectId || 'general'}/${fileName}`
 
       // Upload file to Supabase Storage
-      const { data: uploadData, error: uploadError } = await supabase.storage
+      const { error: uploadError } = await supabase.storage
         .from('documents')
         .upload(filePath, file, {
           cacheControl: '3600',
@@ -531,7 +531,7 @@ export class DocumentService {
     documentId: string,
     userId: string,
     action: string,
-    metadata: Record<string, any> = {}
+    metadata: Record<string, unknown> = {}
   ): Promise<void> {
     try {
       await supabase

@@ -14,7 +14,7 @@ export interface CreateImageData {
   size?: string
   is_favorite?: boolean
   tags?: string[]
-  metadata?: Record<string, any>
+  metadata?: Record<string, unknown>
 }
 
 export interface UpdateImageData {
@@ -22,7 +22,7 @@ export interface UpdateImageData {
   style?: string
   is_favorite?: boolean
   tags?: string[]
-  metadata?: Record<string, any>
+  metadata?: Record<string, unknown>
 }
 
 export interface ImageGenerationRequest {
@@ -46,7 +46,7 @@ export interface ImageListFilters {
   offset?: number
 }
 
-export interface ImageServiceResponse<T = any> {
+export interface ImageServiceResponse<T = unknown> {
   data: T | null
   error: string | null
   success: boolean
@@ -630,7 +630,7 @@ export class ImageService {
   private static async logImageActivity(
     userId: string,
     action: string,
-    metadata: Record<string, any> = {}
+    metadata: Record<string, unknown> = {}
   ): Promise<void> {
     try {
       await supabase

@@ -11,7 +11,7 @@ export interface CreateProjectData {
   category: 'proposal' | 'development' | 'operation'
   status?: 'active' | 'completed' | 'archived' | 'paused'
   tags?: string[]
-  metadata?: Record<string, any>
+  metadata?: Record<string, unknown>
 }
 
 export interface UpdateProjectData {
@@ -20,7 +20,7 @@ export interface UpdateProjectData {
   category?: 'proposal' | 'development' | 'operation'
   status?: 'active' | 'completed' | 'archived' | 'paused'
   tags?: string[]
-  metadata?: Record<string, any>
+  metadata?: Record<string, unknown>
 }
 
 export interface ProjectListFilters {
@@ -32,7 +32,7 @@ export interface ProjectListFilters {
   offset?: number
 }
 
-export interface ProjectServiceResponse<T = any> {
+export interface ProjectServiceResponse<T = unknown> {
   data: T | null
   error: string | null
   success: boolean
@@ -488,7 +488,7 @@ export class ProjectService {
     projectId: string,
     userId: string,
     action: string,
-    metadata: Record<string, any> = {}
+    metadata: Record<string, unknown> = {}
   ): Promise<void> {
     try {
       await supabase
