@@ -3,7 +3,7 @@ import { create } from 'zustand'
 interface ThemeState {
   isDarkMode: boolean
   toggleTheme: () => void
-  setTheme: (_isDark: boolean) => void
+  setTheme: (isDark: boolean) => void
 }
 
 export const useThemeStore = create<ThemeState>(set => ({

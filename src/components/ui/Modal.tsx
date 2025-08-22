@@ -190,7 +190,7 @@ export const FormModal: React.FC<FormModalProps> = ({
 }) => {
   const handleSubmit = (event: React.FormEvent) => {
     event.preventDefault()
-    onSubmit(event)
+    onSubmit()
   }
 
   return (

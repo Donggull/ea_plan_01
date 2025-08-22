@@ -4,8 +4,8 @@ import { User } from '@/types'
 interface AuthState {
   user: User | null
   isLoading: boolean
-  setUser: (_user: User | null) => void
-  setLoading: (_loading: boolean) => void
+  setUser: (user: User | null) => void
+  setLoading: (loading: boolean) => void
   signOut: () => void
 }
 

@@ -19,24 +19,24 @@ export interface AuthContextType {
   loading: boolean
   error: string | null
   signUp: (
-    _email: string,
-    _password: string,
-    _name: string
+    email: string,
+    password: string,
+    name: string
   ) => Promise<{
     data: { user: User | null; session: Session | null }
     error: AuthError | null
   }>
   signIn: (
-    _email: string,
-    _password: string
+    email: string,
+    password: string
   ) => Promise<{
     data: { user: User | null; session: Session | null }
     error: AuthError | null
   }>
   signOut: () => Promise<{ error: AuthError | null }>
-  resetPassword: (_email: string) => Promise<{ error: AuthError | null }>
+  resetPassword: (email: string) => Promise<{ error: AuthError | null }>
   updateProfile: (
-    _updates: Partial<UserProfile>
+    updates: Partial<UserProfile>
   ) => Promise<{ error: Error | null }>
   clearError: () => void
 }

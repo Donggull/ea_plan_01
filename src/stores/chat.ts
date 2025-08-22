@@ -7,12 +7,12 @@ interface ChatState {
   messages: Message[]
   isLoading: boolean
   selectedModel: AIModel
-  setConversations: (_conversations: Conversation[]) => void
-  setCurrentConversation: (_conversation: Conversation | null) => void
-  setMessages: (_messages: Message[]) => void
-  addMessage: (_message: Message) => void
-  setLoading: (_loading: boolean) => void
-  setSelectedModel: (_model: AIModel) => void
+  setConversations: (conversations: Conversation[]) => void
+  setCurrentConversation: (conversation: Conversation | null) => void
+  setMessages: (messages: Message[]) => void
+  addMessage: (message: Message) => void
+  setLoading: (loading: boolean) => void
+  setSelectedModel: (model: AIModel) => void
 }
 
 export const useChatStore = create<ChatState>(set => ({
