@@ -2,8 +2,10 @@ import { supabase } from '@/lib/supabase'
 import type { Database } from '@/lib/supabase'
 
 type Conversation = Database['public']['Tables']['conversations']['Row']
-type ConversationInsert = Database['public']['Tables']['conversations']['Insert']
-type ConversationUpdate = Database['public']['Tables']['conversations']['Update']
+type ConversationInsert =
+  Database['public']['Tables']['conversations']['Insert']
+type ConversationUpdate =
+  Database['public']['Tables']['conversations']['Update']
 
 type Message = Database['public']['Tables']['messages']['Row']
 type MessageInsert = Database['public']['Tables']['messages']['Insert']
@@ -62,25 +64,30 @@ export interface ConversationSummary {
 }
 
 export class ChatService {
-  static async createConversation(conversationData: CreateConversationData): Promise<ChatServiceResponse<Conversation>> {
+  static async createConversation(
+    conversationData: CreateConversationData
+  ): Promise<ChatServiceResponse<Conversation>> {
     try {
-      const { data: { user }, error: authError } = await supabase.auth.getUser()
-      
+      const {
+        data: { user },
+        error: authError,
+      } = await supabase.auth.getUser()
+
       if (authError || !user) {
         return {
           data: null,
           error: 'User must be authenticated to create conversation',
-          success: false
+          success: false,
         }
       }
 
       const insertData: ConversationInsert = {
         user_id: user.id,
-        project_id: conversationData.project_id,
+        project_id: conversationData.project_id || null,
         title: conversationData.title,
         model_used: conversationData.model_used,
         tags: conversationData.tags || [],
-        metadata: conversationData.metadata || {}
+        metadata: conversationData.metadata || {},
       }
 
       const { data: newConversation, error: insertError } = await supabase
@@ -93,40 +100,51 @@ export class ChatService {
         return {
           data: null,
           error: `Failed to create conversation: ${insertError.message}`,
-          success: false
+          success: false,
         }
       }
 
       // Log the activity
-      await this.logChatActivity(newConversation.id, user.id, 'conversation_created', {
-        title: conversationData.title,
-        model_used: conversationData.model_used,
-        project_id: conversationData.project_id
-      })
+      await this.logChatActivity(
+        newConversation.id,
+        user.id,
+        'conversation_created',
+        {
+          title: conversationData.title,
+          model_used: conversationData.model_used,
+          project_id: conversationData.project_id,
+        }
+      )
 
       return {
         data: newConversation,
         error: null,
-        success: true
+        success: true,
       }
     } catch (error) {
       return {
         data: null,
         error: `Unexpected error: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        success: false
+        success: false,
       }
     }
   }
 
-  static async getConversationById(conversationId: string, includeMessages: boolean = false): Promise<ChatServiceResponse<ConversationWithMessages>> {
+  static async getConversationById(
+    conversationId: string,
+    includeMessages: boolean = false
+  ): Promise<ChatServiceResponse<ConversationWithMessages>> {
     try {
-      const { data: { user }, error: authError } = await supabase.auth.getUser()
-      
+      const {
+        data: { user },
+        error: authError,
+      } = await supabase.auth.getUser()
+
       if (authError || !user) {
         return {
           data: null,
           error: 'User must be authenticated',
-          success: false
+          success: false,
         }
       }
 
@@ -141,7 +159,7 @@ export class ChatService {
         return {
           data: null,
           error: `Failed to fetch conversation: ${conversationError.message}`,
-          success: false
+          success: false,
         }
       }
 
@@ -158,7 +176,7 @@ export class ChatService {
           return {
             data: null,
             error: `Failed to fetch messages: ${messagesError.message}`,
-            success: false
+            success: false,
           }
         }
 
@@ -166,50 +184,59 @@ export class ChatService {
           ...conversation,
           messages: messages || [],
           messageCount: messages?.length || 0,
-          lastMessage: messages?.[messages.length - 1]
+          lastMessage: messages?.[messages.length - 1],
         }
       } else {
         // Get message count and last message
         const [messageCountRes, lastMessageRes] = await Promise.all([
-          supabase.from('messages').select('id', { count: 'exact' }).eq('conversation_id', conversationId),
-          supabase.from('messages')
+          supabase
+            .from('messages')
+            .select('id', { count: 'exact' })
+            .eq('conversation_id', conversationId),
+          supabase
+            .from('messages')
             .select('*')
             .eq('conversation_id', conversationId)
             .order('created_at', { ascending: false })
             .limit(1)
-            .single()
+            .single(),
         ])
 
         conversationWithMessages = {
           ...conversation,
           messageCount: messageCountRes.count || 0,
-          lastMessage: lastMessageRes.data || undefined
+          lastMessage: lastMessageRes.data || undefined,
         }
       }
 
       return {
         data: conversationWithMessages,
         error: null,
-        success: true
+        success: true,
       }
     } catch (error) {
       return {
         data: null,
         error: `Unexpected error: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        success: false
+        success: false,
       }
     }
   }
 
-  static async addMessage(messageData: CreateMessageData): Promise<ChatServiceResponse<Message>> {
+  static async addMessage(
+    messageData: CreateMessageData
+  ): Promise<ChatServiceResponse<Message>> {
     try {
-      const { data: { user }, error: authError } = await supabase.auth.getUser()
-      
+      const {
+        data: { user },
+        error: authError,
+      } = await supabase.auth.getUser()
+
       if (authError || !user) {
         return {
           data: null,
           error: 'User must be authenticated to add message',
-          success: false
+          success: false,
         }
       }
 
@@ -225,7 +252,7 @@ export class ChatService {
         return {
           data: null,
           error: 'Conversation not found or access denied',
-          success: false
+          success: false,
         }
       }
 
@@ -233,7 +260,7 @@ export class ChatService {
         conversation_id: messageData.conversation_id,
         role: messageData.role,
         content: messageData.content,
-        metadata: messageData.metadata || {}
+        metadata: messageData.metadata || {},
       }
 
       const { data: newMessage, error: insertError } = await supabase
@@ -246,7 +273,7 @@ export class ChatService {
         return {
           data: null,
           error: `Failed to add message: ${insertError.message}`,
-          success: false
+          success: false,
         }
       }
 
@@ -257,40 +284,51 @@ export class ChatService {
         .eq('id', messageData.conversation_id)
 
       // Log the activity
-      await this.logChatActivity(messageData.conversation_id, user.id, 'message_added', {
-        role: messageData.role,
-        content_length: messageData.content.length
-      })
+      await this.logChatActivity(
+        messageData.conversation_id,
+        user.id,
+        'message_added',
+        {
+          role: messageData.role,
+          content_length: messageData.content.length,
+        }
+      )
 
       return {
         data: newMessage,
         error: null,
-        success: true
+        success: true,
       }
     } catch (error) {
       return {
         data: null,
         error: `Unexpected error: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        success: false
+        success: false,
       }
     }
   }
 
-  static async updateConversation(conversationId: string, updates: UpdateConversationData): Promise<ChatServiceResponse<Conversation>> {
+  static async updateConversation(
+    conversationId: string,
+    updates: UpdateConversationData
+  ): Promise<ChatServiceResponse<Conversation>> {
     try {
-      const { data: { user }, error: authError } = await supabase.auth.getUser()
-      
+      const {
+        data: { user },
+        error: authError,
+      } = await supabase.auth.getUser()
+
       if (authError || !user) {
         return {
           data: null,
           error: 'User must be authenticated to update conversation',
-          success: false
+          success: false,
         }
       }
 
       const updateData: ConversationUpdate = {
         ...updates,
-        updated_at: new Date().toISOString()
+        updated_at: new Date().toISOString(),
       }
 
       const { data: updatedConversation, error: updateError } = await supabase
@@ -305,36 +343,46 @@ export class ChatService {
         return {
           data: null,
           error: `Failed to update conversation: ${updateError.message}`,
-          success: false
+          success: false,
         }
       }
 
       // Log the activity
-      await this.logChatActivity(conversationId, user.id, 'conversation_updated', { updates })
+      await this.logChatActivity(
+        conversationId,
+        user.id,
+        'conversation_updated',
+        { updates }
+      )
 
       return {
         data: updatedConversation,
         error: null,
-        success: true
+        success: true,
       }
     } catch (error) {
       return {
         data: null,
         error: `Unexpected error: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        success: false
+        success: false,
       }
     }
   }
 
-  static async deleteConversation(conversationId: string): Promise<ChatServiceResponse<boolean>> {
+  static async deleteConversation(
+    conversationId: string
+  ): Promise<ChatServiceResponse<boolean>> {
     try {
-      const { data: { user }, error: authError } = await supabase.auth.getUser()
-      
+      const {
+        data: { user },
+        error: authError,
+      } = await supabase.auth.getUser()
+
       if (authError || !user) {
         return {
           data: null,
           error: 'User must be authenticated to delete conversation',
-          success: false
+          success: false,
         }
       }
 
@@ -348,10 +396,15 @@ export class ChatService {
 
       // Log the deletion before actually deleting
       if (conversation) {
-        await this.logChatActivity(conversationId, user.id, 'conversation_deleted', {
-          title: conversation.title,
-          model_used: conversation.model_used
-        })
+        await this.logChatActivity(
+          conversationId,
+          user.id,
+          'conversation_deleted',
+          {
+            title: conversation.title,
+            model_used: conversation.model_used,
+          }
+        )
       }
 
       const { error: deleteError } = await supabase
@@ -364,33 +417,38 @@ export class ChatService {
         return {
           data: null,
           error: `Failed to delete conversation: ${deleteError.message}`,
-          success: false
+          success: false,
         }
       }
 
       return {
         data: true,
         error: null,
-        success: true
+        success: true,
       }
     } catch (error) {
       return {
         data: null,
         error: `Unexpected error: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        success: false
+        success: false,
       }
     }
   }
 
-  static async listConversations(filters: ConversationListFilters = {}): Promise<ChatServiceResponse<ConversationSummary[]>> {
+  static async listConversations(
+    filters: ConversationListFilters = {}
+  ): Promise<ChatServiceResponse<ConversationSummary[]>> {
     try {
-      const { data: { user }, error: authError } = await supabase.auth.getUser()
-      
+      const {
+        data: { user },
+        error: authError,
+      } = await supabase.auth.getUser()
+
       if (authError || !user) {
         return {
           data: null,
           error: 'User must be authenticated',
-          success: false
+          success: false,
         }
       }
 
@@ -422,7 +480,10 @@ export class ChatService {
       }
 
       if (filters.offset) {
-        query = query.range(filters.offset, filters.offset + (filters.limit || 10) - 1)
+        query = query.range(
+          filters.offset,
+          filters.offset + (filters.limit || 10) - 1
+        )
       }
 
       // Order by updated_at descending
@@ -434,21 +495,25 @@ export class ChatService {
         return {
           data: null,
           error: `Failed to fetch conversations: ${conversationsError.message}`,
-          success: false
+          success: false,
         }
       }
 
       // Enhance conversations with message counts and last message
       const conversationSummaries: ConversationSummary[] = await Promise.all(
-        (conversations || []).map(async (conversation) => {
+        (conversations || []).map(async conversation => {
           const [messageCountRes, lastMessageRes] = await Promise.all([
-            supabase.from('messages').select('id', { count: 'exact' }).eq('conversation_id', conversation.id),
-            supabase.from('messages')
+            supabase
+              .from('messages')
+              .select('id', { count: 'exact' })
+              .eq('conversation_id', conversation.id),
+            supabase
+              .from('messages')
               .select('created_at')
               .eq('conversation_id', conversation.id)
               .order('created_at', { ascending: false })
               .limit(1)
-              .single()
+              .single(),
           ])
 
           return {
@@ -456,9 +521,10 @@ export class ChatService {
             title: conversation.title,
             project_id: conversation.project_id,
             messageCount: messageCountRes.count || 0,
-            lastMessageAt: lastMessageRes.data?.created_at || conversation.created_at,
+            lastMessageAt:
+              lastMessageRes.data?.created_at || conversation.created_at,
             model_used: conversation.model_used,
-            tags: conversation.tags || []
+            tags: conversation.tags || [],
           }
         })
       )
@@ -466,26 +532,33 @@ export class ChatService {
       return {
         data: conversationSummaries,
         error: null,
-        success: true
+        success: true,
       }
     } catch (error) {
       return {
         data: null,
         error: `Unexpected error: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        success: false
+        success: false,
       }
     }
   }
 
-  static async getMessages(conversationId: string, limit?: number, offset?: number): Promise<ChatServiceResponse<Message[]>> {
+  static async getMessages(
+    conversationId: string,
+    limit?: number,
+    offset?: number
+  ): Promise<ChatServiceResponse<Message[]>> {
     try {
-      const { data: { user }, error: authError } = await supabase.auth.getUser()
-      
+      const {
+        data: { user },
+        error: authError,
+      } = await supabase.auth.getUser()
+
       if (authError || !user) {
         return {
           data: null,
           error: 'User must be authenticated',
-          success: false
+          success: false,
         }
       }
 
@@ -501,7 +574,7 @@ export class ChatService {
         return {
           data: null,
           error: 'Conversation not found or access denied',
-          success: false
+          success: false,
         }
       }
 
@@ -525,33 +598,39 @@ export class ChatService {
         return {
           data: null,
           error: `Failed to fetch messages: ${messagesError.message}`,
-          success: false
+          success: false,
         }
       }
 
       return {
         data: messages || [],
         error: null,
-        success: true
+        success: true,
       }
     } catch (error) {
       return {
         data: null,
         error: `Unexpected error: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        success: false
+        success: false,
       }
     }
   }
 
-  static async addConversationTag(conversationId: string, tag: string): Promise<ChatServiceResponse<Conversation>> {
+  static async addConversationTag(
+    conversationId: string,
+    tag: string
+  ): Promise<ChatServiceResponse<Conversation>> {
     try {
-      const { data: { user }, error: authError } = await supabase.auth.getUser()
-      
+      const {
+        data: { user },
+        error: authError,
+      } = await supabase.auth.getUser()
+
       if (authError || !user) {
         return {
           data: null,
           error: 'User must be authenticated',
-          success: false
+          success: false,
         }
       }
 
@@ -567,7 +646,7 @@ export class ChatService {
         return {
           data: null,
           error: `Failed to fetch conversation: ${fetchError.message}`,
-          success: false
+          success: false,
         }
       }
 
@@ -578,26 +657,33 @@ export class ChatService {
       }
 
       // Tag already exists, return current conversation
-      const currentConversationResult = await this.getConversationById(conversationId)
+      const currentConversationResult =
+        await this.getConversationById(conversationId)
       return currentConversationResult
     } catch (error) {
       return {
         data: null,
         error: `Unexpected error: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        success: false
+        success: false,
       }
     }
   }
 
-  static async removeConversationTag(conversationId: string, tag: string): Promise<ChatServiceResponse<Conversation>> {
+  static async removeConversationTag(
+    conversationId: string,
+    tag: string
+  ): Promise<ChatServiceResponse<Conversation>> {
     try {
-      const { data: { user }, error: authError } = await supabase.auth.getUser()
-      
+      const {
+        data: { user },
+        error: authError,
+      } = await supabase.auth.getUser()
+
       if (authError || !user) {
         return {
           data: null,
           error: 'User must be authenticated',
-          success: false
+          success: false,
         }
       }
 
@@ -613,32 +699,38 @@ export class ChatService {
         return {
           data: null,
           error: `Failed to fetch conversation: ${fetchError.message}`,
-          success: false
+          success: false,
         }
       }
 
       const currentTags = conversation.tags || []
       const updatedTags = currentTags.filter(t => t !== tag)
-      
+
       return this.updateConversation(conversationId, { tags: updatedTags })
     } catch (error) {
       return {
         data: null,
         error: `Unexpected error: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        success: false
+        success: false,
       }
     }
   }
 
-  static async searchConversations(searchTerm: string): Promise<ChatServiceResponse<ConversationSummary[]>> {
+  static async searchConversations(
+    searchTerm: string
+  ): Promise<ChatServiceResponse<ConversationSummary[]>> {
     return this.listConversations({ search: searchTerm })
   }
 
-  static async getConversationsByProject(projectId: string): Promise<ChatServiceResponse<ConversationSummary[]>> {
+  static async getConversationsByProject(
+    projectId: string
+  ): Promise<ChatServiceResponse<ConversationSummary[]>> {
     return this.listConversations({ project_id: projectId })
   }
 
-  static async getRecentConversations(limit: number = 10): Promise<ChatServiceResponse<ConversationSummary[]>> {
+  static async getRecentConversations(
+    limit: number = 10
+  ): Promise<ChatServiceResponse<ConversationSummary[]>> {
     return this.listConversations({ limit })
   }
 
@@ -649,16 +741,14 @@ export class ChatService {
     metadata: Record<string, unknown> = {}
   ): Promise<void> {
     try {
-      await supabase
-        .from('activity_logs')
-        .insert({
-          user_id: userId,
-          conversation_id: conversationId,
-          action,
-          metadata,
-          ip_address: 'unknown', // Could be passed from client or detected server-side
-          user_agent: 'unknown'  // Could be passed from client
-        })
+      await supabase.from('activity_logs').insert({
+        user_id: userId,
+        conversation_id: conversationId,
+        action,
+        metadata,
+        ip_address: 'unknown', // Could be passed from client or detected server-side
+        user_agent: 'unknown', // Could be passed from client
+      })
     } catch (error) {
       console.error('Failed to log chat activity:', error)
       // Don't throw error as this is not critical functionality

@@ -67,7 +67,7 @@ export type Database = {
       conversations: {
         Row: {
           id: string
-          project_id: string
+          project_id: string | null
           title: string
           model_used: string
           created_at: string
@@ -75,7 +75,7 @@ export type Database = {
         }
         Insert: {
           id?: string
-          project_id: string
+          project_id?: string | null
           title: string
           model_used: string
           created_at?: string
