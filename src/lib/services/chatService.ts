@@ -148,17 +148,17 @@ export class ChatService {
         }
       }
 
-      const { error: conversationError } = await supabase
+      const { data: conversation, error: conversationError } = await supabase
         .from('conversations')
         .select('*')
         .eq('id', conversationId)
         .eq('user_id', user.id)
         .single()
 
-      if (conversationError) {
+      if (conversationError || !conversation) {
         return {
           data: null,
-          error: `Failed to fetch conversation: ${conversationError.message}`,
+          error: `Failed to fetch conversation: ${conversationError?.message || 'Conversation not found'}`,
           success: false,
         }
       }
