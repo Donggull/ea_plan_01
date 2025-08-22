@@ -1,6 +1,12 @@
 'use client'
 
-import React, { createContext, useContext, useEffect, useState, useCallback } from 'react'
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  useCallback,
+} from 'react'
 import { User, Session, AuthError } from '@supabase/supabase-js'
 import { supabase, Database } from '@/lib/supabase'
 
@@ -12,11 +18,26 @@ export interface AuthContextType {
   session: Session | null
   loading: boolean
   error: string | null
-  signUp: (email: string, password: string, name: string) => Promise<{ data: { user: User | null; session: Session | null }; error: AuthError | null }>
-  signIn: (email: string, password: string) => Promise<{ data: { user: User | null; session: Session | null }; error: AuthError | null }>
+  signUp: (
+    _email: string,
+    _password: string,
+    _name: string
+  ) => Promise<{
+    data: { user: User | null; session: Session | null }
+    error: AuthError | null
+  }>
+  signIn: (
+    _email: string,
+    _password: string
+  ) => Promise<{
+    data: { user: User | null; session: Session | null }
+    error: AuthError | null
+  }>
   signOut: () => Promise<{ error: AuthError | null }>
-  resetPassword: (email: string) => Promise<{ error: AuthError | null }>
-  updateProfile: (updates: Partial<UserProfile>) => Promise<{ error: Error | null }>
+  resetPassword: (_email: string) => Promise<{ error: AuthError | null }>
+  updateProfile: (
+    _updates: Partial<UserProfile>
+  ) => Promise<{ error: Error | null }>
   clearError: () => void
 }
 
@@ -38,8 +59,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
     const getInitialSession = async () => {
       try {
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession()
-        
+        const {
+          data: { session },
+          error: sessionError,
+        } = await supabase.auth.getSession()
+
         if (sessionError) {
           console.error('Error getting session:', sessionError)
           setError(sessionError.message)
@@ -49,7 +73,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         if (isMounted) {
           setSession(session)
           setUser(session?.user ?? null)
-          
+
           if (session?.user) {
             await fetchUserProfile(session.user.id)
           }
@@ -68,29 +92,29 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
     getInitialSession()
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        if (!isMounted) return
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (!isMounted) return
 
-        console.log('Auth state changed:', event, session?.user?.id)
-        
-        setSession(session)
-        setUser(session?.user ?? null)
-        setError(null)
+      console.log('Auth state changed:', event, session?.user?.id)
 
-        if (session?.user) {
-          await fetchUserProfile(session.user.id)
-        } else {
-          setUserProfile(null)
-        }
+      setSession(session)
+      setUser(session?.user ?? null)
+      setError(null)
 
-        if (event === 'SIGNED_OUT') {
-          setUserProfile(null)
-        }
-
-        setLoading(false)
+      if (session?.user) {
+        await fetchUserProfile(session.user.id)
+      } else {
+        setUserProfile(null)
       }
-    )
+
+      if (event === 'SIGNED_OUT') {
+        setUserProfile(null)
+      }
+
+      setLoading(false)
+    })
 
     return () => {
       isMounted = false
@@ -134,7 +158,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
         .insert({
           id: userId,
           email: user.data.user.email!,
-          name: user.data.user.user_metadata?.name || user.data.user.email!.split('@')[0],
+          name:
+            user.data.user.user_metadata?.name ||
+            user.data.user.email!.split('@')[0],
           subscription_tier: 'free' as const,
         })
         .select()
@@ -153,7 +179,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
   }
 
-  const signUp = async (email: string, password: string, name: string): Promise<{ data: { user: User | null; session: Session | null }; error: AuthError | null }> => {
+  const signUp = async (
+    email: string,
+    password: string,
+    name: string
+  ): Promise<{
+    data: { user: User | null; session: Session | null }
+    error: AuthError | null
+  }> => {
     setLoading(true)
     setError(null)
 
@@ -176,16 +209,22 @@ export function AuthProvider({ children }: AuthProviderProps) {
     } catch {
       const errorMessage = '회원가입 중 오류가 발생했습니다.'
       setError(errorMessage)
-      return { 
+      return {
         data: { user: null, session: null },
-        error: new Error(errorMessage) as AuthError
+        error: new Error(errorMessage) as AuthError,
       }
     } finally {
       setLoading(false)
     }
   }
 
-  const signIn = async (email: string, password: string): Promise<{ data: { user: User | null; session: Session | null }; error: AuthError | null }> => {
+  const signIn = async (
+    email: string,
+    password: string
+  ): Promise<{
+    data: { user: User | null; session: Session | null }
+    error: AuthError | null
+  }> => {
     setLoading(true)
     setError(null)
 
@@ -203,9 +242,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
     } catch {
       const errorMessage = '로그인 중 오류가 발생했습니다.'
       setError(errorMessage)
-      return { 
+      return {
         data: { user: null, session: null },
-        error: new Error(errorMessage) as AuthError
+        error: new Error(errorMessage) as AuthError,
       }
     } finally {
       setLoading(false)
@@ -218,7 +257,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
     try {
       const { error } = await supabase.auth.signOut()
-      
+
       if (error) {
         setError(getErrorMessage(error))
       } else {
@@ -273,9 +312,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
     try {
       const { data, error } = await supabase
         .from('users')
-        .update({ 
-          ...updates, 
-          updated_at: new Date().toISOString() 
+        .update({
+          ...updates,
+          updated_at: new Date().toISOString(),
         })
         .eq('id', user.id)
         .select()
@@ -334,11 +373,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     clearError,
   }
 
-  return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
-  )
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }
 
 export const useAuth = () => {

@@ -3,7 +3,7 @@ import { create } from 'zustand'
 interface ThemeState {
   isDarkMode: boolean
   toggleTheme: () => void
-  setTheme: (isDark: boolean) => void
+  setTheme: (_isDark: boolean) => void
 }
 
 export const useThemeStore = create<ThemeState>(set => ({
@@ -17,7 +17,7 @@ export const useThemeStore = create<ThemeState>(set => ({
       }
       return { isDarkMode: newMode }
     }),
-  setTheme: (isDark) =>
+  setTheme: isDark =>
     set(() => {
       if (typeof window !== 'undefined') {
         document.documentElement.classList.toggle('dark', isDark)

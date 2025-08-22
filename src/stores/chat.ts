@@ -7,12 +7,12 @@ interface ChatState {
   messages: Message[]
   isLoading: boolean
   selectedModel: AIModel
-  setConversations: (conversations: Conversation[]) => void
-  setCurrentConversation: (conversation: Conversation | null) => void
-  setMessages: (messages: Message[]) => void
-  addMessage: (message: Message) => void
-  setLoading: (loading: boolean) => void
-  setSelectedModel: (model: AIModel) => void
+  setConversations: (_conversations: Conversation[]) => void
+  setCurrentConversation: (_conversation: Conversation | null) => void
+  setMessages: (_messages: Message[]) => void
+  addMessage: (_message: Message) => void
+  setLoading: (_loading: boolean) => void
+  setSelectedModel: (_model: AIModel) => void
 }
 
 export const useChatStore = create<ChatState>(set => ({
@@ -21,12 +21,12 @@ export const useChatStore = create<ChatState>(set => ({
   messages: [],
   isLoading: false,
   selectedModel: 'gemini',
-  setConversations: (conversations) => set({ conversations }),
-  setCurrentConversation: (conversation) =>
+  setConversations: conversations => set({ conversations }),
+  setCurrentConversation: conversation =>
     set({ currentConversation: conversation }),
-  setMessages: (messages) => set({ messages }),
-  addMessage: (message) =>
+  setMessages: messages => set({ messages }),
+  addMessage: message =>
     set(state => ({ messages: [...state.messages, message] })),
-  setLoading: (loading) => set({ isLoading: loading }),
-  setSelectedModel: (model) => set({ selectedModel: model }),
+  setLoading: loading => set({ isLoading: loading }),
+  setSelectedModel: model => set({ selectedModel: model }),
 }))

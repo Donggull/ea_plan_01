@@ -202,11 +202,9 @@ export type Database = {
       }
     }
     Views: {
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       [_ in never]: never
     }
     Functions: {
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       [_ in never]: never
     }
     Enums: {

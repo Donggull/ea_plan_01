@@ -277,7 +277,11 @@ const ToastContainer: React.FC<ToastContainerProps> = ({ toasts, onClose }) => {
   const container = (
     <div className="fixed top-0 right-0 z-50 w-full max-w-sm p-4 space-y-2">
       {toasts.map(toast => (
-        <ToastComponent key={toast.id} toast={toast} onClose={onClose} />
+        <ToastComponent
+          key={toast.id}
+          toast={toast}
+          onClose={() => onClose(toast.id)}
+        />
       ))}
     </div>
   )

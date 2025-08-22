@@ -43,16 +43,31 @@ export interface DocumentWithAnalysis extends Document {
   extractedEntities?: Record<string, unknown>
 }
 
+export interface DocumentAnalysis {
+  id: string
+  document_id: string
+  analysis_type: string
+  results: Record<string, unknown>
+  confidence_score?: number
+  created_at: string
+}
+
 export class DocumentService {
-  static async uploadDocument(file: File, projectId?: string): Promise<DocumentServiceResponse<Document>> {
+  static async uploadDocument(
+    file: File,
+    projectId?: string
+  ): Promise<DocumentServiceResponse<Document>> {
     try {
-      const { data: { user }, error: authError } = await supabase.auth.getUser()
-      
+      const {
+        data: { user },
+        error: authError,
+      } = await supabase.auth.getUser()
+
       if (authError || !user) {
         return {
           data: null,
           error: 'User must be authenticated to upload document',
-          success: false
+          success: false,
         }
       }
 
@@ -66,14 +81,14 @@ export class DocumentService {
         .from('documents')
         .upload(filePath, file, {
           cacheControl: '3600',
-          upsert: false
+          upsert: false,
         })
 
       if (uploadError) {
         return {
           data: null,
           error: `Failed to upload file: ${uploadError.message}`,
-          success: false
+          success: false,
         }
       }
 
@@ -92,8 +107,8 @@ export class DocumentService {
         metadata: {
           upload_date: new Date().toISOString(),
           original_name: file.name,
-          storage_path: filePath
-        }
+          storage_path: filePath,
+        },
       }
 
       const result = await this.createDocument(documentData)
@@ -108,20 +123,25 @@ export class DocumentService {
       return {
         data: null,
         error: `Unexpected error: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        success: false
+        success: false,
       }
     }
   }
 
-  static async createDocument(documentData: CreateDocumentData): Promise<DocumentServiceResponse<Document>> {
+  static async createDocument(
+    documentData: CreateDocumentData
+  ): Promise<DocumentServiceResponse<Document>> {
     try {
-      const { data: { user }, error: authError } = await supabase.auth.getUser()
-      
+      const {
+        data: { user },
+        error: authError,
+      } = await supabase.auth.getUser()
+
       if (authError || !user) {
         return {
           data: null,
           error: 'User must be authenticated to create document',
-          success: false
+          success: false,
         }
       }
 
@@ -134,7 +154,7 @@ export class DocumentService {
         file_url: documentData.file_url,
         extracted_content: documentData.extracted_content,
         analysis_result: documentData.analysis_result,
-        metadata: documentData.metadata || {}
+        metadata: documentData.metadata || {},
       }
 
       const { data: newDocument, error: insertError } = await supabase
@@ -147,40 +167,50 @@ export class DocumentService {
         return {
           data: null,
           error: `Failed to create document: ${insertError.message}`,
-          success: false
+          success: false,
         }
       }
 
       // Log the activity
-      await this.logDocumentActivity(newDocument.id, user.id, 'document_created', {
-        file_name: documentData.file_name,
-        file_type: documentData.file_type,
-        project_id: documentData.project_id
-      })
+      await this.logDocumentActivity(
+        newDocument.id,
+        user.id,
+        'document_created',
+        {
+          file_name: documentData.file_name,
+          file_type: documentData.file_type,
+          project_id: documentData.project_id,
+        }
+      )
 
       return {
         data: newDocument,
         error: null,
-        success: true
+        success: true,
       }
     } catch (error) {
       return {
         data: null,
         error: `Unexpected error: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        success: false
+        success: false,
       }
     }
   }
 
-  static async getDocumentById(documentId: string): Promise<DocumentServiceResponse<DocumentWithAnalysis>> {
+  static async getDocumentById(
+    documentId: string
+  ): Promise<DocumentServiceResponse<DocumentWithAnalysis>> {
     try {
-      const { data: { user }, error: authError } = await supabase.auth.getUser()
-      
+      const {
+        data: { user },
+        error: authError,
+      } = await supabase.auth.getUser()
+
       if (authError || !user) {
         return {
           data: null,
           error: 'User must be authenticated',
-          success: false
+          success: false,
         }
       }
 
@@ -195,7 +225,7 @@ export class DocumentService {
         return {
           data: null,
           error: `Failed to fetch document: ${documentError.message}`,
-          success: false
+          success: false,
         }
       }
 
@@ -204,38 +234,44 @@ export class DocumentService {
         ...document,
         analysisStatus: document.analysis_result ? 'completed' : 'pending',
         keyInsights: document.analysis_result?.key_insights || [],
-        extractedEntities: document.analysis_result?.entities || {}
+        extractedEntities: document.analysis_result?.entities || {},
       }
 
       return {
         data: documentWithAnalysis,
         error: null,
-        success: true
+        success: true,
       }
     } catch (error) {
       return {
         data: null,
         error: `Unexpected error: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        success: false
+        success: false,
       }
     }
   }
 
-  static async updateDocument(documentId: string, updates: UpdateDocumentData): Promise<DocumentServiceResponse<Document>> {
+  static async updateDocument(
+    documentId: string,
+    updates: UpdateDocumentData
+  ): Promise<DocumentServiceResponse<Document>> {
     try {
-      const { data: { user }, error: authError } = await supabase.auth.getUser()
-      
+      const {
+        data: { user },
+        error: authError,
+      } = await supabase.auth.getUser()
+
       if (authError || !user) {
         return {
           data: null,
           error: 'User must be authenticated to update document',
-          success: false
+          success: false,
         }
       }
 
       const updateData: DocumentUpdate = {
         ...updates,
-        updated_at: new Date().toISOString()
+        updated_at: new Date().toISOString(),
       }
 
       const { data: updatedDocument, error: updateError } = await supabase
@@ -250,36 +286,43 @@ export class DocumentService {
         return {
           data: null,
           error: `Failed to update document: ${updateError.message}`,
-          success: false
+          success: false,
         }
       }
 
       // Log the activity
-      await this.logDocumentActivity(documentId, user.id, 'document_updated', { updates })
+      await this.logDocumentActivity(documentId, user.id, 'document_updated', {
+        updates,
+      })
 
       return {
         data: updatedDocument,
         error: null,
-        success: true
+        success: true,
       }
     } catch (error) {
       return {
         data: null,
         error: `Unexpected error: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        success: false
+        success: false,
       }
     }
   }
 
-  static async deleteDocument(documentId: string): Promise<DocumentServiceResponse<boolean>> {
+  static async deleteDocument(
+    documentId: string
+  ): Promise<DocumentServiceResponse<boolean>> {
     try {
-      const { data: { user }, error: authError } = await supabase.auth.getUser()
-      
+      const {
+        data: { user },
+        error: authError,
+      } = await supabase.auth.getUser()
+
       if (authError || !user) {
         return {
           data: null,
           error: 'User must be authenticated to delete document',
-          success: false
+          success: false,
         }
       }
 
@@ -302,9 +345,14 @@ export class DocumentService {
         }
 
         // Log the deletion before actually deleting
-        await this.logDocumentActivity(documentId, user.id, 'document_deleted', {
-          file_name: document.file_name
-        })
+        await this.logDocumentActivity(
+          documentId,
+          user.id,
+          'document_deleted',
+          {
+            file_name: document.file_name,
+          }
+        )
       }
 
       const { error: deleteError } = await supabase
@@ -317,40 +365,42 @@ export class DocumentService {
         return {
           data: null,
           error: `Failed to delete document: ${deleteError.message}`,
-          success: false
+          success: false,
         }
       }
 
       return {
         data: true,
         error: null,
-        success: true
+        success: true,
       }
     } catch (error) {
       return {
         data: null,
         error: `Unexpected error: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        success: false
+        success: false,
       }
     }
   }
 
-  static async listDocuments(filters: DocumentListFilters = {}): Promise<DocumentServiceResponse<DocumentWithAnalysis[]>> {
+  static async listDocuments(
+    filters: DocumentListFilters = {}
+  ): Promise<DocumentServiceResponse<DocumentWithAnalysis[]>> {
     try {
-      const { data: { user }, error: authError } = await supabase.auth.getUser()
-      
+      const {
+        data: { user },
+        error: authError,
+      } = await supabase.auth.getUser()
+
       if (authError || !user) {
         return {
           data: null,
           error: 'User must be authenticated',
-          success: false
+          success: false,
         }
       }
 
-      let query = supabase
-        .from('documents')
-        .select('*')
-        .eq('user_id', user.id)
+      let query = supabase.from('documents').select('*').eq('user_id', user.id)
 
       // Apply filters
       if (filters.project_id) {
@@ -362,7 +412,9 @@ export class DocumentService {
       }
 
       if (filters.search) {
-        query = query.or(`file_name.ilike.%${filters.search}%,extracted_content.ilike.%${filters.search}%`)
+        query = query.or(
+          `file_name.ilike.%${filters.search}%,extracted_content.ilike.%${filters.search}%`
+        )
       }
 
       // Apply pagination
@@ -371,7 +423,10 @@ export class DocumentService {
       }
 
       if (filters.offset) {
-        query = query.range(filters.offset, filters.offset + (filters.limit || 10) - 1)
+        query = query.range(
+          filters.offset,
+          filters.offset + (filters.limit || 10) - 1
+        )
       }
 
       // Order by created_at descending
@@ -383,53 +438,67 @@ export class DocumentService {
         return {
           data: null,
           error: `Failed to fetch documents: ${documentsError.message}`,
-          success: false
+          success: false,
         }
       }
 
       // Enhance documents with analysis status
-      const documentsWithAnalysis: DocumentWithAnalysis[] = (documents || []).map(document => ({
+      const documentsWithAnalysis: DocumentWithAnalysis[] = (
+        documents || []
+      ).map(document => ({
         ...document,
         analysisStatus: document.analysis_result ? 'completed' : 'pending',
         keyInsights: document.analysis_result?.key_insights || [],
-        extractedEntities: document.analysis_result?.entities || {}
+        extractedEntities: document.analysis_result?.entities || {},
       }))
 
       return {
         data: documentsWithAnalysis,
         error: null,
-        success: true
+        success: true,
       }
     } catch (error) {
       return {
         data: null,
         error: `Unexpected error: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        success: false
+        success: false,
       }
     }
   }
 
-  static async getDocumentsByProject(projectId: string): Promise<DocumentServiceResponse<DocumentWithAnalysis[]>> {
+  static async getDocumentsByProject(
+    projectId: string
+  ): Promise<DocumentServiceResponse<DocumentWithAnalysis[]>> {
     return this.listDocuments({ project_id: projectId })
   }
 
-  static async getDocumentsByType(fileType: string): Promise<DocumentServiceResponse<DocumentWithAnalysis[]>> {
+  static async getDocumentsByType(
+    fileType: string
+  ): Promise<DocumentServiceResponse<DocumentWithAnalysis[]>> {
     return this.listDocuments({ file_type: fileType })
   }
 
-  static async searchDocuments(searchTerm: string): Promise<DocumentServiceResponse<DocumentWithAnalysis[]>> {
+  static async searchDocuments(
+    searchTerm: string
+  ): Promise<DocumentServiceResponse<DocumentWithAnalysis[]>> {
     return this.listDocuments({ search: searchTerm })
   }
 
-  static async analyzeDocument(documentId: string, analysisType: string = 'general'): Promise<DocumentServiceResponse<any>> {
+  static async analyzeDocument(
+    documentId: string,
+    analysisType: string = 'general'
+  ): Promise<DocumentServiceResponse<DocumentAnalysis>> {
     try {
-      const { data: { user }, error: authError } = await supabase.auth.getUser()
-      
+      const {
+        data: { user },
+        error: authError,
+      } = await supabase.auth.getUser()
+
       if (authError || !user) {
         return {
           data: null,
           error: 'User must be authenticated',
-          success: false
+          success: false,
         }
       }
 
@@ -444,7 +513,7 @@ export class DocumentService {
         return {
           data: null,
           error: `Failed to fetch document: ${documentError.message}`,
-          success: false
+          success: false,
         }
       }
 
@@ -452,7 +521,7 @@ export class DocumentService {
         return {
           data: null,
           error: 'Document content has not been extracted yet',
-          success: false
+          success: false,
         }
       }
 
@@ -463,21 +532,21 @@ export class DocumentService {
         key_insights: [
           'Document contains project requirements',
           'Timeline specifications found',
-          'Budget constraints identified'
+          'Budget constraints identified',
         ],
         entities: {
           dates: [],
           budget_items: [],
-          requirements: []
+          requirements: [],
         },
         summary: 'Document analysis completed',
         confidence_score: 0.85,
-        processed_at: new Date().toISOString()
+        processed_at: new Date().toISOString(),
       }
 
       // Update document with analysis result
       const updateResult = await this.updateDocument(documentId, {
-        analysis_result: analysisResult
+        analysis_result: analysisResult,
       })
 
       if (!updateResult.success) {
@@ -487,18 +556,21 @@ export class DocumentService {
       return {
         data: analysisResult,
         error: null,
-        success: true
+        success: true,
       }
     } catch (error) {
       return {
         data: null,
         error: `Unexpected error: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        success: false
+        success: false,
       }
     }
   }
 
-  private static async extractContentAndAnalyze(documentId: string, file: File): Promise<void> {
+  private static async extractContentAndAnalyze(
+    documentId: string,
+    file: File
+  ): Promise<void> {
     try {
       let extractedContent = ''
 
@@ -516,7 +588,7 @@ export class DocumentService {
       // Update document with extracted content
       if (extractedContent) {
         await this.updateDocument(documentId, {
-          extracted_content: extractedContent
+          extracted_content: extractedContent,
         })
 
         // Trigger analysis
@@ -534,16 +606,14 @@ export class DocumentService {
     metadata: Record<string, unknown> = {}
   ): Promise<void> {
     try {
-      await supabase
-        .from('activity_logs')
-        .insert({
-          user_id: userId,
-          document_id: documentId,
-          action,
-          metadata,
-          ip_address: 'unknown',
-          user_agent: 'unknown'
-        })
+      await supabase.from('activity_logs').insert({
+        user_id: userId,
+        document_id: documentId,
+        action,
+        metadata,
+        ip_address: 'unknown',
+        user_agent: 'unknown',
+      })
     } catch (error) {
       console.error('Failed to log document activity:', error)
     }

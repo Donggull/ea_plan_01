@@ -26,16 +26,27 @@ export interface UserServiceResponse<T = unknown> {
   success: boolean
 }
 
+export interface Activity {
+  id: string
+  type: string
+  description: string
+  timestamp: string
+  metadata?: Record<string, unknown>
+}
+
 export class UserService {
   static async getCurrentUser(): Promise<UserServiceResponse<UserProfile>> {
     try {
-      const { data: { user }, error: authError } = await supabase.auth.getUser()
-      
+      const {
+        data: { user },
+        error: authError,
+      } = await supabase.auth.getUser()
+
       if (authError) {
         return {
           data: null,
           error: `Authentication error: ${authError.message}`,
-          success: false
+          success: false,
         }
       }
 
@@ -43,7 +54,7 @@ export class UserService {
         return {
           data: null,
           error: 'User not authenticated',
-          success: false
+          success: false,
         }
       }
 
@@ -57,33 +68,38 @@ export class UserService {
         return {
           data: null,
           error: `Failed to fetch user profile: ${profileError.message}`,
-          success: false
+          success: false,
         }
       }
 
       return {
         data: userProfile,
         error: null,
-        success: true
+        success: true,
       }
     } catch (error) {
       return {
         data: null,
         error: `Unexpected error: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        success: false
+        success: false,
       }
     }
   }
 
-  static async createUserProfile(userData: CreateUserProfileData): Promise<UserServiceResponse<UserProfile>> {
+  static async createUserProfile(
+    userData: CreateUserProfileData
+  ): Promise<UserServiceResponse<UserProfile>> {
     try {
-      const { data: { user }, error: authError } = await supabase.auth.getUser()
-      
+      const {
+        data: { user },
+        error: authError,
+      } = await supabase.auth.getUser()
+
       if (authError || !user) {
         return {
           data: null,
           error: 'User must be authenticated to create profile',
-          success: false
+          success: false,
         }
       }
 
@@ -92,7 +108,7 @@ export class UserService {
         email: userData.email,
         name: userData.name,
         avatar_url: userData.avatar_url,
-        subscription_tier: userData.subscription_tier || 'free'
+        subscription_tier: userData.subscription_tier || 'free',
       }
 
       const { data: newUser, error: insertError } = await supabase
@@ -105,42 +121,49 @@ export class UserService {
         return {
           data: null,
           error: `Failed to create user profile: ${insertError.message}`,
-          success: false
+          success: false,
         }
       }
 
       // Log the activity
-      await this.logUserActivity(user.id, 'profile_created', { profile_data: userData })
+      await this.logUserActivity(user.id, 'profile_created', {
+        profile_data: userData,
+      })
 
       return {
         data: newUser,
         error: null,
-        success: true
+        success: true,
       }
     } catch (error) {
       return {
         data: null,
         error: `Unexpected error: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        success: false
+        success: false,
       }
     }
   }
 
-  static async updateUserProfile(updates: UpdateUserProfileData): Promise<UserServiceResponse<UserProfile>> {
+  static async updateUserProfile(
+    updates: UpdateUserProfileData
+  ): Promise<UserServiceResponse<UserProfile>> {
     try {
-      const { data: { user }, error: authError } = await supabase.auth.getUser()
-      
+      const {
+        data: { user },
+        error: authError,
+      } = await supabase.auth.getUser()
+
       if (authError || !user) {
         return {
           data: null,
           error: 'User must be authenticated to update profile',
-          success: false
+          success: false,
         }
       }
 
       const updateData: UserUpdate = {
         ...updates,
-        updated_at: new Date().toISOString()
+        updated_at: new Date().toISOString(),
       }
 
       const { data: updatedUser, error: updateError } = await supabase
@@ -154,7 +177,7 @@ export class UserService {
         return {
           data: null,
           error: `Failed to update user profile: ${updateError.message}`,
-          success: false
+          success: false,
         }
       }
 
@@ -164,18 +187,20 @@ export class UserService {
       return {
         data: updatedUser,
         error: null,
-        success: true
+        success: true,
       }
     } catch (error) {
       return {
         data: null,
         error: `Unexpected error: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        success: false
+        success: false,
       }
     }
   }
 
-  static async getUserById(userId: string): Promise<UserServiceResponse<UserProfile>> {
+  static async getUserById(
+    userId: string
+  ): Promise<UserServiceResponse<UserProfile>> {
     try {
       const { data: userProfile, error } = await supabase
         .from('users')
@@ -187,41 +212,46 @@ export class UserService {
         return {
           data: null,
           error: `Failed to fetch user: ${error.message}`,
-          success: false
+          success: false,
         }
       }
 
       return {
         data: userProfile,
         error: null,
-        success: true
+        success: true,
       }
     } catch (error) {
       return {
         data: null,
         error: `Unexpected error: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        success: false
+        success: false,
       }
     }
   }
 
-  static async updateSubscription(tier: 'free' | 'pro' | 'enterprise'): Promise<UserServiceResponse<UserProfile>> {
+  static async updateSubscription(
+    tier: 'free' | 'pro' | 'enterprise'
+  ): Promise<UserServiceResponse<UserProfile>> {
     try {
-      const { data: { user }, error: authError } = await supabase.auth.getUser()
-      
+      const {
+        data: { user },
+        error: authError,
+      } = await supabase.auth.getUser()
+
       if (authError || !user) {
         return {
           data: null,
           error: 'User must be authenticated to update subscription',
-          success: false
+          success: false,
         }
       }
 
       const { data: updatedUser, error: updateError } = await supabase
         .from('users')
-        .update({ 
+        .update({
           subscription_tier: tier,
-          updated_at: new Date().toISOString()
+          updated_at: new Date().toISOString(),
         })
         .eq('id', user.id)
         .select()
@@ -231,39 +261,42 @@ export class UserService {
         return {
           data: null,
           error: `Failed to update subscription: ${updateError.message}`,
-          success: false
+          success: false,
         }
       }
 
       // Log the subscription change
-      await this.logUserActivity(user.id, 'subscription_updated', { 
+      await this.logUserActivity(user.id, 'subscription_updated', {
         new_tier: tier,
-        previous_tier: updatedUser.subscription_tier 
+        previous_tier: updatedUser.subscription_tier,
       })
 
       return {
         data: updatedUser,
         error: null,
-        success: true
+        success: true,
       }
     } catch (error) {
       return {
         data: null,
         error: `Unexpected error: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        success: false
+        success: false,
       }
     }
   }
 
   static async deleteUserProfile(): Promise<UserServiceResponse<boolean>> {
     try {
-      const { data: { user }, error: authError } = await supabase.auth.getUser()
-      
+      const {
+        data: { user },
+        error: authError,
+      } = await supabase.auth.getUser()
+
       if (authError || !user) {
         return {
           data: null,
           error: 'User must be authenticated to delete profile',
-          success: false
+          success: false,
         }
       }
 
@@ -279,52 +312,73 @@ export class UserService {
         return {
           data: null,
           error: `Failed to delete user profile: ${deleteError.message}`,
-          success: false
+          success: false,
         }
       }
 
       return {
         data: true,
         error: null,
-        success: true
+        success: true,
       }
     } catch (error) {
       return {
         data: null,
         error: `Unexpected error: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        success: false
+        success: false,
       }
     }
   }
 
-  static async getUserStats(userId?: string): Promise<UserServiceResponse<{
-    projectCount: number
-    conversationCount: number
-    documentCount: number
-    imageCount: number
-    botCount: number
-  }>> {
+  static async getUserStats(userId?: string): Promise<
+    UserServiceResponse<{
+      projectCount: number
+      conversationCount: number
+      documentCount: number
+      imageCount: number
+      botCount: number
+    }>
+  > {
     try {
-      const { data: { user }, error: authError } = await supabase.auth.getUser()
-      
+      const {
+        data: { user },
+        error: authError,
+      } = await supabase.auth.getUser()
+
       if (authError || !user) {
         return {
           data: null,
           error: 'User must be authenticated',
-          success: false
+          success: false,
         }
       }
 
       const targetUserId = userId || user.id
 
       // Get counts for various user resources
-      const [projectsRes, conversationsRes, documentsRes, imagesRes, botsRes] = await Promise.all([
-        supabase.from('projects').select('id', { count: 'exact' }).eq('user_id', targetUserId),
-        supabase.from('conversations').select('id', { count: 'exact' }).eq('user_id', targetUserId),
-        supabase.from('documents').select('id', { count: 'exact' }).eq('user_id', targetUserId),
-        supabase.from('generated_images').select('id', { count: 'exact' }).eq('user_id', targetUserId),
-        supabase.from('custom_bots').select('id', { count: 'exact' }).eq('user_id', targetUserId)
-      ])
+      const [projectsRes, conversationsRes, documentsRes, imagesRes, botsRes] =
+        await Promise.all([
+          supabase
+            .from('projects')
+            .select('id', { count: 'exact' })
+            .eq('user_id', targetUserId),
+          supabase
+            .from('conversations')
+            .select('id', { count: 'exact' })
+            .eq('user_id', targetUserId),
+          supabase
+            .from('documents')
+            .select('id', { count: 'exact' })
+            .eq('user_id', targetUserId),
+          supabase
+            .from('generated_images')
+            .select('id', { count: 'exact' })
+            .eq('user_id', targetUserId),
+          supabase
+            .from('custom_bots')
+            .select('id', { count: 'exact' })
+            .eq('user_id', targetUserId),
+        ])
 
       return {
         data: {
@@ -332,29 +386,34 @@ export class UserService {
           conversationCount: conversationsRes.count || 0,
           documentCount: documentsRes.count || 0,
           imageCount: imagesRes.count || 0,
-          botCount: botsRes.count || 0
+          botCount: botsRes.count || 0,
         },
         error: null,
-        success: true
+        success: true,
       }
     } catch (error) {
       return {
         data: null,
         error: `Unexpected error: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        success: false
+        success: false,
       }
     }
   }
 
-  static async getRecentActivity(limit: number = 10): Promise<UserServiceResponse<any[]>> {
+  static async getRecentActivity(
+    limit: number = 10
+  ): Promise<UserServiceResponse<Activity[]>> {
     try {
-      const { data: { user }, error: authError } = await supabase.auth.getUser()
-      
+      const {
+        data: { user },
+        error: authError,
+      } = await supabase.auth.getUser()
+
       if (authError || !user) {
         return {
           data: null,
           error: 'User must be authenticated',
-          success: false
+          success: false,
         }
       }
 
@@ -369,39 +428,37 @@ export class UserService {
         return {
           data: null,
           error: `Failed to fetch recent activity: ${error.message}`,
-          success: false
+          success: false,
         }
       }
 
       return {
         data: activities || [],
         error: null,
-        success: true
+        success: true,
       }
     } catch (error) {
       return {
         data: null,
         error: `Unexpected error: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        success: false
+        success: false,
       }
     }
   }
 
   private static async logUserActivity(
-    userId: string, 
-    action: string, 
+    userId: string,
+    action: string,
     metadata: Record<string, unknown> = {}
   ): Promise<void> {
     try {
-      await supabase
-        .from('activity_logs')
-        .insert({
-          user_id: userId,
-          action,
-          metadata,
-          ip_address: 'unknown', // Could be passed from client or detected server-side
-          user_agent: 'unknown'  // Could be passed from client
-        })
+      await supabase.from('activity_logs').insert({
+        user_id: userId,
+        action,
+        metadata,
+        ip_address: 'unknown', // Could be passed from client or detected server-side
+        user_agent: 'unknown', // Could be passed from client
+      })
     } catch (error) {
       console.error('Failed to log user activity:', error)
       // Don't throw error as this is not critical functionality

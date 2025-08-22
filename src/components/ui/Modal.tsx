@@ -168,7 +168,7 @@ export const ConfirmModal: React.FC<ConfirmModalProps> = ({
 interface FormModalProps {
   isOpen: boolean
   onClose: () => void
-  onSubmit: (event: React.FormEvent) => void
+  onSubmit: () => void
   title: string
   children: React.ReactNode
   submitText?: string
