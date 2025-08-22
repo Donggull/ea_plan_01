@@ -69,15 +69,20 @@ export interface BotConversation {
 }
 
 export class CustomBotService {
-  static async createCustomBot(botData: CreateCustomBotData): Promise<CustomBotServiceResponse<CustomBot>> {
+  static async createCustomBot(
+    botData: CreateCustomBotData
+  ): Promise<CustomBotServiceResponse<CustomBot>> {
     try {
-      const { data: { user }, error: authError } = await supabase.auth.getUser()
-      
+      const {
+        data: { user },
+        error: authError,
+      } = await supabase.auth.getUser()
+
       if (authError || !user) {
         return {
           data: null,
           error: 'User must be authenticated to create custom bot',
-          success: false
+          success: false,
         }
       }
 
@@ -90,7 +95,7 @@ export class CustomBotService {
         is_public: botData.is_public || false,
         is_active: botData.is_active !== false, // default to true
         tags: botData.tags || [],
-        metadata: botData.metadata || {}
+        metadata: botData.metadata || {},
       }
 
       const { data: newBot, error: insertError } = await supabase
@@ -103,39 +108,44 @@ export class CustomBotService {
         return {
           data: null,
           error: `Failed to create custom bot: ${insertError.message}`,
-          success: false
+          success: false,
         }
       }
 
       // Log the activity
       await this.logBotActivity(newBot.id, user.id, 'bot_created', {
         bot_name: botData.name,
-        is_public: botData.is_public
+        is_public: botData.is_public,
       })
 
       return {
         data: newBot,
         error: null,
-        success: true
+        success: true,
       }
     } catch (error) {
       return {
         data: null,
         error: `Unexpected error: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        success: false
+        success: false,
       }
     }
   }
 
-  static async getCustomBotById(botId: string): Promise<CustomBotServiceResponse<CustomBotWithStats>> {
+  static async getCustomBotById(
+    botId: string
+  ): Promise<CustomBotServiceResponse<CustomBotWithStats>> {
     try {
-      const { data: { user }, error: authError } = await supabase.auth.getUser()
-      
+      const {
+        data: { user },
+        error: authError,
+      } = await supabase.auth.getUser()
+
       if (authError || !user) {
         return {
           data: null,
           error: 'User must be authenticated',
-          success: false
+          success: false,
         }
       }
 
@@ -151,20 +161,24 @@ export class CustomBotService {
         return {
           data: null,
           error: `Failed to fetch custom bot: ${botError.message}`,
-          success: false
+          success: false,
         }
       }
 
       // Get usage stats
       const [conversationsRes, ratingsRes] = await Promise.all([
-        supabase.from('conversations').select('id', { count: 'exact' }).eq('bot_id', botId),
-        supabase.from('activity_logs')
+        supabase
+          .from('conversations')
+          .select('id', { count: 'exact' })
+          .eq('bot_id', botId),
+        supabase
+          .from('activity_logs')
           .select('created_at')
           .eq('custom_bot_id', botId)
           .eq('action', 'bot_used')
           .order('created_at', { ascending: false })
           .limit(1)
-          .single()
+          .single(),
       ])
 
       const botWithStats: CustomBotWithStats = {
@@ -172,38 +186,44 @@ export class CustomBotService {
         usage_count: bot.metadata?.usage_count || 0,
         rating: bot.metadata?.average_rating || 0,
         conversation_count: conversationsRes.count || 0,
-        last_used: ratingsRes.data?.created_at
+        last_used: ratingsRes.data?.created_at,
       }
 
       return {
         data: botWithStats,
         error: null,
-        success: true
+        success: true,
       }
     } catch (error) {
       return {
         data: null,
         error: `Unexpected error: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        success: false
+        success: false,
       }
     }
   }
 
-  static async updateCustomBot(botId: string, updates: UpdateCustomBotData): Promise<CustomBotServiceResponse<CustomBot>> {
+  static async updateCustomBot(
+    botId: string,
+    updates: UpdateCustomBotData
+  ): Promise<CustomBotServiceResponse<CustomBot>> {
     try {
-      const { data: { user }, error: authError } = await supabase.auth.getUser()
-      
+      const {
+        data: { user },
+        error: authError,
+      } = await supabase.auth.getUser()
+
       if (authError || !user) {
         return {
           data: null,
           error: 'User must be authenticated to update custom bot',
-          success: false
+          success: false,
         }
       }
 
       const updateData: CustomBotUpdate = {
         ...updates,
-        updated_at: new Date().toISOString()
+        updated_at: new Date().toISOString(),
       }
 
       const { data: updatedBot, error: updateError } = await supabase
@@ -218,7 +238,7 @@ export class CustomBotService {
         return {
           data: null,
           error: `Failed to update custom bot: ${updateError.message}`,
-          success: false
+          success: false,
         }
       }
 
@@ -228,26 +248,31 @@ export class CustomBotService {
       return {
         data: updatedBot,
         error: null,
-        success: true
+        success: true,
       }
     } catch (error) {
       return {
         data: null,
         error: `Unexpected error: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        success: false
+        success: false,
       }
     }
   }
 
-  static async deleteCustomBot(botId: string): Promise<CustomBotServiceResponse<boolean>> {
+  static async deleteCustomBot(
+    botId: string
+  ): Promise<CustomBotServiceResponse<boolean>> {
     try {
-      const { data: { user }, error: authError } = await supabase.auth.getUser()
-      
+      const {
+        data: { user },
+        error: authError,
+      } = await supabase.auth.getUser()
+
       if (authError || !user) {
         return {
           data: null,
           error: 'User must be authenticated to delete custom bot',
-          success: false
+          success: false,
         }
       }
 
@@ -263,7 +288,7 @@ export class CustomBotService {
       if (bot) {
         await this.logBotActivity(botId, user.id, 'bot_deleted', {
           bot_name: bot.name,
-          was_public: bot.is_public
+          was_public: bot.is_public,
         })
       }
 
@@ -277,39 +302,42 @@ export class CustomBotService {
         return {
           data: null,
           error: `Failed to delete custom bot: ${deleteError.message}`,
-          success: false
+          success: false,
         }
       }
 
       return {
         data: true,
         error: null,
-        success: true
+        success: true,
       }
     } catch (error) {
       return {
         data: null,
         error: `Unexpected error: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        success: false
+        success: false,
       }
     }
   }
 
-  static async listCustomBots(filters: CustomBotListFilters = {}): Promise<CustomBotServiceResponse<CustomBotWithStats[]>> {
+  static async listCustomBots(
+    filters: CustomBotListFilters = {}
+  ): Promise<CustomBotServiceResponse<CustomBotWithStats[]>> {
     try {
-      const { data: { user }, error: authError } = await supabase.auth.getUser()
-      
+      const {
+        data: { user },
+        error: authError,
+      } = await supabase.auth.getUser()
+
       if (authError || !user) {
         return {
           data: null,
           error: 'User must be authenticated',
-          success: false
+          success: false,
         }
       }
 
-      let query = supabase
-        .from('custom_bots')
-        .select('*')
+      let query = supabase.from('custom_bots').select('*')
 
       // If filtering for public bots, show public active bots from all users
       // If not specified or false, show only user's bots
@@ -319,7 +347,9 @@ export class CustomBotService {
         query = query.eq('user_id', user.id)
       } else {
         // Show user's bots + public bots
-        query = query.or(`user_id.eq.${user.id},and(is_public.eq.true,is_active.eq.true)`)
+        query = query.or(
+          `user_id.eq.${user.id},and(is_public.eq.true,is_active.eq.true)`
+        )
       }
 
       // Apply other filters
@@ -332,7 +362,9 @@ export class CustomBotService {
       }
 
       if (filters.search) {
-        query = query.or(`name.ilike.%${filters.search}%,description.ilike.%${filters.search}%`)
+        query = query.or(
+          `name.ilike.%${filters.search}%,description.ilike.%${filters.search}%`
+        )
       }
 
       // Apply pagination
@@ -341,7 +373,10 @@ export class CustomBotService {
       }
 
       if (filters.offset) {
-        query = query.range(filters.offset, filters.offset + (filters.limit || 10) - 1)
+        query = query.range(
+          filters.offset,
+          filters.offset + (filters.limit || 10) - 1
+        )
       }
 
       // Order by updated_at descending
@@ -353,22 +388,26 @@ export class CustomBotService {
         return {
           data: null,
           error: `Failed to fetch custom bots: ${botsError.message}`,
-          success: false
+          success: false,
         }
       }
 
       // Enhance bots with stats
       const botsWithStats: CustomBotWithStats[] = await Promise.all(
-        (bots || []).map(async (bot) => {
+        (bots || []).map(async bot => {
           const [conversationsRes, lastUsedRes] = await Promise.all([
-            supabase.from('conversations').select('id', { count: 'exact' }).eq('bot_id', bot.id),
-            supabase.from('activity_logs')
+            supabase
+              .from('conversations')
+              .select('id', { count: 'exact' })
+              .eq('bot_id', bot.id),
+            supabase
+              .from('activity_logs')
               .select('created_at')
               .eq('custom_bot_id', bot.id)
               .eq('action', 'bot_used')
               .order('created_at', { ascending: false })
               .limit(1)
-              .single()
+              .single(),
           ])
 
           return {
@@ -376,7 +415,7 @@ export class CustomBotService {
             usage_count: bot.metadata?.usage_count || 0,
             rating: bot.metadata?.average_rating || 0,
             conversation_count: conversationsRes.count || 0,
-            last_used: lastUsedRes.data?.created_at
+            last_used: lastUsedRes.data?.created_at,
           }
         })
       )
@@ -384,26 +423,32 @@ export class CustomBotService {
       return {
         data: botsWithStats,
         error: null,
-        success: true
+        success: true,
       }
     } catch (error) {
       return {
         data: null,
         error: `Unexpected error: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        success: false
+        success: false,
       }
     }
   }
 
-  static async addKnowledgeBaseDocument(botId: string, document: KnowledgeBaseDocument): Promise<CustomBotServiceResponse<CustomBot>> {
+  static async addKnowledgeBaseDocument(
+    botId: string,
+    document: KnowledgeBaseDocument
+  ): Promise<CustomBotServiceResponse<CustomBot>> {
     try {
-      const { data: { user }, error: authError } = await supabase.auth.getUser()
-      
+      const {
+        data: { user },
+        error: authError,
+      } = await supabase.auth.getUser()
+
       if (authError || !user) {
         return {
           data: null,
           error: 'User must be authenticated',
-          success: false
+          success: false,
         }
       }
 
@@ -419,32 +464,43 @@ export class CustomBotService {
         return {
           data: null,
           error: `Failed to fetch custom bot: ${fetchError.message}`,
-          success: false
+          success: false,
         }
       }
 
       const currentKnowledgeBase = bot.knowledge_base || []
-      const updatedKnowledgeBase = [...currentKnowledgeBase, JSON.stringify(document)]
+      const updatedKnowledgeBase = [
+        ...currentKnowledgeBase,
+        JSON.stringify(document),
+      ]
 
-      return this.updateCustomBot(botId, { knowledge_base: updatedKnowledgeBase })
+      return this.updateCustomBot(botId, {
+        knowledge_base: updatedKnowledgeBase,
+      })
     } catch (error) {
       return {
         data: null,
         error: `Unexpected error: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        success: false
+        success: false,
       }
     }
   }
 
-  static async removeKnowledgeBaseDocument(botId: string, documentId: string): Promise<CustomBotServiceResponse<CustomBot>> {
+  static async removeKnowledgeBaseDocument(
+    botId: string,
+    documentId: string
+  ): Promise<CustomBotServiceResponse<CustomBot>> {
     try {
-      const { data: { user }, error: authError } = await supabase.auth.getUser()
-      
+      const {
+        data: { user },
+        error: authError,
+      } = await supabase.auth.getUser()
+
       if (authError || !user) {
         return {
           data: null,
           error: 'User must be authenticated',
-          success: false
+          success: false,
         }
       }
 
@@ -460,87 +516,101 @@ export class CustomBotService {
         return {
           data: null,
           error: `Failed to fetch custom bot: ${fetchError.message}`,
-          success: false
+          success: false,
         }
       }
 
       const currentKnowledgeBase = bot.knowledge_base || []
-      const updatedKnowledgeBase = currentKnowledgeBase.filter(doc => {
-        try {
-          const parsedDoc = JSON.parse(doc)
-          return parsedDoc.id !== documentId
-        } catch {
-          return true // Keep malformed documents
+      const updatedKnowledgeBase = currentKnowledgeBase.filter(
+        (doc: string) => {
+          try {
+            const parsedDoc = JSON.parse(doc)
+            return parsedDoc.id !== documentId
+          } catch {
+            return true // Keep malformed documents
+          }
         }
-      })
+      )
 
-      return this.updateCustomBot(botId, { knowledge_base: updatedKnowledgeBase })
+      return this.updateCustomBot(botId, {
+        knowledge_base: updatedKnowledgeBase,
+      })
     } catch (error) {
       return {
         data: null,
         error: `Unexpected error: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        success: false
+        success: false,
       }
     }
   }
 
-  static async toggleBotVisibility(botId: string): Promise<CustomBotServiceResponse<CustomBot>> {
+  static async toggleBotVisibility(
+    botId: string
+  ): Promise<CustomBotServiceResponse<CustomBot>> {
     try {
       const botResult = await this.getCustomBotById(botId)
-      
+
       if (!botResult.success || !botResult.data) {
         return {
           data: null,
           error: botResult.error || 'Bot not found',
-          success: false
+          success: false,
         }
       }
 
       return this.updateCustomBot(botId, {
-        is_public: !botResult.data.is_public
+        is_public: !botResult.data.is_public,
       })
     } catch (error) {
       return {
         data: null,
         error: `Unexpected error: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        success: false
+        success: false,
       }
     }
   }
 
-  static async toggleBotStatus(botId: string): Promise<CustomBotServiceResponse<CustomBot>> {
+  static async toggleBotStatus(
+    botId: string
+  ): Promise<CustomBotServiceResponse<CustomBot>> {
     try {
       const botResult = await this.getCustomBotById(botId)
-      
+
       if (!botResult.success || !botResult.data) {
         return {
           data: null,
           error: botResult.error || 'Bot not found',
-          success: false
+          success: false,
         }
       }
 
       return this.updateCustomBot(botId, {
-        is_active: !botResult.data.is_active
+        is_active: !botResult.data.is_active,
       })
     } catch (error) {
       return {
         data: null,
         error: `Unexpected error: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        success: false
+        success: false,
       }
     }
   }
 
-  static async addBotTag(botId: string, tag: string): Promise<CustomBotServiceResponse<CustomBot>> {
+  static async addBotTag(
+    botId: string,
+    tag: string
+  ): Promise<CustomBotServiceResponse<CustomBot>> {
     try {
-      const { data: { user }, error: authError } = await supabase.auth.getUser()
-      
+      const {
+        data: { user },
+        error: authError,
+      } = await supabase.auth.getUser()
+
       if (authError || !user) {
         return {
           data: null,
           error: 'User must be authenticated',
-          success: false
+          success: false,
         }
       }
 
@@ -556,7 +626,7 @@ export class CustomBotService {
         return {
           data: null,
           error: `Failed to fetch custom bot: ${fetchError.message}`,
-          success: false
+          success: false,
         }
       }
 
@@ -573,20 +643,26 @@ export class CustomBotService {
       return {
         data: null,
         error: `Unexpected error: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        success: false
+        success: false,
       }
     }
   }
 
-  static async removeBotTag(botId: string, tag: string): Promise<CustomBotServiceResponse<CustomBot>> {
+  static async removeBotTag(
+    botId: string,
+    tag: string
+  ): Promise<CustomBotServiceResponse<CustomBot>> {
     try {
-      const { data: { user }, error: authError } = await supabase.auth.getUser()
-      
+      const {
+        data: { user },
+        error: authError,
+      } = await supabase.auth.getUser()
+
       if (authError || !user) {
         return {
           data: null,
           error: 'User must be authenticated',
-          success: false
+          success: false,
         }
       }
 
@@ -602,49 +678,58 @@ export class CustomBotService {
         return {
           data: null,
           error: `Failed to fetch custom bot: ${fetchError.message}`,
-          success: false
+          success: false,
         }
       }
 
       const currentTags = bot.tags || []
       const updatedTags = currentTags.filter(t => t !== tag)
-      
+
       return this.updateCustomBot(botId, { tags: updatedTags })
     } catch (error) {
       return {
         data: null,
         error: `Unexpected error: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        success: false
+        success: false,
       }
     }
   }
 
-  static async getMyCustomBots(): Promise<CustomBotServiceResponse<CustomBotWithStats[]>> {
+  static async getMyCustomBots(): Promise<
+    CustomBotServiceResponse<CustomBotWithStats[]>
+  > {
     return this.listCustomBots({ is_public: false })
   }
 
-  static async getPublicCustomBots(): Promise<CustomBotServiceResponse<CustomBotWithStats[]>> {
+  static async getPublicCustomBots(): Promise<
+    CustomBotServiceResponse<CustomBotWithStats[]>
+  > {
     return this.listCustomBots({ is_public: true })
   }
 
-  static async searchCustomBots(searchTerm: string): Promise<CustomBotServiceResponse<CustomBotWithStats[]>> {
+  static async searchCustomBots(
+    searchTerm: string
+  ): Promise<CustomBotServiceResponse<CustomBotWithStats[]>> {
     return this.listCustomBots({ search: searchTerm })
   }
 
-  static async cloneCustomBot(botId: string, newName?: string): Promise<CustomBotServiceResponse<CustomBot>> {
+  static async cloneCustomBot(
+    botId: string,
+    newName?: string
+  ): Promise<CustomBotServiceResponse<CustomBot>> {
     try {
       const botResult = await this.getCustomBotById(botId)
-      
+
       if (!botResult.success || !botResult.data) {
         return {
           data: null,
           error: botResult.error || 'Bot not found',
-          success: false
+          success: false,
         }
       }
 
       const originalBot = botResult.data
-      
+
       const clonedBotData: CreateCustomBotData = {
         name: newName || `${originalBot.name} (Copy)`,
         description: originalBot.description,
@@ -656,8 +741,8 @@ export class CustomBotService {
         metadata: {
           ...originalBot.metadata,
           cloned_from: botId,
-          cloned_at: new Date().toISOString()
-        }
+          cloned_at: new Date().toISOString(),
+        },
       }
 
       return this.createCustomBot(clonedBotData)
@@ -665,15 +750,18 @@ export class CustomBotService {
       return {
         data: null,
         error: `Unexpected error: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        success: false
+        success: false,
       }
     }
   }
 
   static async recordBotUsage(botId: string): Promise<void> {
     try {
-      const { data: { user }, error: authError } = await supabase.auth.getUser()
-      
+      const {
+        data: { user },
+        error: authError,
+      } = await supabase.auth.getUser()
+
       if (authError || !user) {
         return
       }
@@ -688,15 +776,15 @@ export class CustomBotService {
       if (bot) {
         const currentMetadata = bot.metadata || {}
         const usageCount = (currentMetadata.usage_count || 0) + 1
-        
+
         await supabase
           .from('custom_bots')
           .update({
             metadata: {
               ...currentMetadata,
               usage_count: usageCount,
-              last_used: new Date().toISOString()
-            }
+              last_used: new Date().toISOString(),
+            },
           })
           .eq('id', botId)
       }
@@ -715,16 +803,14 @@ export class CustomBotService {
     metadata: Record<string, unknown> = {}
   ): Promise<void> {
     try {
-      await supabase
-        .from('activity_logs')
-        .insert({
-          user_id: userId,
-          custom_bot_id: botId,
-          action,
-          metadata,
-          ip_address: 'unknown',
-          user_agent: 'unknown'
-        })
+      await supabase.from('activity_logs').insert({
+        user_id: userId,
+        custom_bot_id: botId,
+        action,
+        metadata,
+        ip_address: 'unknown',
+        user_agent: 'unknown',
+      })
     } catch (error) {
       console.error('Failed to log bot activity:', error)
     }
