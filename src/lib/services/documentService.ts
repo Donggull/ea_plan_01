@@ -6,7 +6,7 @@ type DocumentInsert = Database['public']['Tables']['documents']['Insert']
 type DocumentUpdate = Database['public']['Tables']['documents']['Update']
 
 export interface CreateDocumentData {
-  project_id?: string
+  project_id?: string | null
   file_name: string
   file_type: string
   file_size: number
@@ -147,7 +147,7 @@ export class DocumentService {
 
       const insertData: DocumentInsert = {
         user_id: user.id,
-        project_id: documentData.project_id,
+        project_id: documentData.project_id || null,
         file_name: documentData.file_name,
         file_type: documentData.file_type,
         file_size: documentData.file_size,

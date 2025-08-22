@@ -185,7 +185,7 @@ export type Database = {
       documents: {
         Row: {
           id: string
-          project_id: string
+          project_id: string | null
           file_name: string
           file_path: string
           file_type: string
@@ -199,7 +199,7 @@ export type Database = {
         }
         Insert: {
           id?: string
-          project_id: string
+          project_id?: string | null
           file_name: string
           file_path: string
           file_type: string
@@ -212,6 +212,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          project_id?: string | null
           file_name?: string
           extracted_content?: string
           analysis_result?: Record<string, unknown>
