@@ -17,7 +17,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
-          id?: string
+          id: string
           email: string
           name: string
           avatar_url?: string

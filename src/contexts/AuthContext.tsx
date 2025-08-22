@@ -74,7 +74,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
               id: userId,
               email: user.data.user.email!,
               name:
-                user.data.user.user_metadata?.name ||
+                (user.data.user.user_metadata?.name as string) ||
                 user.data.user.email!.split('@')[0],
               subscription_tier: 'free' as const,
             })
