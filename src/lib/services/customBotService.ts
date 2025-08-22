@@ -683,7 +683,7 @@ export class CustomBotService {
       }
 
       const currentTags = bot.tags || []
-      const updatedTags = currentTags.filter(t => t !== tag)
+      const updatedTags = currentTags.filter((t: string) => t !== tag)
 
       return this.updateCustomBot(botId, { tags: updatedTags })
     } catch (error) {
