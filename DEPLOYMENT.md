@@ -12,15 +12,22 @@
 
 ### 2. 환경 변수 설정
 
-Vercel 프로젝트 Settings > Environment Variables에서 다음 변수들을 추가:
+⚠️ **중요**: Vercel 프로젝트 Settings > Environment Variables에서 다음 변수들을 **직접 추가**해야 합니다:
+
+#### 설정 방법:
+
+1. Vercel 프로젝트 → Settings 탭 → Environment Variables 메뉴
+2. "Add New" 버튼 클릭
+3. 아래 변수들을 하나씩 추가 (Name과 Value 입력)
+4. Environment: Production, Preview, Development 모두 체크
 
 #### 필수 환경 변수 (Supabase)
 
-```
-NEXT_PUBLIC_SUPABASE_URL=https://your-project-id.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
-SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
-```
+| Variable Name                   | Value Example                             |
+| ------------------------------- | ----------------------------------------- |
+| `NEXT_PUBLIC_SUPABASE_URL`      | `https://abc123def456.supabase.co`        |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...` |
+| `SUPABASE_SERVICE_ROLE_KEY`     | `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...` |
 
 #### 선택적 환경 변수 (AI APIs - 향후 구현용)
 
