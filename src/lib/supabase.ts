@@ -123,8 +123,12 @@ export type Database = {
           user_id: string
           name: string
           description?: string
+          system_prompt?: string
           knowledge_base: string[]
           is_public: boolean
+          is_active: boolean
+          tags: string[]
+          metadata: Record<string, unknown>
           created_at: string
           updated_at: string
         }
@@ -133,16 +137,24 @@ export type Database = {
           user_id: string
           name: string
           description?: string
+          system_prompt?: string
           knowledge_base: string[]
           is_public?: boolean
+          is_active?: boolean
+          tags?: string[]
+          metadata?: Record<string, unknown>
           created_at?: string
           updated_at?: string
         }
         Update: {
           name?: string
           description?: string
+          system_prompt?: string
           knowledge_base?: string[]
           is_public?: boolean
+          is_active?: boolean
+          tags?: string[]
+          metadata?: Record<string, unknown>
           updated_at?: string
         }
       }
