@@ -11,6 +11,7 @@ import { User, Session, AuthError } from '@supabase/supabase-js'
 import { supabase, Database } from '@/lib/supabase'
 
 export type UserProfile = Database['public']['Tables']['users']['Row']
+export type UserInsert = Database['public']['Tables']['users']['Insert']
 
 export interface AuthContextType {
   user: User | null
@@ -68,16 +69,18 @@ export function AuthProvider({ children }: AuthProviderProps) {
           const user = await supabase.auth.getUser()
           if (!user.data.user) return
 
+          const insertData: UserInsert = {
+            id: userId,
+            email: user.data.user.email!,
+            name:
+              (user.data.user.user_metadata?.name as string) ||
+              user.data.user.email!.split('@')[0],
+            subscription_tier: 'free',
+          }
+
           const { data: newProfile, error: createError } = await supabase
             .from('users')
-            .insert({
-              id: userId,
-              email: user.data.user.email!,
-              name:
-                (user.data.user.user_metadata?.name as string) ||
-                user.data.user.email!.split('@')[0],
-              subscription_tier: 'free' as const,
-            })
+            .insert(insertData)
             .select()
             .single()
 
