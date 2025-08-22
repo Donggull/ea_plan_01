@@ -78,7 +78,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
             await fetchUserProfile(session.user.id)
           }
         }
-      } catch {
+      } catch (err) {
         console.error('Error in getInitialSession:', err)
         if (isMounted) {
           setError('세션을 가져오는 중 오류가 발생했습니다.')
@@ -173,7 +173,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       }
 
       setUserProfile(data)
-    } catch {
+    } catch (err) {
       console.error('Error in createUserProfile:', err)
       setError('사용자 프로필을 생성하는 중 오류가 발생했습니다.')
     }
@@ -206,7 +206,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
       }
 
       return { data, error }
-    } catch {
+    } catch (err) {
+      console.error('Error in signUp:', err)
       const errorMessage = '회원가입 중 오류가 발생했습니다.'
       setError(errorMessage)
       return {
@@ -239,7 +240,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
       }
 
       return { data, error }
-    } catch {
+    } catch (err) {
+      console.error('Error in signIn:', err)
       const errorMessage = '로그인 중 오류가 발생했습니다.'
       setError(errorMessage)
       return {
@@ -267,7 +269,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
       }
 
       return { error }
-    } catch {
+    } catch (err) {
+      console.error('Error in signOut:', err)
       const errorMessage = '로그아웃 중 오류가 발생했습니다.'
       setError(errorMessage)
       return { error: { message: errorMessage } as AuthError }
@@ -290,7 +293,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
       }
 
       return { error }
-    } catch {
+    } catch (err) {
+      console.error('Error in resetPassword:', err)
       const errorMessage = '비밀번호 재설정 중 오류가 발생했습니다.'
       setError(errorMessage)
       return { error: { message: errorMessage } as AuthError }
@@ -327,7 +331,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
       setUserProfile(data)
       return { error: null }
-    } catch {
+    } catch (err) {
+      console.error('Error in updateProfile:', err)
       const errorMessage = '프로필 업데이트 중 오류가 발생했습니다.'
       setError(errorMessage)
       return { error: new Error(errorMessage) }
