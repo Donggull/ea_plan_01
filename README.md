@@ -1,36 +1,117 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 웹·앱 서비스 기획자 플랫폼
 
-## Getting Started
+AI 기반 통합 워크플로우 플랫폼으로, 제안 진행부터 구축 관리, 운영 관리까지 전 과정을 하나의 플랫폼에서 효율적으로 처리할 수 있는 종합 솔루션입니다.
 
-First, run the development server:
+## 주요 기능
+
+### 🎯 핵심 카테고리
+
+- **제안 진행**: RFP 분석, 시장 조사, 제안서 작성, 비용 산정
+- **구축 관리**: 현황분석, 요구사항정리, 기능정의, 화면설계, WBS, QA관리
+- **운영 관리**: 요건 관리, 업무 분배, 일정 관리, 성과 관리
+
+### 🤖 AI 시스템
+
+- **멀티 모델 지원**: Gemini, ChatGPT, Claude + MCP 연동
+- **RAG 기반 커스텀 챗봇** 생성 및 공유
+- **실시간 코드 실행 캔버스**
+- **이미지 생성**: Flux Schnell, Imagen3
+
+## 기술 스택
+
+- **Frontend**: Next.js 15, TypeScript, Tailwind CSS
+- **State Management**: Zustand, TanStack Query
+- **Database**: Supabase
+- **UI Components**: Headless UI, Heroicons
+- **Code Editor**: Monaco Editor
+- **Animation**: Framer Motion
+- **Real-time**: Socket.io
+
+## 개발 환경 설정
+
+### 1. 저장소 클론 및 의존성 설치
+
+```bash
+git clone <repository-url>
+cd planning-platform
+npm install
+```
+
+### 2. 환경 변수 설정
+
+`.env.example` 파일을 복사하여 `.env.local` 파일을 생성하고 필요한 API 키들을 설정합니다:
+
+```bash
+cp .env.example .env.local
+```
+
+필수 환경 변수:
+
+- `NEXT_PUBLIC_SUPABASE_URL`: Supabase 프로젝트 URL
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`: Supabase 익명 키
+- `GEMINI_API_KEY`: Google Gemini API 키
+- `OPENAI_API_KEY`: OpenAI API 키
+- `ANTHROPIC_API_KEY`: Anthropic Claude API 키
+
+### 3. 개발 서버 실행
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+http://localhost:3000 에서 애플리케이션을 확인할 수 있습니다.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 사용 가능한 스크립트
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- `npm run dev`: 개발 서버 실행
+- `npm run build`: 프로덕션 빌드
+- `npm run start`: 프로덕션 서버 실행
+- `npm run lint`: ESLint 실행
+- `npm run lint:fix`: ESLint 자동 수정
+- `npm run format`: Prettier 포맷팅
+- `npm run format:check`: Prettier 포맷 확인
 
-## Learn More
+## 프로젝트 구조
 
-To learn more about Next.js, take a look at the following resources:
+```
+src/
+├── app/                 # Next.js App Router 페이지
+├── components/          # 재사용 컴포넌트
+│   ├── ui/             # 기본 UI 컴포넌트
+│   ├── chat/           # 챗봇 관련 컴포넌트
+│   ├── canvas/         # 코드/이미지 캔버스
+│   ├── project/        # 프로젝트 관리 컴포넌트
+│   └── layout/         # 레이아웃 컴포넌트
+├── lib/                # 유틸리티 및 설정
+├── hooks/              # 커스텀 훅
+├── stores/             # Zustand 상태 관리
+└── types/              # TypeScript 타입 정의
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## 개발 도구 설정
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### Code Quality
 
-## Deploy on Vercel
+- **ESLint**: 코드 품질 검사
+- **Prettier**: 코드 포맷팅
+- **Husky**: Git 훅 관리
+- **lint-staged**: 스테이징된 파일만 린트 실행
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### Pre-commit 훅
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+커밋 전에 자동으로 실행됩니다:
+
+1. ESLint 검사 및 자동 수정
+2. Prettier 포맷팅
+3. 타입 체크
+
+## 기여 가이드
+
+1. 브랜치 생성: `git checkout -b feature/your-feature-name`
+2. 변경사항 커밋: `git commit -m 'Add some feature'`
+3. 브랜치 푸시: `git push origin feature/your-feature-name`
+4. Pull Request 생성
+
+## 라이선스
+
+이 프로젝트는 [MIT 라이선스](LICENSE)를 따릅니다.

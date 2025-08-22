@@ -1,103 +1,250 @@
-import Image from "next/image";
+'use client'
 
-export default function Home() {
-  return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
+import { motion } from 'framer-motion'
+import Link from 'next/link'
+import {
+  ChartBarIcon,
+  Square3Stack3DIcon,
+  UserGroupIcon,
+  ChatBubbleLeftRightIcon,
+  ArrowRightIcon,
+} from '@heroicons/react/24/outline'
+
+export default function HomePage() {
+  const features = [
+    {
+      title: '제안 진행',
+      description: 'RFP 분석부터 제안서 작성까지',
+      icon: ChartBarIcon,
+      color: 'from-orange-400 to-yellow-500',
+      bgPattern: 'dots',
+      href: '/projects',
+      buttonText: '제안 시작하기',
+      buttonColor: 'bg-orange-600 hover:bg-orange-700',
+    },
+    {
+      title: '구축 관리',
+      description: '요구사항 정리부터 QA까지',
+      icon: Square3Stack3DIcon,
+      color: 'from-pink-500 to-rose-500',
+      bgPattern: 'grid',
+      href: '/projects',
+      buttonText: '구축 관리하기',
+      buttonColor: 'bg-pink-600 hover:bg-pink-700',
+    },
+    {
+      title: '운영 관리',
+      description: '업무 분배와 일정 관리',
+      icon: UserGroupIcon,
+      color: 'from-emerald-500 to-teal-500',
+      bgPattern: 'circles',
+      href: '/dashboard',
+      buttonText: '운영 시작하기',
+      buttonColor: 'bg-emerald-600 hover:bg-emerald-700',
+    },
+    {
+      title: 'AI 챗봇',
+      description: 'AI 모델로 스마트한 업무 지원',
+      icon: ChatBubbleLeftRightIcon,
+      color: 'from-blue-500 to-indigo-600',
+      bgPattern: 'waves',
+      href: '/chat',
+      buttonText: 'AI와 대화하기',
+      buttonColor: 'bg-blue-600 hover:bg-blue-700',
+    },
+  ]
+
+  const PatternDots = () => (
+    <div className="absolute inset-0 opacity-20">
+      {Array.from({ length: 35 }).map((_, i) => (
+        <div
+          key={i}
+          className="absolute w-3 h-3 bg-orange-800 rounded-full"
+          style={{
+            left: `${15 + (i % 5) * 20}%`,
+            top: `${20 + Math.floor(i / 5) * 15}%`,
+          }}
         />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+      ))}
+    </div>
+  )
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+  const PatternGrid = () => (
+    <div className="absolute inset-0 opacity-15">
+      {Array.from({ length: 12 }).map((_, i) => (
+        <div
+          key={i}
+          className="absolute w-8 h-8 border-2 border-pink-700"
+          style={{
+            left: `${10 + (i % 4) * 20}%`,
+            top: `${25 + Math.floor(i / 4) * 20}%`,
+          }}
+        />
+      ))}
+    </div>
+  )
+
+  const PatternCircles = () => (
+    <div className="absolute inset-0 opacity-20">
+      <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
+        <div className="w-32 h-32 border-4 border-emerald-700 rounded-full"></div>
+        <div className="absolute top-4 left-4 w-24 h-24 border-2 border-emerald-600 rounded-full"></div>
+        <div className="absolute top-8 left-8 w-16 h-16 border-2 border-emerald-500 rounded-full"></div>
+      </div>
+    </div>
+  )
+
+  const PatternWaves = () => (
+    <div className="absolute inset-0 opacity-15">
+      {Array.from({ length: 20 }).map((_, i) => (
+        <div
+          key={i}
+          className="absolute w-4 h-1 bg-blue-700 rounded-full"
+          style={{
+            left: `${10 + (i % 5) * 18}%`,
+            top: `${30 + Math.floor(i / 5) * 15}%`,
+            transform: `rotate(${i * 18}deg)`,
+          }}
+        />
+      ))}
+    </div>
+  )
+
+  const getPattern = (pattern: string) => {
+    switch (pattern) {
+      case 'dots':
+        return <PatternDots />
+      case 'grid':
+        return <PatternGrid />
+      case 'circles':
+        return <PatternCircles />
+      case 'waves':
+        return <PatternWaves />
+      default:
+        return null
+    }
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-900 text-white overflow-hidden">
+      {/* Background */}
+      <div className="absolute inset-0 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900"></div>
+
+      {/* Header */}
+      <header className="relative z-10 flex items-center justify-between p-6">
+        <div className="flex items-center space-x-8">
+          <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center">
+            <div className="w-6 h-6 bg-gray-900 rounded"></div>
+          </div>
+          <nav className="hidden md:flex items-center space-x-6">
+            <button className="flex items-center space-x-2 text-gray-300 hover:text-white">
+              <ChartBarIcon className="w-5 h-5" />
+              <span>제안진행</span>
+            </button>
+            <button className="flex items-center space-x-2 text-gray-300 hover:text-white">
+              <Square3Stack3DIcon className="w-5 h-5" />
+              <span>구축관리</span>
+            </button>
+            <button className="flex items-center space-x-2 text-gray-300 hover:text-white">
+              <UserGroupIcon className="w-5 h-5" />
+              <span>운영관리</span>
+            </button>
+          </nav>
+        </div>
+        <div className="flex items-center space-x-4">
+          <Link href="/dashboard">
+            <button className="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+              대시보드
+            </button>
+          </Link>
+          <Link href="/projects">
+            <button className="bg-purple-600 hover:bg-purple-700 px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+              프로젝트
+            </button>
+          </Link>
+          <button className="w-8 h-8 bg-gray-700 rounded-full flex items-center justify-center">
+            <span className="text-xl">⚙️</span>
+          </button>
+        </div>
+      </header>
+
+      {/* Main Content */}
+      <main className="relative z-10 px-6 pt-12 pb-20">
+        <div className="max-w-7xl mx-auto">
+          {/* Hero Section */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
+            className="text-center mb-16"
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+            <p className="text-gray-400 text-lg mb-4">
+              기획자를 위한 AI 통합 플랫폼
+            </p>
+            <h1 className="text-5xl lg:text-6xl font-bold mb-8 leading-tight">
+              <span className="text-white">웹·앱 서비스 기획의</span>
+              <br />
+              <span className="bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
+                새로운 경험
+              </span>
+            </h1>
+          </motion.div>
+
+          {/* Feature Cards Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
+            {features.map((feature, index) => (
+              <motion.div
+                key={feature.title}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: index * 0.1 }}
+                whileHover={{ y: -5 }}
+                className="group"
+              >
+                <div
+                  className={`relative h-[500px] bg-gradient-to-br ${feature.color} rounded-3xl p-8 overflow-hidden shadow-2xl hover:shadow-3xl transition-all duration-300`}
+                >
+                  {/* Background Pattern */}
+                  {getPattern(feature.bgPattern)}
+
+                  {/* Content */}
+                  <div className="relative z-10 h-full flex flex-col">
+                    {/* Icon */}
+                    <div className="mb-6">
+                      <div className="w-12 h-12 bg-black/20 rounded-xl flex items-center justify-center backdrop-blur-sm">
+                        <feature.icon className="w-6 h-6 text-white" />
+                      </div>
+                    </div>
+
+                    {/* Title */}
+                    <h3 className="text-2xl font-bold text-white mb-4">
+                      {feature.title}
+                    </h3>
+
+                    {/* Spacer */}
+                    <div className="flex-1"></div>
+
+                    {/* Description */}
+                    <p className="text-white/90 text-lg font-medium mb-8 leading-relaxed">
+                      {feature.description}
+                    </p>
+
+                    {/* Button */}
+                    <Link href={feature.href}>
+                      <button
+                        className={`w-full ${feature.buttonColor} text-white py-4 rounded-2xl font-semibold text-lg transition-all duration-300 hover:transform hover:scale-105 shadow-lg flex items-center justify-center space-x-2`}
+                      >
+                        <span>{feature.buttonText}</span>
+                        <ArrowRightIcon className="w-5 h-5" />
+                      </button>
+                    </Link>
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+          </div>
         </div>
       </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
     </div>
-  );
+  )
 }
