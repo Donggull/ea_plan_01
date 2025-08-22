@@ -732,8 +732,8 @@ export class CustomBotService {
 
       const clonedBotData: CreateCustomBotData = {
         name: newName || `${originalBot.name} (Copy)`,
-        description: originalBot.description,
-        system_prompt: originalBot.system_prompt,
+        description: originalBot.description || '',
+        system_prompt: originalBot.system_prompt || '',
         knowledge_base: originalBot.knowledge_base,
         is_public: false, // Cloned bots are private by default
         is_active: true,
