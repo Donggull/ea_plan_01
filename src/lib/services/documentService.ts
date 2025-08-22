@@ -531,7 +531,7 @@ export class DocumentService {
 
       // Here you would call your AI service to analyze the document
       // For now, we'll create a mock analysis result
-      const analysisResult = {
+      const analysisData = {
         analysis_type: analysisType,
         key_insights: [
           'Document contains project requirements',
@@ -550,11 +550,25 @@ export class DocumentService {
 
       // Update document with analysis result
       const updateResult = await this.updateDocument(documentId, {
-        analysis_result: analysisResult,
+        analysis_result: analysisData,
       })
 
       if (!updateResult.success) {
-        return updateResult
+        return {
+          data: null,
+          error: updateResult.error,
+          success: false,
+        }
+      }
+
+      // Create proper DocumentAnalysis object
+      const analysisResult: DocumentAnalysis = {
+        id: `analysis_${Date.now()}`,
+        document_id: documentId,
+        analysis_type: analysisType,
+        results: analysisData,
+        confidence_score: 0.85,
+        created_at: new Date().toISOString(),
       }
 
       return {
