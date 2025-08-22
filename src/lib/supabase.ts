@@ -67,23 +67,31 @@ export type Database = {
       conversations: {
         Row: {
           id: string
+          user_id: string
           project_id: string | null
           title: string
           model_used: string
+          tags: string[]
+          metadata: Record<string, unknown>
           created_at: string
           updated_at: string
         }
         Insert: {
           id?: string
+          user_id: string
           project_id?: string | null
           title: string
           model_used: string
+          tags?: string[]
+          metadata?: Record<string, unknown>
           created_at?: string
           updated_at?: string
         }
         Update: {
           title?: string
           model_used?: string
+          tags?: string[]
+          metadata?: Record<string, unknown>
           updated_at?: string
         }
       }
