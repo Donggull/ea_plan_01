@@ -13,6 +13,7 @@ import {
   XMarkIcon,
   ArrowDownIcon,
   MicrophoneIcon,
+  WrenchScrewdriverIcon,
 } from '@heroicons/react/24/outline'
 import MessageBubble, { type Message } from './MessageBubble'
 import LoadingMessage from './LoadingMessage'
@@ -20,6 +21,13 @@ import ChatSettingsPanel, {
   type ChatSettings,
   type AIModel,
 } from './ChatSettings'
+import AdvancedChatFeatures from './AdvancedChatFeatures'
+import ToolUsage from './ToolUsage'
+import { type MCPToolType } from '@/lib/services/mcpService'
+import {
+  ContextService,
+  type ProjectContext,
+} from '@/lib/services/contextService'
 
 interface ChatInterfaceProps {
   conversationId?: string
@@ -27,6 +35,8 @@ interface ChatInterfaceProps {
   onMessageSend?: (message: string, files?: File[]) => Promise<void>
   onCodeExecute?: (code: string, language: string) => void
   className?: string
+  projectId?: string
+  userId?: string
 }
 
 interface FilePreview {
@@ -35,12 +45,25 @@ interface FilePreview {
   preview?: string
 }
 
+interface ActiveTool {
+  id: string
+  type: MCPToolType
+  name: string
+  status: 'pending' | 'running' | 'success' | 'error'
+  input?: Record<string, unknown>
+  result?: unknown
+  startTime?: number
+  endTime?: number
+}
+
 export default function ChatInterface({
   conversationId: _conversationId,
   initialMessages = [],
   onMessageSend,
   onCodeExecute: _onCodeExecute,
   className = '',
+  projectId,
+  userId = 'demo-user', // For demo purposes
 }: ChatInterfaceProps) {
   const [messages, setMessages] = useState<Message[]>(initialMessages)
   const [inputValue, setInputValue] = useState('')
@@ -49,6 +72,11 @@ export default function ChatInterface({
   const [selectedFiles, setSelectedFiles] = useState<FilePreview[]>([])
   const [showScrollToBottom, setShowScrollToBottom] = useState(false)
   const [isRecording, setIsRecording] = useState(false)
+  const [activeTools, setActiveTools] = useState<ActiveTool[]>([])
+  const [showMCPTools, setShowMCPTools] = useState(false)
+  const [projectContext, setProjectContext] = useState<ProjectContext | null>(
+    null
+  )
 
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const messagesContainerRef = useRef<HTMLDivElement>(null)
@@ -91,6 +119,24 @@ export default function ChatInterface({
     container.addEventListener('scroll', handleScroll)
     return () => container.removeEventListener('scroll', handleScroll)
   }, [])
+
+  const loadProjectContext = useCallback(async () => {
+    if (!projectId || !userId) return
+
+    try {
+      const context = await ContextService.getProjectContext(projectId, userId)
+      setProjectContext(context)
+    } catch (error) {
+      console.error('Failed to load project context:', error)
+    }
+  }, [projectId, userId])
+
+  // Load project context if available
+  useEffect(() => {
+    if (projectId && userId) {
+      loadProjectContext()
+    }
+  }, [projectId, userId, loadProjectContext])
 
   const scrollToBottom = (smooth = true) => {
     messagesEndRef.current?.scrollIntoView({
@@ -231,6 +277,137 @@ export default function ChatInterface({
     setIsRecording(!isRecording)
   }
 
+  // Execute MCP tool
+  const executeTool = async (
+    toolType: MCPToolType,
+    parameters: Record<string, unknown>,
+    toolName: string
+  ) => {
+    const toolId = Math.random().toString(36).substr(2, 9)
+    const startTime = Date.now()
+
+    // Add tool to active tools
+    const newTool: ActiveTool = {
+      id: toolId,
+      type: toolType,
+      name: toolName,
+      status: 'running',
+      input: parameters,
+      startTime,
+    }
+
+    setActiveTools(prev => [...prev, newTool])
+
+    try {
+      const response = await fetch('/api/chat/tools', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          toolType,
+          parameters,
+          userId,
+        }),
+      })
+
+      const result = await response.json()
+      const endTime = Date.now()
+
+      // Update tool with result
+      setActiveTools(prev =>
+        prev.map(tool =>
+          tool.id === toolId
+            ? {
+                ...tool,
+                status: result.success ? 'success' : 'error',
+                result,
+                endTime,
+              }
+            : tool
+        )
+      )
+
+      return result
+    } catch (error) {
+      console.error('Tool execution error:', error)
+      const endTime = Date.now()
+
+      // Update tool with error
+      setActiveTools(prev =>
+        prev.map(tool =>
+          tool.id === toolId
+            ? {
+                ...tool,
+                status: 'error',
+                result: { error: 'Tool execution failed' },
+                endTime,
+              }
+            : tool
+        )
+      )
+
+      return { success: false, error: 'Tool execution failed' }
+    }
+  }
+
+  // Handle message editing
+  const handleEditMessage = (messageId: string, newContent: string) => {
+    setMessages(prev =>
+      prev.map(msg =>
+        msg.id === messageId ? { ...msg, content: newContent } : msg
+      )
+    )
+  }
+
+  // Handle message regeneration
+  const handleRegenerateMessage = async (messageId: string) => {
+    const messageIndex = messages.findIndex(m => m.id === messageId)
+    if (messageIndex === -1) return
+
+    const message = messages[messageIndex]
+    if (message.role !== 'assistant') return
+
+    // Find the user message that prompted this response
+    const userMessage = messages
+      .slice(0, messageIndex)
+      .reverse()
+      .find(m => m.role === 'user')
+
+    if (!userMessage) return
+
+    // Remove the assistant message and regenerate
+    setMessages(prev => prev.filter(m => m.id !== messageId))
+    setIsLoading(true)
+
+    try {
+      await simulateAIResponse(userMessage.content)
+    } catch (error) {
+      console.error('Failed to regenerate message:', error)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  // Handle message rating
+  const handleRateMessage = (messageId: string, rating: number) => {
+    setMessages(prev =>
+      prev.map(msg => (msg.id === messageId ? { ...msg, rating } : msg))
+    )
+  }
+
+  // Handle conversation branching
+  const handleBranchMessage = (messageId: string) => {
+    // This would create a new conversation branch
+    console.log('Branching from message:', messageId)
+  }
+
+  // Handle template usage
+  const handleUseTemplate = (template: string) => {
+    setInputValue(template)
+    textareaRef.current?.focus()
+  }
+
   return (
     <div
       className={`flex flex-col h-full bg-gray-50 dark:bg-gray-900 ${className}`}
@@ -322,11 +499,36 @@ export default function ChatInterface({
         {/* Messages */}
         <AnimatePresence>
           {messages.map((message, index) => (
-            <MessageBubble
-              key={message.id}
-              message={message}
-              index={index}
-              isLast={index === messages.length - 1}
+            <div key={message.id}>
+              <MessageBubble
+                message={message}
+                index={index}
+                isLast={index === messages.length - 1}
+              />
+              <AdvancedChatFeatures
+                message={message}
+                onEdit={handleEditMessage}
+                onRegenerate={handleRegenerateMessage}
+                onRate={handleRateMessage}
+                onBranch={handleBranchMessage}
+                onUseTemplate={handleUseTemplate}
+              />
+            </div>
+          ))}
+        </AnimatePresence>
+
+        {/* Active Tools */}
+        <AnimatePresence>
+          {activeTools.map(tool => (
+            <ToolUsage
+              key={tool.id}
+              toolType={tool.type}
+              toolName={tool.name}
+              status={tool.status}
+              input={tool.input}
+              result={tool.result}
+              startTime={tool.startTime}
+              endTime={tool.endTime}
             />
           ))}
         </AnimatePresence>
@@ -433,6 +635,18 @@ export default function ChatInterface({
             >
               <MicrophoneIcon className="w-5 h-5" />
             </button>
+
+            <button
+              onClick={() => setShowMCPTools(!showMCPTools)}
+              className={`p-2 transition-colors rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 ${
+                showMCPTools
+                  ? 'text-blue-500 bg-blue-50 dark:bg-blue-900/20'
+                  : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
+              }`}
+              title="MCP 도구"
+            >
+              <WrenchScrewdriverIcon className="w-5 h-5" />
+            </button>
           </div>
 
           {/* Text Input */}
@@ -523,6 +737,90 @@ export default function ChatInterface({
             </button>
           ))}
         </div>
+
+        {/* MCP Tools Panel */}
+        <AnimatePresence>
+          {showMCPTools && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              className="mt-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg"
+            >
+              <p className="text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">
+                MCP 도구:
+              </p>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                <button
+                  onClick={() =>
+                    executeTool(
+                      'web_search',
+                      { query: inputValue || '검색어를 입력해주세요' },
+                      '웹 검색'
+                    )
+                  }
+                  className="p-3 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors text-left"
+                >
+                  <div className="text-sm font-medium">🔍 웹 검색</div>
+                  <div className="text-xs opacity-75">실시간 정보 검색</div>
+                </button>
+
+                <button
+                  onClick={() =>
+                    executeTool(
+                      'database',
+                      { query: 'SELECT * FROM projects LIMIT 5' },
+                      '데이터베이스 쿼리'
+                    )
+                  }
+                  className="p-3 bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-300 rounded-lg hover:bg-purple-100 dark:hover:bg-purple-900/40 transition-colors text-left"
+                >
+                  <div className="text-sm font-medium">🗄️ DB 쿼리</div>
+                  <div className="text-xs opacity-75">데이터베이스 조회</div>
+                </button>
+
+                <button
+                  onClick={() =>
+                    executeTool(
+                      'file_system',
+                      { operation: 'list', path: '/' },
+                      '파일 시스템'
+                    )
+                  }
+                  className="p-3 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300 rounded-lg hover:bg-green-100 dark:hover:bg-green-900/40 transition-colors text-left"
+                >
+                  <div className="text-sm font-medium">📁 파일</div>
+                  <div className="text-xs opacity-75">파일 읽기/쓰기</div>
+                </button>
+
+                <button
+                  onClick={() =>
+                    executeTool(
+                      'image_generation',
+                      { prompt: inputValue || '아름다운 풍경' },
+                      '이미지 생성'
+                    )
+                  }
+                  className="p-3 bg-pink-50 dark:bg-pink-900/20 text-pink-700 dark:text-pink-300 rounded-lg hover:bg-pink-100 dark:hover:bg-pink-900/40 transition-colors text-left"
+                >
+                  <div className="text-sm font-medium">🎨 이미지</div>
+                  <div className="text-xs opacity-75">AI 이미지 생성</div>
+                </button>
+              </div>
+
+              {projectContext && (
+                <div className="mt-3 p-2 bg-white dark:bg-gray-700 rounded-lg">
+                  <p className="text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    프로젝트 컨텍스트:
+                  </p>
+                  <p className="text-xs text-gray-600 dark:text-gray-400">
+                    {ContextService.getContextSummary(projectContext)}
+                  </p>
+                </div>
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
       {/* Settings Sidebar */}
