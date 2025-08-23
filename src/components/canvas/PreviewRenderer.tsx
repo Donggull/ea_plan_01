@@ -257,8 +257,8 @@ export default function PreviewRenderer({
     doc.close()
   }, [code])
 
-  // 이제 executeCode 함수를 정의 (헬퍼 함수들이 이미 정의된 후)
-  const executeCode = useCallback(async () => {
+  // 코드 실행 함수 (useCallback 없이 일반 함수로 정의하여 의존성 문제 해결)
+  const executeCode = async () => {
     setIsExecuting(true)
     setExecutionResult({ type: 'loading' })
 
@@ -295,25 +295,19 @@ export default function PreviewRenderer({
       setIsExecuting(false)
       onExecute?.()
     }
-  }, [
-    language,
-    onExecute,
-    renderWebContent,
-    executePythonCode,
-    renderCSSDemo,
-    renderPlainText,
-  ])
+  }
 
-  // 코드 변경 시 자동 미리보기 실행
+  // 코드 변경 시 자동 미리보기 실행 (디바운스된 버전)
   useEffect(() => {
-    if (autoPreview && code.trim()) {
-      const debounceTimer = setTimeout(() => {
-        executeCode()
-      }, 500) // 500ms 디바운스
+    if (!autoPreview || !code.trim()) return
 
-      return () => clearTimeout(debounceTimer)
-    }
-  }, [code, autoPreview, executeCode])
+    const debounceTimer = setTimeout(() => {
+      executeCode()
+    }, 500) // 500ms 디바운스
+
+    return () => clearTimeout(debounceTimer)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [code, autoPreview, language]) // executeCode를 의존성에 포함하면 무한 루프 발생
 
   const handleReset = () => {
     if (iframeRef.current) {
