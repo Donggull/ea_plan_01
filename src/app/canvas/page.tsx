@@ -21,7 +21,10 @@ import CodeEditor, { getLanguageTemplate } from '@/components/canvas/CodeEditor'
 import CodeTemplates, {
   type CodeTemplate,
 } from '@/components/canvas/CodeTemplates'
-import PreviewRenderer from '@/components/canvas/PreviewRenderer'
+import CodeRunner from '@/components/canvas/CodeRunner'
+import LibraryLoader, {
+  type ExternalLibrary,
+} from '@/components/canvas/LibraryLoader'
 
 export default function CanvasPage() {
   const [selectedLanguage, setSelectedLanguage] = useState('javascript')
@@ -29,6 +32,7 @@ export default function CanvasPage() {
   const [isRunning, setIsRunning] = useState(false)
   const [code, setCode] = useState(() => getLanguageTemplate('javascript'))
   const [showTemplates, setShowTemplates] = useState(false)
+  const [libraries, setLibraries] = useState<ExternalLibrary[]>([])
   const [output, setOutput] = useState('')
 
   const languages = [
@@ -364,6 +368,19 @@ export default function CanvasPage() {
                 <EyeIcon className="w-4 h-4" />
                 <span>미리보기</span>
               </motion.button>
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => setSelectedTab('libraries')}
+                className={`flex items-center space-x-2 px-3 py-1.5 text-sm rounded-lg font-medium transition-all duration-200 ${
+                  selectedTab === 'libraries'
+                    ? 'bg-gradient-to-r from-slate-600 to-slate-700 text-white shadow-lg'
+                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+                }`}
+              >
+                <DocumentPlusIcon className="w-4 h-4" />
+                <span>라이브러리</span>
+              </motion.button>
             </div>
             <motion.button
               whileHover={{ scale: 1.1 }}
@@ -407,12 +424,64 @@ export default function CanvasPage() {
             )}
 
             {selectedTab === 'preview' && (
-              <PreviewRenderer
+              <CodeRunner
                 code={code}
                 language={selectedLanguage}
-                onExecute={runCode}
+                onExecute={result => {
+                  setIsRunning(false)
+                  if (result.type === 'success') {
+                    setOutput(result.output || '실행 완료')
+                  } else {
+                    setOutput(`오류: ${result.error}`)
+                  }
+                }}
+                enableExternalLibs={libraries.length > 0}
+                maxExecutionTime={10000}
                 className="flex-1"
               />
+            )}
+
+            {selectedTab === 'libraries' && (
+              <div className="flex-1 p-4 bg-white dark:bg-gray-900 overflow-auto">
+                <div className="max-w-4xl mx-auto">
+                  <div className="mb-4">
+                    <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
+                      외부 라이브러리 관리
+                    </h3>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                      코드 실행 시 사용할 외부 JavaScript 및 CSS 라이브러리를
+                      추가하고 관리할 수 있습니다.
+                    </p>
+                  </div>
+
+                  <LibraryLoader
+                    libraries={libraries}
+                    onLibrariesChange={setLibraries}
+                  />
+
+                  {libraries.length > 0 && (
+                    <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                      <h4 className="text-sm font-medium text-blue-900 dark:text-blue-100 mb-2">
+                        💡 사용 팁
+                      </h4>
+                      <ul className="text-sm text-blue-800 dark:text-blue-200 space-y-1">
+                        <li>
+                          • JavaScript 라이브러리는 전역 변수로 접근할 수
+                          있습니다
+                        </li>
+                        <li>• CSS 라이브러리는 자동으로 스타일이 적용됩니다</li>
+                        <li>
+                          • React 등의 라이브러리는 JSX 문법을 사용할 수
+                          있습니다
+                        </li>
+                        <li>
+                          • 로드 순서가 중요한 경우 라이브러리 순서를 조정하세요
+                        </li>
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              </div>
             )}
           </div>
         </motion.div>
