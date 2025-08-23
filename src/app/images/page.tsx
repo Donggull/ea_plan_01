@@ -370,15 +370,15 @@ export default function ImagesPage() {
         )}
       </AnimatePresence>
 
-      {/* 새로운 이미지 생성 패널 */}
+      {/* 메인 컨텐츠 영역 */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2 }}
-        className="grid grid-cols-1 lg:grid-cols-3 gap-6"
+        className="grid grid-cols-1 xl:grid-cols-4 gap-8"
       >
-        {/* 메인 생성 패널 */}
-        <div className="lg:col-span-2">
+        {/* 메인 생성 패널 - 왼쪽 영역 */}
+        <div className="xl:col-span-3">
           <ImageGenerationPanel
             onGenerate={handleGenerate}
             isGenerating={isGenerating}
@@ -386,24 +386,26 @@ export default function ImagesPage() {
           />
         </div>
 
-        {/* 사이드바 */}
-        <div className="space-y-6">
-          {/* 참조 이미지 업로드 */}
-          <ReferenceImageUpload
-            onImageUpload={handleReferenceImageUpload}
-            onImageRemove={handleReferenceImageRemove}
-            currentImage={referenceImage}
-            disabled={isGenerating}
-          />
+        {/* 오른쪽 사이드 영역 */}
+        <div className="xl:col-span-1">
+          <div className="space-y-6 sticky top-6">
+            {/* 참조 이미지 업로드 */}
+            <ReferenceImageUpload
+              onImageUpload={handleReferenceImageUpload}
+              onImageRemove={handleReferenceImageRemove}
+              currentImage={referenceImage}
+              disabled={isGenerating}
+            />
 
-          {/* 생성 진행 상태 */}
-          <GenerationProgressStatus
-            generations={generations}
-            onCancel={handleCancelGeneration}
-            onRetry={handleRetryGeneration}
-            onViewResult={handleViewResult}
-            onDownload={handleDownloadResult}
-          />
+            {/* 생성 진행 상태 */}
+            <GenerationProgressStatus
+              generations={generations}
+              onCancel={handleCancelGeneration}
+              onRetry={handleRetryGeneration}
+              onViewResult={handleViewResult}
+              onDownload={handleDownloadResult}
+            />
+          </div>
         </div>
       </motion.div>
 

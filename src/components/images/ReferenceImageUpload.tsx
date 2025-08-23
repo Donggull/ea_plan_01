@@ -114,8 +114,9 @@ export default function ReferenceImageUpload({
 
   // 드래그 앤 드롭 핸들러
   const handleDragOver = useCallback(
-    (e: React.DragEvent) => {
+    (e: React.DragEvent<HTMLDivElement>) => {
       e.preventDefault()
+      e.stopPropagation()
       if (!disabled && !uploading) {
         setDragOver(true)
       }
@@ -123,21 +124,49 @@ export default function ReferenceImageUpload({
     [disabled, uploading]
   )
 
-  const handleDragLeave = useCallback((e: React.DragEvent) => {
+  const handleDragEnter = useCallback(
+    (e: React.DragEvent<HTMLDivElement>) => {
+      e.preventDefault()
+      e.stopPropagation()
+      if (!disabled && !uploading) {
+        setDragOver(true)
+      }
+    },
+    [disabled, uploading]
+  )
+
+  const handleDragLeave = useCallback((e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault()
-    setDragOver(false)
+    e.stopPropagation()
+    // Only set dragOver to false if we're actually leaving the dropzone
+    const rect = dropZoneRef.current?.getBoundingClientRect()
+    if (
+      rect &&
+      (e.clientX <= rect.left ||
+        e.clientX >= rect.right ||
+        e.clientY <= rect.top ||
+        e.clientY >= rect.bottom)
+    ) {
+      setDragOver(false)
+    }
   }, [])
 
   const handleDrop = useCallback(
-    (e: React.DragEvent) => {
+    (e: React.DragEvent<HTMLDivElement>) => {
       e.preventDefault()
+      e.stopPropagation()
       setDragOver(false)
 
       if (disabled || uploading) return
 
       const files = Array.from(e.dataTransfer.files)
       if (files.length > 0) {
-        handleFile(files[0])
+        const file = files[0]
+        if (file.type.startsWith('image/')) {
+          handleFile(file)
+        } else {
+          setError('이미지 파일만 업로드 가능합니다.')
+        }
       }
     },
     [disabled, uploading, handleFile]
@@ -185,6 +214,7 @@ export default function ReferenceImageUpload({
                 : 'border-gray-300 dark:border-gray-600 hover:border-gray-400'
             } ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
             onDragOver={handleDragOver}
+            onDragEnter={handleDragEnter}
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}
             onClick={() => !disabled && fileInputRef.current?.click()}
@@ -465,16 +495,6 @@ export default function ReferenceImageUpload({
           </motion.div>
         )}
       </AnimatePresence>
-
-      {/* 숨겨진 파일 입력 */}
-      <input
-        ref={fileInputRef}
-        type="file"
-        className="hidden"
-        accept={supportedFormats.map(f => `.${f}`).join(',')}
-        onChange={handleFileSelect}
-        disabled={disabled}
-      />
     </div>
   )
 }
