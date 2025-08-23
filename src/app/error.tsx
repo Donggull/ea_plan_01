@@ -16,7 +16,15 @@ export default function Error({
 }) {
   useEffect(() => {
     // Log the error to an error reporting service
-    console.error(error)
+    console.error('Application error:', error)
+
+    // 특정 환경 변수 오류인지 확인
+    if (
+      error.message?.includes('supabase') ||
+      error.message?.includes('SUPABASE')
+    ) {
+      console.error('Supabase configuration error detected')
+    }
   }, [error])
 
   return (

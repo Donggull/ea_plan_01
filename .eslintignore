@@ -1,0 +1,26 @@
+# Next.js build output
+.next/
+out/
+
+# Node modules
+node_modules/
+
+# Next.js generated files
+next-env.d.ts
+
+# Vercel
+.vercel/
+
+# Environment files
+.env*
+!.env.example
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
