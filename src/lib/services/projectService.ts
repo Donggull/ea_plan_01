@@ -59,8 +59,7 @@ export class ProjectService {
     projectData: CreateProjectData
   ): Promise<ProjectServiceResponse<Project>> {
     try {
-      // For demo mode, use server client to bypass RLS
-      const serverClient = createServerComponentClient()
+      // For demo mode, we'll use the regular client and rely on service role RLS policies
       const defaultUserId = 'c8b9c8d7-0c5a-4a0f-9f8c-6c5b9a3e4d2f' // Sample user ID
 
       const insertData: ProjectInsert = {
@@ -76,7 +75,7 @@ export class ProjectService {
         visibility_level: projectData.visibility_level || 'private',
       }
 
-      const { data: newProject, error: insertError } = await serverClient
+      const { data: newProject, error: insertError } = await supabase
         .from('projects')
         .insert(insertData)
         .select()
