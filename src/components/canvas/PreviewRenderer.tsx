@@ -36,63 +36,7 @@ export default function PreviewRenderer({
     useState<ExecutionResult | null>(null)
   const [autoPreview, setAutoPreview] = useState(true)
 
-  const executeCode = useCallback(async () => {
-    setIsExecuting(true)
-    setExecutionResult({ type: 'loading' })
-
-    try {
-      await new Promise(resolve => setTimeout(resolve, 100)) // 실행 시뮬레이션
-
-      if (
-        language === 'html' ||
-        language === 'javascript' ||
-        language === 'typescript'
-      ) {
-        renderWebContent()
-      } else if (language === 'python') {
-        await executePythonCode()
-      } else if (language === 'css') {
-        renderCSSDemo()
-      } else {
-        renderPlainText()
-      }
-
-      setExecutionResult({
-        type: 'success',
-        output: '코드가 성공적으로 실행되었습니다.',
-      })
-    } catch (error) {
-      setExecutionResult({
-        type: 'error',
-        error:
-          error instanceof Error
-            ? error.message
-            : '알 수 없는 오류가 발생했습니다.',
-      })
-    } finally {
-      setIsExecuting(false)
-      onExecute?.()
-    }
-  }, [
-    language,
-    onExecute,
-    renderWebContent,
-    executePythonCode,
-    renderCSSDemo,
-    renderPlainText,
-  ])
-
-  // 코드 변경 시 자동 미리보기 실행
-  useEffect(() => {
-    if (autoPreview && code.trim()) {
-      const debounceTimer = setTimeout(() => {
-        executeCode()
-      }, 500) // 500ms 디바운스
-
-      return () => clearTimeout(debounceTimer)
-    }
-  }, [code, autoPreview, executeCode])
-
+  // 헬퍼 함수들을 먼저 정의
   const renderWebContent = useCallback(() => {
     if (!iframeRef.current) return
 
@@ -312,6 +256,64 @@ export default function PreviewRenderer({
     doc.write(htmlContent)
     doc.close()
   }, [code])
+
+  // 이제 executeCode 함수를 정의 (헬퍼 함수들이 이미 정의된 후)
+  const executeCode = useCallback(async () => {
+    setIsExecuting(true)
+    setExecutionResult({ type: 'loading' })
+
+    try {
+      await new Promise(resolve => setTimeout(resolve, 100)) // 실행 시뮬레이션
+
+      if (
+        language === 'html' ||
+        language === 'javascript' ||
+        language === 'typescript'
+      ) {
+        renderWebContent()
+      } else if (language === 'python') {
+        await executePythonCode()
+      } else if (language === 'css') {
+        renderCSSDemo()
+      } else {
+        renderPlainText()
+      }
+
+      setExecutionResult({
+        type: 'success',
+        output: '코드가 성공적으로 실행되었습니다.',
+      })
+    } catch (error) {
+      setExecutionResult({
+        type: 'error',
+        error:
+          error instanceof Error
+            ? error.message
+            : '알 수 없는 오류가 발생했습니다.',
+      })
+    } finally {
+      setIsExecuting(false)
+      onExecute?.()
+    }
+  }, [
+    language,
+    onExecute,
+    renderWebContent,
+    executePythonCode,
+    renderCSSDemo,
+    renderPlainText,
+  ])
+
+  // 코드 변경 시 자동 미리보기 실행
+  useEffect(() => {
+    if (autoPreview && code.trim()) {
+      const debounceTimer = setTimeout(() => {
+        executeCode()
+      }, 500) // 500ms 디바운스
+
+      return () => clearTimeout(debounceTimer)
+    }
+  }, [code, autoPreview, executeCode])
 
   const handleReset = () => {
     if (iframeRef.current) {
