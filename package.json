@@ -13,6 +13,8 @@
     "prepare": "husky"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.60.0",
+    "@google/generative-ai": "^0.24.1",
     "@headlessui/react": "^2.2.7",
     "@heroicons/react": "^2.2.0",
     "@monaco-editor/react": "^4.7.0",
@@ -24,8 +26,10 @@
     "@tanstack/react-query-devtools": "^5.85.5",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "eventsource-parser": "^3.0.5",
     "framer-motion": "^12.23.12",
     "next": "15.5.0",
+    "openai": "^5.15.0",
     "react": "19.1.0",
     "react-dom": "19.1.0",
     "react-dropzone": "^14.3.8",
