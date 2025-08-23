@@ -59,8 +59,8 @@ export class ProjectService {
         description: projectData.description,
         category: projectData.category,
         status: projectData.status || 'active',
-        tags: projectData.tags || [],
         metadata: projectData.metadata || {},
+        // tags: projectData.tags || [], // Temporarily commented out until DB schema is updated
       }
 
       const { data: newProject, error: insertError } = await supabase
@@ -327,9 +327,10 @@ export class ProjectService {
         query = query.eq('status', filters.status)
       }
 
-      if (filters.tags && filters.tags.length > 0) {
-        query = query.overlaps('tags', filters.tags)
-      }
+      // Temporarily commented out until DB schema is updated
+      // if (filters.tags && filters.tags.length > 0) {
+      //   query = query.overlaps('tags', filters.tags)
+      // }
 
       if (filters.search) {
         query = query.or(
@@ -429,31 +430,39 @@ export class ProjectService {
         }
       }
 
+      // Temporarily disable tag operations until DB schema is updated
+      return {
+        data: null,
+        error:
+          'Tag operations are temporarily disabled until database schema is updated',
+        success: false,
+      }
+
       // Get current project
-      const { data: project, error: fetchError } = await supabase
-        .from('projects')
-        .select('tags')
-        .eq('id', projectId)
-        .eq('user_id', user.id)
-        .single()
+      // const { data: project, error: fetchError } = await supabase
+      //   .from('projects')
+      //   .select('tags')
+      //   .eq('id', projectId)
+      //   .eq('user_id', user.id)
+      //   .single()
 
-      if (fetchError) {
-        return {
-          data: null,
-          error: `Failed to fetch project: ${fetchError.message}`,
-          success: false,
-        }
-      }
+      // if (fetchError) {
+      //   return {
+      //     data: null,
+      //     error: `Failed to fetch project: ${fetchError.message}`,
+      //     success: false,
+      //   }
+      // }
 
-      const currentTags = project.tags || []
-      if (!currentTags.includes(tag)) {
-        const updatedTags = [...currentTags, tag]
-        return this.updateProject(projectId, { tags: updatedTags })
-      }
+      // const currentTags = project.tags || []
+      // if (!currentTags.includes(tag)) {
+      //   const updatedTags = [...currentTags, tag]
+      //   return this.updateProject(projectId, { tags: updatedTags })
+      // }
 
       // Tag already exists, return current project
-      const currentProjectResult = await this.getProjectById(projectId)
-      return currentProjectResult
+      // const currentProjectResult = await this.getProjectById(projectId)
+      // return currentProjectResult
     } catch (error) {
       return {
         data: null,
@@ -481,26 +490,34 @@ export class ProjectService {
         }
       }
 
-      // Get current project
-      const { data: project, error: fetchError } = await supabase
-        .from('projects')
-        .select('tags')
-        .eq('id', projectId)
-        .eq('user_id', user.id)
-        .single()
-
-      if (fetchError) {
-        return {
-          data: null,
-          error: `Failed to fetch project: ${fetchError.message}`,
-          success: false,
-        }
+      // Temporarily disable tag operations until DB schema is updated
+      return {
+        data: null,
+        error:
+          'Tag operations are temporarily disabled until database schema is updated',
+        success: false,
       }
 
-      const currentTags = project.tags || []
-      const updatedTags = currentTags.filter((t: string) => t !== tag)
+      // Get current project
+      // const { data: project, error: fetchError } = await supabase
+      //   .from('projects')
+      //   .select('tags')
+      //   .eq('id', projectId)
+      //   .eq('user_id', user.id)
+      //   .single()
 
-      return this.updateProject(projectId, { tags: updatedTags })
+      // if (fetchError) {
+      //   return {
+      //     data: null,
+      //     error: `Failed to fetch project: ${fetchError.message}`,
+      //     success: false,
+      //   }
+      // }
+
+      // const currentTags = project.tags || []
+      // const updatedTags = currentTags.filter((t: string) => t !== tag)
+
+      // return this.updateProject(projectId, { tags: updatedTags })
     } catch (error) {
       return {
         data: null,
