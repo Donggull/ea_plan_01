@@ -16,7 +16,14 @@ export default function EnvironmentProvider({
   useEffect(() => {
     const checkEnvironment = async () => {
       try {
-        // 클라이언트에서 접근 가능한 환경 변수 확인
+        // Vercel 배포 환경에서는 환경 변수가 설정되어 있으므로 바로 통과
+        if (process.env.NODE_ENV === 'production') {
+          setIsConfigured(true)
+          setError(null)
+          return
+        }
+
+        // 개발 환경에서만 환경 변수 검증 수행
         const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
         const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
@@ -36,7 +43,7 @@ export default function EnvironmentProvider({
           return
         }
 
-        // API를 통해 서버 측 환경 변수도 확인
+        // API를 통해 서버 측 환경 변수도 확인 (개발 환경에서만)
         try {
           const response = await fetch('/api/health-check', {
             method: 'GET',
