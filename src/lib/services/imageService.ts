@@ -813,7 +813,7 @@ export class ImageService {
         monthly_remaining: 1000 - requestedCount,
         cost_remaining: 10.0,
       }
-    } catch (error) {
+    } catch (_error) {
       return {
         allowed: false,
         daily_remaining: 0,

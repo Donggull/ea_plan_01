@@ -10,8 +10,8 @@ import {
   ClipboardDocumentIcon,
   CheckIcon,
   StarIcon,
-  TagIcon,
-  ClockIcon,
+  // TagIcon,
+  // ClockIcon,
   UserIcon,
 } from '@heroicons/react/24/outline'
 import { StarIcon as StarSolid } from '@heroicons/react/24/solid'
