@@ -2,11 +2,14 @@ import { NextResponse } from 'next/server'
 import { aiService } from '@/lib/services/aiService'
 import { AI_MODEL_CONFIGS } from '@/lib/config/aiConfig'
 
+// Vercel 환경 최적화
+export const runtime = 'nodejs'
+
 // GET /api/models - 사용 가능한 AI 모델 목록 조회
 export async function GET() {
   try {
     const models = aiService.getAvailableModels()
-    
+
     return NextResponse.json({
       success: true,
       data: {
@@ -29,7 +32,7 @@ export async function GET() {
     })
   } catch (error) {
     console.error('Models API error:', error)
-    
+
     return NextResponse.json(
       {
         success: false,
@@ -45,7 +48,7 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const { model } = await request.json()
-    
+
     if (!model || !AI_MODEL_CONFIGS[model as keyof typeof AI_MODEL_CONFIGS]) {
       return NextResponse.json(
         {
@@ -60,7 +63,8 @@ export async function POST(request: Request) {
     const testMessages = [
       {
         role: 'user' as const,
-        content: 'Hello! Please respond with "Test successful" to confirm the connection.',
+        content:
+          'Hello! Please respond with "Test successful" to confirm the connection.',
       },
     ]
 
@@ -70,7 +74,9 @@ export async function POST(request: Request) {
       maxTokens: 50,
     })
 
-    const isSuccessful = response.content.toLowerCase().includes('test successful')
+    const isSuccessful = response.content
+      .toLowerCase()
+      .includes('test successful')
 
     return NextResponse.json({
       success: true,
@@ -84,7 +90,7 @@ export async function POST(request: Request) {
     })
   } catch (error) {
     console.error('Model test error:', error)
-    
+
     return NextResponse.json(
       {
         success: false,

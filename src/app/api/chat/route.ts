@@ -2,23 +2,28 @@ import { NextRequest, NextResponse } from 'next/server'
 import { aiService } from '@/lib/services/aiService'
 import type { ChatRequest } from '@/lib/services/aiService'
 
+// Vercel 환경 최적화
+export const runtime = 'nodejs'
+export const maxDuration = 60 // 60초 타임아웃
+
 // POST /api/chat - 채팅 메시지 전송
 export async function POST(request: NextRequest) {
   try {
     // 인증 확인 (간단한 헤더 기반 인증)
     const authHeader = request.headers.get('authorization')
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     // 요청 본문 파싱
     const body: ChatRequest = await request.json()
 
     // 요청 검증
-    if (!body.messages || !Array.isArray(body.messages) || body.messages.length === 0) {
+    if (
+      !body.messages ||
+      !Array.isArray(body.messages) ||
+      body.messages.length === 0
+    ) {
       return NextResponse.json(
         { error: 'Messages array is required and cannot be empty' },
         { status: 400 }
@@ -33,7 +38,7 @@ export async function POST(request: NextRequest) {
           { status: 400 }
         )
       }
-      
+
       if (!['user', 'assistant', 'system'].includes(message.role)) {
         return NextResponse.json(
           { error: 'Invalid message role' },
@@ -56,25 +61,27 @@ export async function POST(request: NextRequest) {
         async start(controller) {
           try {
             const encoder = new TextEncoder()
-            
+
             for await (const chunk of aiService.streamChat(body)) {
               const data = JSON.stringify(chunk)
               controller.enqueue(encoder.encode(`data: ${data}\n\n`))
-              
+
               if (chunk.done) {
                 controller.enqueue(encoder.encode('data: [DONE]\n\n'))
                 break
               }
             }
-            
+
             controller.close()
           } catch (error) {
             console.error('Streaming error:', error)
-            const errorData = JSON.stringify({ 
+            const errorData = JSON.stringify({
               error: error instanceof Error ? error.message : 'Unknown error',
-              done: true 
+              done: true,
             })
-            controller.enqueue(new TextEncoder().encode(`data: ${errorData}\n\n`))
+            controller.enqueue(
+              new TextEncoder().encode(`data: ${errorData}\n\n`)
+            )
             controller.close()
           }
         },
@@ -84,7 +91,7 @@ export async function POST(request: NextRequest) {
         headers: {
           'Content-Type': 'text/event-stream',
           'Cache-Control': 'no-cache',
-          'Connection': 'keep-alive',
+          Connection: 'keep-alive',
           'Access-Control-Allow-Origin': '*',
           'Access-Control-Allow-Methods': 'POST',
           'Access-Control-Allow-Headers': 'Content-Type, Authorization',
@@ -104,14 +111,14 @@ export async function POST(request: NextRequest) {
     })
 
     return NextResponse.json(response)
-
   } catch (error) {
     console.error('Chat API error:', error)
-    
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
-    
+
+    const errorMessage =
+      error instanceof Error ? error.message : 'Unknown error occurred'
+
     return NextResponse.json(
-      { 
+      {
         error: errorMessage,
         timestamp: new Date().toISOString(),
       },
@@ -124,16 +131,16 @@ export async function POST(request: NextRequest) {
 export async function GET() {
   try {
     const models = aiService.getAvailableModels()
-    
+
     return NextResponse.json({
       models,
       timestamp: new Date().toISOString(),
     })
   } catch (error) {
     console.error('Get models error:', error)
-    
+
     return NextResponse.json(
-      { 
+      {
         error: error instanceof Error ? error.message : 'Failed to get models',
         timestamp: new Date().toISOString(),
       },

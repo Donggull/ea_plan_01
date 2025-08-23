@@ -13,7 +13,10 @@ import {
 import { useAI, useAIModels } from '@/lib/hooks/useAI'
 import type { AIModel } from '@/lib/config/aiConfig'
 
-const modelIcons: Record<AIModel, React.ComponentType<any>> = {
+const modelIcons: Record<
+  AIModel,
+  React.ComponentType<React.SVGProps<SVGSVGElement>>
+> = {
   gemini: SparklesIcon,
   chatgpt: ChatBubbleLeftIcon,
   claude: ComputerDesktopIcon,
@@ -42,13 +45,13 @@ export default function ChatInterface() {
   } = useAI({
     model: selectedModel,
     stream: true,
-    onChunk: (chunk) => {
+    onChunk: chunk => {
       console.log('Received chunk:', chunk)
     },
-    onComplete: (response) => {
+    onComplete: response => {
       console.log('Completed:', response)
     },
-    onError: (error) => {
+    onError: error => {
       console.error('AI Error:', error)
     },
   })
@@ -110,11 +113,15 @@ export default function ChatInterface() {
           {/* Model Selector */}
           <select
             value={selectedModel}
-            onChange={(e) => setSelectedModel(e.target.value as AIModel)}
+            onChange={e => setSelectedModel(e.target.value as AIModel)}
             className="px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
-            {models.map((model) => (
-              <option key={model.id} value={model.id} disabled={!model.available}>
+            {models.map(model => (
+              <option
+                key={model.id}
+                value={model.id}
+                disabled={!model.available}
+              >
                 {model.name} {!model.available && '(N/A)'}
               </option>
             ))}
@@ -147,8 +154,12 @@ export default function ChatInterface() {
           <AnimatePresence>
             {messages.map((message, index) => {
               const isUser = message.role === 'user'
-              const ModelIcon = message.model ? modelIcons[message.model] : CpuChipIcon
-              const modelColor = message.model ? modelColors[message.model] : 'from-gray-500 to-gray-600'
+              const ModelIcon = message.model
+                ? modelIcons[message.model]
+                : CpuChipIcon
+              const modelColor = message.model
+                ? modelColors[message.model]
+                : 'from-gray-500 to-gray-600'
 
               return (
                 <motion.div
@@ -158,16 +169,24 @@ export default function ChatInterface() {
                   exit={{ opacity: 0, y: -20 }}
                   className={`flex ${isUser ? 'justify-end' : 'justify-start'} group`}
                 >
-                  <div className={`flex max-w-[80%] ${isUser ? 'flex-row-reverse' : 'flex-row'}`}>
+                  <div
+                    className={`flex max-w-[80%] ${isUser ? 'flex-row-reverse' : 'flex-row'}`}
+                  >
                     {/* Avatar */}
-                    <div className={`flex-shrink-0 ${isUser ? 'ml-3' : 'mr-3'}`}>
-                      <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                        isUser 
-                          ? 'bg-blue-500' 
-                          : `bg-gradient-to-r ${modelColor}`
-                      }`}>
+                    <div
+                      className={`flex-shrink-0 ${isUser ? 'ml-3' : 'mr-3'}`}
+                    >
+                      <div
+                        className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                          isUser
+                            ? 'bg-blue-500'
+                            : `bg-gradient-to-r ${modelColor}`
+                        }`}
+                      >
                         {isUser ? (
-                          <span className="text-white text-sm font-medium">U</span>
+                          <span className="text-white text-sm font-medium">
+                            U
+                          </span>
                         ) : (
                           <ModelIcon className="w-4 h-4 text-white" />
                         )}
@@ -175,25 +194,30 @@ export default function ChatInterface() {
                     </div>
 
                     {/* Message Content */}
-                    <div className={`rounded-2xl px-4 py-3 ${
-                      isUser
-                        ? 'bg-blue-500 text-white'
-                        : 'bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white'
-                    }`}>
+                    <div
+                      className={`rounded-2xl px-4 py-3 ${
+                        isUser
+                          ? 'bg-blue-500 text-white'
+                          : 'bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white'
+                      }`}
+                    >
                       <div className="whitespace-pre-wrap break-words">
                         {message.content}
                       </div>
-                      
+
                       {/* Message Info */}
-                      <div className={`flex items-center justify-between mt-2 text-xs ${
-                        isUser 
-                          ? 'text-blue-100' 
-                          : 'text-gray-500 dark:text-gray-400'
-                      }`}>
+                      <div
+                        className={`flex items-center justify-between mt-2 text-xs ${
+                          isUser
+                            ? 'text-blue-100'
+                            : 'text-gray-500 dark:text-gray-400'
+                        }`}
+                      >
                         <div className="flex items-center space-x-2">
                           {message.model && (
                             <span className="font-medium">
-                              {models.find(m => m.id === message.model)?.name || message.model}
+                              {models.find(m => m.id === message.model)?.name ||
+                                message.model}
                             </span>
                           )}
                           {message.timestamp && (
@@ -219,8 +243,14 @@ export default function ChatInterface() {
             <div className="flex items-center space-x-2 px-4 py-3 bg-gray-100 dark:bg-gray-800 rounded-2xl">
               <div className="flex space-x-1">
                 <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" />
-                <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }} />
-                <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }} />
+                <div
+                  className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
+                  style={{ animationDelay: '0.1s' }}
+                />
+                <div
+                  className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
+                  style={{ animationDelay: '0.2s' }}
+                />
               </div>
               <span className="text-sm text-gray-500 dark:text-gray-400">
                 {models.find(m => m.id === selectedModel)?.name} 생각 중...
@@ -267,7 +297,7 @@ export default function ChatInterface() {
           <div className="flex-1 relative">
             <textarea
               value={inputValue}
-              onChange={(e) => setInputValue(e.target.value)}
+              onChange={e => setInputValue(e.target.value)}
               onKeyPress={handleKeyPress}
               placeholder={`${models.find(m => m.id === selectedModel)?.name || selectedModel}에게 메시지를 보내세요...`}
               rows={1}
@@ -277,7 +307,7 @@ export default function ChatInterface() {
                 maxHeight: '120px',
               }}
             />
-            
+
             {/* Character Count */}
             <div className="absolute bottom-2 right-2 text-xs text-gray-400">
               {inputValue.length}/2000
