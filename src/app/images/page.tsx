@@ -7,7 +7,6 @@ import {
   PhotoIcon,
   MagnifyingGlassIcon,
   SparklesIcon,
-  CloudArrowUpIcon,
   HeartIcon,
   ShareIcon,
   ArrowDownTrayIcon,
@@ -16,14 +15,95 @@ import {
   CubeIcon,
   LightBulbIcon,
   FilmIcon,
+  Cog6ToothIcon,
 } from '@heroicons/react/24/outline'
 
+// 새로운 컴포넌트 import
+import ImageGenerationPanel from '@/components/images/ImageGenerationPanel'
+import ReferenceImageUpload from '@/components/images/ReferenceImageUpload'
+import GenerationProgressStatus from '@/components/images/GenerationProgressStatus'
+import AdvancedSettingsPanel from '@/components/images/AdvancedSettingsPanel'
+import PromptHelper from '@/components/images/PromptHelper'
+
 export default function ImagesPage() {
-  const [selectedModel, setSelectedModel] = useState('flux')
-  const [selectedStyle, setSelectedStyle] = useState('realistic')
+  const [selectedModel, setSelectedModel] = useState('flux-schnell')
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedFilter, setSelectedFilter] = useState('all')
   const [isGenerating, setIsGenerating] = useState(false)
+
+  // 새로운 UI 컴포넌트 state
+  const [showAdvancedSettings, setShowAdvancedSettings] = useState(false)
+  const [showPromptHelper, setShowPromptHelper] = useState(false)
+  const [currentPrompt, setCurrentPrompt] = useState('')
+  const [referenceImage, setReferenceImage] = useState<{
+    file: File
+    url: string
+  } | null>(null)
+
+  // 고급 설정 state
+  const [advancedSettings, setAdvancedSettings] = useState({
+    guidanceScale: 7.5,
+    inferenceSteps: 20,
+    samplerType: 'euler',
+    aspectRatioLock: true,
+    batchSize: 1,
+  })
+
+  // 생성 진행 상태 state (모의 데이터)
+  const [generations, setGenerations] = useState<
+    Array<{
+      id: string
+      status: 'queued' | 'processing' | 'completed' | 'failed' | 'cancelled'
+      progress: number
+      model: string
+      prompt: string
+      remainingTime?: number
+      queuePosition?: number
+      totalInQueue?: number
+      startedAt?: Date
+      completedAt?: Date
+      error?: string
+      results?: {
+        images: Array<{
+          id: string
+          url: string
+          thumbnail: string
+        }>
+        totalCost: number
+        generationTime: number
+      }
+    }>
+  >([
+    {
+      id: 'gen-1',
+      status: 'processing',
+      progress: 65,
+      model: 'flux-schnell',
+      prompt: '미래적인 AI 로봇, 네온 블루 컬러, 사이버펑크 스타일',
+      remainingTime: 15,
+      startedAt: new Date(Date.now() - 30000),
+    },
+    {
+      id: 'gen-2',
+      status: 'completed',
+      progress: 100,
+      model: 'imagen3',
+      prompt: '평화로운 일본 정원, 벚꽃, 석등, 황금빛 일몰',
+      completedAt: new Date(Date.now() - 300000),
+      results: {
+        images: [
+          {
+            id: 'img-1',
+            url: '/api/images/placeholder?model=imagen3&prompt=peaceful+garden&index=0',
+            thumbnail:
+              '/api/images/placeholder?model=imagen3&prompt=peaceful+garden&index=0',
+          },
+        ],
+        totalCost: 0.015,
+        generationTime: 12,
+      },
+    },
+  ])
 
   const images = [
     {
@@ -107,31 +187,6 @@ export default function ImagesPage() {
     },
   ]
 
-  const aiModels = [
-    {
-      id: 'flux',
-      name: 'Flux Schnell',
-      description: '빠른 생성 속도',
-      icon: '⚡',
-      color: 'from-amber-500 to-amber-600',
-    },
-    {
-      id: 'imagen3',
-      name: 'Imagen 3',
-      description: '최고 품질',
-      icon: '🎯',
-      color: 'from-indigo-500 to-indigo-600',
-    },
-  ]
-
-  const styles = [
-    { id: 'realistic', name: '사실적', icon: '📸' },
-    { id: 'artistic', name: '예술적', icon: '🎨' },
-    { id: 'cartoon', name: '만화', icon: '🦸' },
-    { id: 'abstract', name: '추상', icon: '🌈' },
-    { id: 'minimal', name: '미니멀', icon: '◻️' },
-  ]
-
   const filterOptions = [
     { id: 'all', label: '전체', icon: PhotoIcon },
     { id: 'UI/UX', label: 'UI/UX', icon: CubeIcon },
@@ -140,9 +195,91 @@ export default function ImagesPage() {
     { id: 'Abstract', label: '추상', icon: SwatchIcon },
   ]
 
-  const generateImage = () => {
+  // 이미지 생성 핸들러
+  const handleGenerate = async (params: {
+    prompt: string
+    model: string
+    style: string
+    count: number
+    size: string
+    quality: string
+    seed?: number
+    guidance?: number
+    steps?: number
+  }) => {
     setIsGenerating(true)
-    setTimeout(() => setIsGenerating(false), 3000)
+
+    // 새 생성 항목 추가
+    const newGeneration = {
+      id: `gen-${Date.now()}`,
+      status: 'queued' as const,
+      progress: 0,
+      model: params.model,
+      prompt: params.prompt,
+      queuePosition: 1,
+      startedAt: new Date(),
+    }
+
+    setGenerations(prev => [newGeneration, ...prev])
+
+    // API 호출 시뮬레이션
+    try {
+      const response = await fetch('/api/images/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...params,
+          async: true,
+        }),
+      })
+
+      if (response.ok) {
+        const result = await response.json()
+        console.log('Generation started:', result)
+      }
+    } catch (error) {
+      console.error('Generation failed:', error)
+    } finally {
+      setIsGenerating(false)
+    }
+  }
+
+  // 참조 이미지 핸들러
+  const handleReferenceImageUpload = (file: File, url: string) => {
+    setReferenceImage({ file, url })
+    // Flux Context 모델로 자동 전환
+    setSelectedModel('flux-context')
+  }
+
+  const handleReferenceImageRemove = () => {
+    setReferenceImage(null)
+    // 기본 모델로 복원
+    setSelectedModel('flux-schnell')
+  }
+
+  // 생성 진행 상태 핸들러
+  const handleCancelGeneration = (id: string) => {
+    setGenerations(prev =>
+      prev.map(gen =>
+        gen.id === id ? { ...gen, status: 'cancelled' as const } : gen
+      )
+    )
+  }
+
+  const handleRetryGeneration = (id: string) => {
+    setGenerations(prev =>
+      prev.map(gen =>
+        gen.id === id ? { ...gen, status: 'queued' as const, progress: 0 } : gen
+      )
+    )
+  }
+
+  const handleViewResult = (id: string) => {
+    console.log('View result for:', id)
+  }
+
+  const handleDownloadResult = (id: string) => {
+    console.log('Download result for:', id)
   }
 
   const filteredImages = images.filter(image => {
@@ -180,162 +317,115 @@ export default function ImagesPage() {
         <motion.div
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
-          className="mt-4 md:mt-0"
+          className="mt-4 md:mt-0 flex flex-col md:flex-row items-center gap-4"
         >
           <button className="bg-gradient-to-r from-slate-600 to-slate-700 text-white px-6 py-3 rounded-xl font-medium hover:shadow-lg transition-all duration-300 flex items-center space-x-2">
             <SparklesIcon className="w-5 h-5" />
             <span>새 이미지 생성</span>
           </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setShowPromptHelper(!showPromptHelper)}
+              className={`px-3 py-1.5 text-sm rounded-lg transition-colors flex items-center gap-1 ${
+                showPromptHelper
+                  ? 'bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-200'
+                  : 'bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600'
+              }`}
+            >
+              <LightBulbIcon className="w-4 h-4" />
+              프롬프트 도우미
+            </button>
+            <button
+              onClick={() => setShowAdvancedSettings(!showAdvancedSettings)}
+              className={`px-3 py-1.5 text-sm rounded-lg transition-colors flex items-center gap-1 ${
+                showAdvancedSettings
+                  ? 'bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-200'
+                  : 'bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600'
+              }`}
+            >
+              <Cog6ToothIcon className="w-4 h-4" />
+              고급 설정
+            </button>
+          </div>
         </motion.div>
       </motion.div>
 
-      {/* Generation panel */}
+      {/* 프롬프트 헬퍼 */}
+      <AnimatePresence>
+        {showPromptHelper && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ delay: 0.1 }}
+          >
+            <PromptHelper
+              currentPrompt={currentPrompt}
+              onPromptChange={setCurrentPrompt}
+              model={selectedModel}
+              style=""
+              className="mb-6"
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* 새로운 이미지 생성 패널 */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.1 }}
-        className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl border border-white/20 dark:border-gray-700/50 rounded-2xl p-8 hover:shadow-xl transition-all duration-300"
+        transition={{ delay: 0.2 }}
+        className="grid grid-cols-1 lg:grid-cols-3 gap-6"
       >
-        <div className="flex items-center space-x-2 mb-6">
-          <LightBulbIcon className="w-6 h-6 text-yellow-500" />
-          <h3 className="text-xl font-bold text-gray-900 dark:text-white">
-            이미지 생성 스튜디오
-          </h3>
+        {/* 메인 생성 패널 */}
+        <div className="lg:col-span-2">
+          <ImageGenerationPanel
+            onGenerate={handleGenerate}
+            isGenerating={isGenerating}
+            disabled={false}
+          />
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          <div className="space-y-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-                프롬프트 ✍️
-              </label>
-              <textarea
-                rows={4}
-                className="block w-full px-4 py-3 bg-gray-50/50 dark:bg-gray-700/50 backdrop-blur border border-white/20 dark:border-gray-600/50 rounded-xl shadow-sm placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-slate-500 focus:border-transparent resize-none"
-                placeholder="상상하는 이미지를 자세히 설명해주세요... (예: 미래적인 도시 풍경, 네온사인, 사이버펑크 스타일)"
-              />
-            </div>
+        {/* 사이드바 */}
+        <div className="space-y-6">
+          {/* 참조 이미지 업로드 */}
+          <ReferenceImageUpload
+            onImageUpload={handleReferenceImageUpload}
+            onImageRemove={handleReferenceImageRemove}
+            currentImage={referenceImage}
+            disabled={isGenerating}
+          />
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-                  AI 모델 🤖
-                </label>
-                <div className="space-y-2">
-                  {aiModels.map(model => (
-                    <motion.button
-                      key={model.id}
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
-                      onClick={() => setSelectedModel(model.id)}
-                      className={`w-full p-3 rounded-xl text-left transition-all duration-200 ${
-                        selectedModel === model.id
-                          ? `bg-gradient-to-r ${model.color} text-white shadow-lg`
-                          : 'bg-gray-50/50 dark:bg-gray-700/50 backdrop-blur hover:bg-gray-100/50 dark:hover:bg-gray-600/50'
-                      }`}
-                    >
-                      <div className="flex items-center justify-between mb-1">
-                        <div className="flex items-center space-x-2">
-                          <span className="text-lg">{model.icon}</span>
-                          <span className="font-medium text-sm">
-                            {model.name}
-                          </span>
-                        </div>
-                        <div
-                          className={`w-3 h-3 rounded-full ${selectedModel === model.id ? 'bg-white/30' : 'bg-gray-300'}`}
-                        />
-                      </div>
-                      <p
-                        className={`text-xs ${selectedModel === model.id ? 'text-white/70' : 'text-gray-500 dark:text-gray-400'}`}
-                      >
-                        {model.description}
-                      </p>
-                    </motion.button>
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-                  스타일 🎨
-                </label>
-                <div className="grid grid-cols-2 gap-2">
-                  {styles.map(style => (
-                    <motion.button
-                      key={style.id}
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                      onClick={() => setSelectedStyle(style.id)}
-                      className={`p-2 rounded-lg text-xs font-medium transition-all duration-200 ${
-                        selectedStyle === style.id
-                          ? 'bg-gradient-to-r from-slate-500 to-slate-600 text-white shadow-md'
-                          : 'bg-gray-100/50 dark:bg-gray-600/50 text-gray-700 dark:text-gray-300 hover:bg-gray-200/50 dark:hover:bg-gray-500/50'
-                      }`}
-                    >
-                      <div className="text-center">
-                        <div className="text-base mb-1">{style.icon}</div>
-                        <div>{style.name}</div>
-                      </div>
-                    </motion.button>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="space-y-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-                참조 이미지 (선택사항) 🖼️
-              </label>
-              <motion.div
-                whileHover={{ scale: 1.02 }}
-                className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl p-8 text-center bg-gradient-to-br from-gray-50/50 to-white/50 dark:from-gray-700/50 dark:to-gray-800/50 backdrop-blur cursor-pointer hover:border-slate-400 dark:hover:border-slate-500 transition-all duration-300"
-              >
-                <motion.div
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  transition={{ delay: 0.2, type: 'spring', stiffness: 200 }}
-                >
-                  <CloudArrowUpIcon className="mx-auto h-12 w-12 text-gray-400 mb-3" />
-                </motion.div>
-                <div className="space-y-1">
-                  <p className="text-sm font-medium text-gray-900 dark:text-white">
-                    이미지를 드래그하거나 클릭하여 업로드
-                  </p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
-                    PNG, JPG, WebP 지원 • 최대 10MB
-                  </p>
-                </div>
-              </motion.div>
-            </div>
-
-            <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              onClick={generateImage}
-              disabled={isGenerating}
-              className={`w-full py-4 rounded-xl font-medium transition-all duration-300 flex items-center justify-center space-x-2 ${
-                isGenerating
-                  ? 'bg-amber-500 text-white cursor-not-allowed'
-                  : 'bg-gradient-to-r from-slate-600 to-slate-700 text-white hover:shadow-xl'
-              }`}
-            >
-              {isGenerating ? (
-                <>
-                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  <span>생성 중...</span>
-                </>
-              ) : (
-                <>
-                  <SparklesIcon className="w-5 h-5" />
-                  <span>🎨 이미지 생성하기</span>
-                </>
-              )}
-            </motion.button>
-          </div>
+          {/* 생성 진행 상태 */}
+          <GenerationProgressStatus
+            generations={generations}
+            onCancel={handleCancelGeneration}
+            onRetry={handleRetryGeneration}
+            onViewResult={handleViewResult}
+            onDownload={handleDownloadResult}
+          />
         </div>
       </motion.div>
+
+      {/* 고급 설정 패널 */}
+      <AnimatePresence>
+        {showAdvancedSettings && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ delay: 0.1 }}
+          >
+            <AdvancedSettingsPanel
+              settings={advancedSettings}
+              onSettingsChange={setAdvancedSettings}
+              modelType={selectedModel}
+              disabled={isGenerating}
+              className="mb-6"
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Filters and search */}
       <motion.div

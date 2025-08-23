@@ -193,7 +193,7 @@ export class ImageService {
       // 프롬프트 최적화
       finalRequest.prompt = this.optimizePrompt(
         finalRequest.prompt,
-        model,
+        model as 'flux-schnell' | 'imagen3' | 'flux-context',
         finalRequest.style
       )
 
