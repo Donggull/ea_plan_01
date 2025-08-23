@@ -392,20 +392,33 @@ export class MCPService {
   ): Promise<MCPToolResult> {
     switch (toolType) {
       case 'web_search':
-        return this.webSearch(parameters.query, parameters.options)
+        return this.webSearch(
+          parameters.query as string,
+          parameters.options as { maxResults?: number; language?: string }
+        )
 
       case 'file_system':
         return this.fileOperation(
-          parameters.operation,
-          parameters.path,
-          parameters.content
+          parameters.operation as 'read' | 'write' | 'list',
+          parameters.path as string,
+          parameters.content as string
         )
 
       case 'database':
-        return this.databaseQuery(parameters.query, parameters.params)
+        return this.databaseQuery(
+          parameters.query as string,
+          parameters.params as unknown[]
+        )
 
       case 'image_generation':
-        return this.generateImage(parameters.prompt, parameters.options)
+        return this.generateImage(
+          parameters.prompt as string,
+          parameters.options as {
+            model?: string
+            size?: string
+            count?: number
+          }
+        )
 
       default:
         return {

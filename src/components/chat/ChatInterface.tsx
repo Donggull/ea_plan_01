@@ -51,7 +51,7 @@ interface ActiveTool {
   name: string
   status: 'pending' | 'running' | 'success' | 'error'
   input?: Record<string, unknown>
-  result?: unknown
+  result?: { success?: boolean; data?: unknown; error?: string }
   startTime?: number
   endTime?: number
 }
@@ -340,7 +340,7 @@ export default function ChatInterface({
             ? {
                 ...tool,
                 status: 'error',
-                result: { error: 'Tool execution failed' },
+                result: { success: false, error: 'Tool execution failed' },
                 endTime,
               }
             : tool

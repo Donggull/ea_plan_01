@@ -14,14 +14,14 @@ import {
   ClockIcon,
   SparklesIcon,
 } from '@heroicons/react/24/outline'
-import type { MCPToolType, MCPToolResult } from '@/lib/services/mcpService'
+import type { MCPToolType } from '@/lib/services/mcpService'
 
 interface ToolUsageProps {
   toolType: MCPToolType
   toolName: string
   status: 'pending' | 'running' | 'success' | 'error'
   input?: Record<string, unknown>
-  result?: MCPToolResult
+  result?: { success?: boolean; data?: unknown; error?: string }
   startTime?: number
   endTime?: number
 }
@@ -153,57 +153,59 @@ export default function ToolUsage({
               <thead>
                 <tr className="bg-gray-50 dark:bg-gray-800">
                   {result.data &&
-                    typeof result.data === 'object' &&
-                    result.data !== null &&
-                    'rows' in result.data &&
-                    Array.isArray((result.data as { rows?: unknown[] }).rows) &&
-                    (result.data as { rows: unknown[] }).rows[0] &&
-                    typeof (result.data as { rows: unknown[] }).rows[0] ===
-                      'object' &&
-                    (result.data as { rows: unknown[] }).rows[0] !== null &&
-                    Object.keys(
-                      (result.data as { rows: Record<string, unknown>[] })
-                        .rows[0]
-                    ).map(key => (
-                      <th
-                        key={key}
-                        className="px-2 py-1 text-left font-medium text-gray-700 dark:text-gray-300"
-                      >
-                        {key}
-                      </th>
-                    ))}
-                </tr>
-              </thead>
-              <tbody>
-                {result.data &&
                   typeof result.data === 'object' &&
                   result.data !== null &&
                   'rows' in result.data &&
                   Array.isArray((result.data as { rows?: unknown[] }).rows) &&
-                  (result.data as { rows: unknown[] }).rows.map(
-                    (row: unknown, index: number) => {
-                      if (typeof row === 'object' && row !== null) {
-                        return (
-                          <tr
-                            key={index}
-                            className="border-t border-gray-200 dark:border-gray-700"
-                          >
-                            {Object.values(row as Record<string, unknown>).map(
-                              (value: unknown, i: number) => (
+                  (result.data as { rows: unknown[] }).rows[0] &&
+                  typeof (result.data as { rows: unknown[] }).rows[0] ===
+                    'object' &&
+                  (result.data as { rows: unknown[] }).rows[0] !== null
+                    ? Object.keys(
+                        (result.data as { rows: Record<string, unknown>[] })
+                          .rows[0]
+                      ).map(key => (
+                        <th
+                          key={key}
+                          className="px-2 py-1 text-left font-medium text-gray-700 dark:text-gray-300"
+                        >
+                          {key}
+                        </th>
+                      ))
+                    : null}
+                </tr>
+              </thead>
+              <tbody>
+                {result.data &&
+                typeof result.data === 'object' &&
+                result.data !== null &&
+                'rows' in result.data &&
+                Array.isArray((result.data as { rows?: unknown[] }).rows)
+                  ? (result.data as { rows: unknown[] }).rows.map(
+                      (row: unknown, index: number) => {
+                        if (typeof row === 'object' && row !== null) {
+                          return (
+                            <tr
+                              key={index}
+                              className="border-t border-gray-200 dark:border-gray-700"
+                            >
+                              {Object.values(
+                                row as Record<string, unknown>
+                              ).map((value: unknown, i: number) => (
                                 <td
                                   key={i}
                                   className="px-2 py-1 text-gray-600 dark:text-gray-400"
                                 >
                                   {String(value)}
                                 </td>
-                              )
-                            )}
-                          </tr>
-                        )
+                              ))}
+                            </tr>
+                          )
+                        }
+                        return null
                       }
-                      return null
-                    }
-                  )}
+                    )
+                  : null}
               </tbody>
             </table>
           </div>

@@ -6,7 +6,7 @@ import {
   PencilIcon,
   ArrowPathIcon,
   StarIcon,
-  ForkIcon,
+  ArrowsPointingOutIcon,
   DocumentDuplicateIcon,
 } from '@heroicons/react/24/outline'
 import { StarIcon as StarIconSolid } from '@heroicons/react/24/solid'
@@ -14,7 +14,7 @@ import { StarIcon as StarIconSolid } from '@heroicons/react/24/solid'
 interface Message {
   id: string
   content: string
-  role: 'user' | 'assistant'
+  role: 'user' | 'assistant' | 'system'
   rating?: number
   versions?: Array<{
     id: string
@@ -122,7 +122,7 @@ export default function AdvancedChatFeatures({
               className="p-1.5 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded transition-colors"
               title="대화 분기"
             >
-              <ForkIcon className="w-4 h-4" />
+              <ArrowsPointingOutIcon className="w-4 h-4" />
             </button>
           </>
         )}
