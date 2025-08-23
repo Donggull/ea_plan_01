@@ -153,17 +153,8 @@ export default function MessageBubble({
                 <ReactMarkdown
                   remarkPlugins={[remarkGfm]}
                   components={{
-                    code: ({
-                      inline,
-                      className,
-                      children,
-                      ...props
-                    }: {
-                      inline?: boolean
-                      className?: string
-                      children?: React.ReactNode
-                      [key: string]: unknown
-                    }) => {
+                    // @ts-expect-error ReactMarkdown code component type mismatch
+                    code({ inline, className, children, ...props }) {
                       const match = /language-(\w+)/.exec(className || '')
                       const language = match ? match[1] : ''
 
