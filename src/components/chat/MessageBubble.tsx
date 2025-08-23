@@ -154,12 +154,16 @@ export default function MessageBubble({
                   remarkPlugins={[remarkGfm]}
                   components={{
                     code: ({
-                      node: _node,
                       inline,
                       className,
                       children,
                       ...props
-                    }: React.ComponentProps<'code'> & { inline?: boolean }) => {
+                    }: {
+                      inline?: boolean
+                      className?: string
+                      children?: React.ReactNode
+                      [key: string]: unknown
+                    }) => {
                       const match = /language-(\w+)/.exec(className || '')
                       const language = match ? match[1] : ''
 
