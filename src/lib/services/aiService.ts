@@ -308,7 +308,12 @@ class AIService {
 
   private async chatWithClaude(
     messages: ChatMessage[],
-    options: { maxTokens: number; temperature: number }
+    options: { 
+      maxTokens: number; 
+      temperature: number;
+      enableMCP?: boolean;
+      availableTools?: string[];
+    }
   ): Promise<ChatResponse> {
     if (!this.anthropicClient) {
       throw new Error('Anthropic client not initialized')
@@ -317,12 +322,28 @@ class AIService {
     const { system, messages: formattedMessages } =
       this.formatMessagesForClaude(messages)
 
+    // MCP 도구 활성화 시 시스템 메시지에 도구 사용 가능 정보 추가
+    let enhancedSystem = system || '';
+    if (options.enableMCP !== false) {
+      const toolsInfo = `
+
+Available MCP tools:
+- web_search: Search the web for current information
+- file_system: Read and write files 
+- database: Query database information
+- image_generation: Generate images
+- custom: Execute custom tools
+
+When you need to use external information or perform actions, use the appropriate MCP tools.`;
+      enhancedSystem += toolsInfo;
+    }
+
     const message = await this.anthropicClient.messages.create({
       model: AI_MODEL_CONFIGS.claude.name,
       max_tokens: options.maxTokens,
       temperature: options.temperature,
       top_p: AI_MODEL_CONFIGS.claude.topP,
-      system: system || undefined,
+      system: enhancedSystem || undefined,
       messages: formattedMessages,
     })
 
