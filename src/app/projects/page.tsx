@@ -56,6 +56,18 @@ export default function ProjectsPage() {
         useProjectStore.getState().clearProjects()
 
         result.data.forEach(project => {
+          // Extract team and deadline from metadata if available
+          const metadata = project.metadata || {}
+          const team = Array.isArray(metadata.team)
+            ? metadata.team
+            : ['Sample User', 'Sample Admin']
+          const deadline =
+            typeof metadata.deadline === 'string'
+              ? metadata.deadline
+              : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+                  .toISOString()
+                  .split('T')[0]
+
           useProjectStore.getState().addProject({
             id: project.id,
             name: project.name,
@@ -69,11 +81,9 @@ export default function ProjectsPage() {
               | 'completed'
               | 'archived'
               | 'paused',
-            progress: Math.floor(Math.random() * 100), // Sample progress
-            team: [], // Sample team data
-            deadline: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
-              .toISOString()
-              .split('T')[0], // Sample deadline
+            progress: Math.floor(Math.random() * 100), // Sample progress for now
+            team: team,
+            deadline: deadline,
             avatar: getAvatarByCategory(project.category),
             color: getColorByCategory(project.category),
             bgColor: getBgColorByCategory(project.category),
