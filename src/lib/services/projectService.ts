@@ -318,9 +318,12 @@ export class ProjectService {
   static async listProjects(
     filters: ProjectListFilters = {}
   ): Promise<ProjectServiceResponse<ProjectWithStats[]>> {
+    console.log('ProjectService.listProjects called with filters:', filters)
+
     try {
       // For demo mode, use default user ID
       const defaultUserId = 'c8b9c8d7-0c5a-4914-812e-5eedc4fd3a3d' // Sample user ID
+      console.log('Using default user ID:', defaultUserId)
 
       const projectsWithAccess: (Project & {
         userRole?: string | null
@@ -330,69 +333,70 @@ export class ProjectService {
 
       // Determine which projects to fetch based on project_type filter
       const projectType = filters.project_type || 'all'
+      console.log('Project type to fetch:', projectType)
 
       if (projectType === 'owned' || projectType === 'all') {
-        // Get projects owned by the user
-        const ownedQuery = supabase
-          .from('projects')
-          .select('*, project_members!left(*)')
-          .eq('owner_id', defaultUserId)
+        // Get projects owned by the user - simplified without joins
+        try {
+          const { data: ownedProjects, error: ownedError } = await supabase
+            .from('projects')
+            .select('*')
+            .eq('owner_id', defaultUserId)
+            .order('updated_at', { ascending: false })
 
-        const { data: ownedProjects, error: ownedError } = await ownedQuery
+          console.log('Owned projects query result:', {
+            data: ownedProjects,
+            error: ownedError,
+          })
 
-        if (!ownedError && ownedProjects) {
-          const ownedWithRole = ownedProjects.map(project => ({
-            ...project,
-            userRole: 'owner' as const,
-            isOwner: true,
-            isMember: false,
-          }))
-          projectsWithAccess.push(...ownedWithRole)
+          if (!ownedError && ownedProjects) {
+            const ownedWithRole = ownedProjects.map(project => ({
+              ...project,
+              userRole: 'owner' as const,
+              isOwner: true,
+              isMember: false,
+            }))
+            projectsWithAccess.push(...ownedWithRole)
+          }
+        } catch (err) {
+          console.error('Error fetching owned projects:', err)
         }
       }
 
       if (projectType === 'member' || projectType === 'all') {
-        // Get projects where user is a member (but not owner)
-        const { data: memberProjects, error: memberError } = await supabase
-          .from('project_members')
-          .select('*, projects(*)')
-          .eq('user_id', defaultUserId)
-
-        if (!memberError && memberProjects) {
-          const memberWithRole = memberProjects
-            .filter(
-              member =>
-                member.projects && member.projects.owner_id !== defaultUserId
-            )
-            .map(member => ({
-              ...member.projects,
-              userRole: member.role,
-              isOwner: false,
-              isMember: true,
-            }))
-          projectsWithAccess.push(...memberWithRole)
-        }
+        // Skip member projects for demo mode to avoid complex joins
+        console.log('Skipping member projects query for demo mode')
       }
 
       if (projectType === 'public' || projectType === 'all') {
         // Get public projects (excluding already included ones)
-        const { data: publicProjects, error: publicError } = await supabase
-          .from('projects')
-          .select('*')
-          .eq('is_public', true)
-          .eq('visibility_level', 'public')
+        try {
+          const { data: publicProjects, error: publicError } = await supabase
+            .from('projects')
+            .select('*')
+            .eq('is_public', true)
+            .eq('visibility_level', 'public')
+            .order('updated_at', { ascending: false })
 
-        if (!publicError && publicProjects) {
-          const existingIds = new Set(projectsWithAccess.map(p => p.id))
-          const publicWithRole = publicProjects
-            .filter(project => !existingIds.has(project.id))
-            .map(project => ({
-              ...project,
-              userRole: null,
-              isOwner: false,
-              isMember: false,
-            }))
-          projectsWithAccess.push(...publicWithRole)
+          console.log('Public projects query result:', {
+            data: publicProjects,
+            error: publicError,
+          })
+
+          if (!publicError && publicProjects) {
+            const existingIds = new Set(projectsWithAccess.map(p => p.id))
+            const publicWithRole = publicProjects
+              .filter(project => !existingIds.has(project.id))
+              .map(project => ({
+                ...project,
+                userRole: null,
+                isOwner: false,
+                isMember: false,
+              }))
+            projectsWithAccess.push(...publicWithRole)
+          }
+        } catch (err) {
+          console.error('Error fetching public projects:', err)
         }
       }
 
@@ -458,12 +462,19 @@ export class ProjectService {
         })
       )
 
+      console.log(
+        'Projects with stats prepared:',
+        projectsWithStats.length,
+        'projects'
+      )
+
       return {
         data: projectsWithStats,
         error: null,
         success: true,
       }
     } catch (error) {
+      console.error('ProjectService.listProjects caught error:', error)
       return {
         data: null,
         error: `Unexpected error: ${error instanceof Error ? error.message : 'Unknown error'}`,
