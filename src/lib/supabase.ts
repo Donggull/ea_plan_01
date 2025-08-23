@@ -40,7 +40,7 @@ export type Database = {
           description?: string
           category: 'proposal' | 'development' | 'operation'
           status: 'active' | 'completed' | 'archived' | 'paused'
-          // tags: string[] // Temporarily commented out until DB schema is updated
+          tags: string[]
           metadata: Record<string, unknown>
           created_at: string
           updated_at: string
@@ -52,7 +52,7 @@ export type Database = {
           description?: string
           category: 'proposal' | 'development' | 'operation'
           status?: 'active' | 'completed' | 'archived' | 'paused'
-          // tags?: string[] // Temporarily commented out until DB schema is updated
+          tags?: string[]
           metadata?: Record<string, unknown>
           created_at?: string
           updated_at?: string
@@ -62,7 +62,7 @@ export type Database = {
           description?: string
           category?: 'proposal' | 'development' | 'operation'
           status?: 'active' | 'completed' | 'archived' | 'paused'
-          // tags?: string[] // Temporarily commented out until DB schema is updated
+          tags?: string[]
           metadata?: Record<string, unknown>
           updated_at?: string
         }
