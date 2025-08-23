@@ -1,4 +1,4 @@
-import { supabase } from '@/lib/supabase'
+import { supabase, createServerComponentClient } from '@/lib/supabase'
 import type { Database } from '@/lib/supabase'
 
 type Project = Database['public']['Tables']['projects']['Row']
@@ -59,7 +59,8 @@ export class ProjectService {
     projectData: CreateProjectData
   ): Promise<ProjectServiceResponse<Project>> {
     try {
-      // For demo mode, use a default user ID
+      // For demo mode, use server client to bypass RLS
+      const serverClient = createServerComponentClient()
       const defaultUserId = 'c8b9c8d7-0c5a-4a0f-9f8c-6c5b9a3e4d2f' // Sample user ID
 
       const insertData: ProjectInsert = {
@@ -75,7 +76,7 @@ export class ProjectService {
         visibility_level: projectData.visibility_level || 'private',
       }
 
-      const { data: newProject, error: insertError } = await supabase
+      const { data: newProject, error: insertError } = await serverClient
         .from('projects')
         .insert(insertData)
         .select()
