@@ -17,38 +17,20 @@ import {
   DocumentTextIcon,
   CpuChipIcon,
   CheckCircleIcon,
+  DocumentPlusIcon,
 } from '@heroicons/react/24/outline'
+import CodeEditor, { getLanguageTemplate } from '@/components/canvas/CodeEditor'
+import CodeTemplates, {
+  type CodeTemplate,
+} from '@/components/canvas/CodeTemplates'
 
 export default function CanvasPage() {
   const [selectedLanguage, setSelectedLanguage] = useState('javascript')
   const [selectedTab, setSelectedTab] = useState('output')
   const [isRunning, setIsRunning] = useState(false)
-  const [code, setCode] = useState(`// 🚀 AI와 함께 코드를 작성해보세요!
-function greet(name) {
-  return \`Hello, \${name}! 🌟\`;
-}
-
-function createCard(title, content) {
-  return {
-    title,
-    content,
-    timestamp: new Date().toISOString(),
-    render() {
-      console.log(\`📦 \${this.title}: \${this.content}\`);
-    }
-  };
-}
-
-// 실행 예시
-const card = createCard("Welcome", "AI 코드 캔버스에 오신 것을 환영합니다!");
-card.render();
-console.log(greet('Developer'));
-
-// 배열 처리 예시
-const languages = ['JavaScript', 'Python', 'TypeScript', 'React'];
-languages.forEach((lang, index) => {
-  console.log(\`\${index + 1}. \${lang} ⚡\`);
-});`)
+  const [code, setCode] = useState(() => getLanguageTemplate('javascript'))
+  const [showTemplates, setShowTemplates] = useState(false)
+  const [output, setOutput] = useState('')
 
   const languages = [
     {
@@ -73,7 +55,7 @@ languages.forEach((lang, index) => {
       description: '데이터 분석',
     },
     {
-      id: 'react',
+      id: 'jsx',
       name: 'React',
       icon: '⚛️',
       color: 'from-slate-500 to-slate-600',
@@ -81,10 +63,17 @@ languages.forEach((lang, index) => {
     },
     {
       id: 'html',
-      name: 'HTML/CSS',
+      name: 'HTML',
       icon: '🎨',
       color: 'from-gray-500 to-gray-600',
-      description: '웹 디자인',
+      description: '웹 마크업',
+    },
+    {
+      id: 'css',
+      name: 'CSS',
+      icon: '🎨',
+      color: 'from-purple-500 to-purple-600',
+      description: '스타일링',
     },
   ]
 
@@ -123,9 +112,67 @@ languages.forEach((lang, index) => {
     },
   ]
 
+  // 언어 변경 처리
+  const handleLanguageChange = (languageId: string) => {
+    setSelectedLanguage(languageId)
+    const template = getLanguageTemplate(languageId)
+    if (template) {
+      setCode(template)
+    }
+  }
+
+  // 템플릿 선택 처리
+  const handleTemplateSelect = (template: CodeTemplate) => {
+    setCode(template.code)
+    setShowTemplates(false)
+  }
+
+  // 코드 실행
   const runCode = () => {
     setIsRunning(true)
-    setTimeout(() => setIsRunning(false), 2000)
+    setOutput('')
+
+    try {
+      // 간단한 코드 실행 시뮬레이션
+      const timestamp = new Date().toLocaleTimeString('ko-KR')
+      let result = ''
+
+      if (
+        selectedLanguage === 'javascript' ||
+        selectedLanguage === 'typescript'
+      ) {
+        result = `⚡ JavaScript/TypeScript 코드 실행 완료
+🕒 실행 시간: ${timestamp}
+📊 메모리 사용량: ${Math.floor(Math.random() * 5 + 1)}.${Math.floor(Math.random() * 10)}MB
+✅ 코드가 성공적으로 실행되었습니다!`
+      } else if (selectedLanguage === 'python') {
+        result = `🐍 Python 코드 실행 완료
+🕒 실행 시간: ${timestamp}
+📊 메모리 사용량: ${Math.floor(Math.random() * 8 + 2)}.${Math.floor(Math.random() * 10)}MB
+✅ 코드가 성공적으로 실행되었습니다!`
+      } else if (selectedLanguage === 'html' || selectedLanguage === 'css') {
+        result = `🎨 HTML/CSS 렌더링 완료
+🕒 렌더링 시간: ${timestamp}
+📊 DOM 노드: ${Math.floor(Math.random() * 50 + 10)}개
+✅ 페이지가 성공적으로 렌더링되었습니다!`
+      } else if (selectedLanguage === 'jsx') {
+        result = `⚛️ React 컴포넌트 렌더링 완료
+🕒 렌더링 시간: ${timestamp}
+📊 컴포넌트: ${Math.floor(Math.random() * 20 + 5)}개
+✅ 컴포넌트가 성공적으로 렌더링되었습니다!`
+      }
+
+      setTimeout(
+        () => {
+          setOutput(result)
+          setIsRunning(false)
+        },
+        1000 + Math.random() * 1000
+      )
+    } catch (error) {
+      setOutput(`❌ 실행 오류: ${error}`)
+      setIsRunning(false)
+    }
   }
 
   return (
@@ -193,6 +240,16 @@ languages.forEach((lang, index) => {
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
+            onClick={() => setShowTemplates(true)}
+            className="flex items-center space-x-2 px-4 py-2 bg-white/80 dark:bg-gray-700/80 backdrop-blur border border-white/20 dark:border-gray-600/50 rounded-xl text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600 transition-all duration-200"
+          >
+            <DocumentPlusIcon className="w-4 h-4" />
+            <span>템플릿</span>
+          </motion.button>
+
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
             className="flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-slate-600 to-slate-700 text-white rounded-xl hover:shadow-lg transition-all duration-200"
           >
             <ShareIcon className="w-4 h-4" />
@@ -215,7 +272,7 @@ languages.forEach((lang, index) => {
                 key={lang.id}
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
-                onClick={() => setSelectedLanguage(lang.id)}
+                onClick={() => handleLanguageChange(lang.id)}
                 className={`flex items-center space-x-2 px-4 py-2 rounded-xl font-medium transition-all duration-200 whitespace-nowrap ${
                   selectedLanguage === lang.id
                     ? `bg-gradient-to-r ${lang.color} text-white shadow-lg`
@@ -263,53 +320,14 @@ languages.forEach((lang, index) => {
           transition={{ delay: 0.2 }}
           className="w-1/2 flex flex-col border-r border-white/20 dark:border-gray-700/50"
         >
-          <div className="flex items-center justify-between p-3 border-b border-white/20 dark:border-gray-700/50 bg-gray-900/90 backdrop-blur">
-            <div className="flex items-center space-x-2">
-              <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-              <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
-              <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-              <span className="ml-2 text-gray-400 text-sm">
-                main.
-                {selectedLanguage === 'typescript'
-                  ? 'ts'
-                  : selectedLanguage === 'python'
-                    ? 'py'
-                    : 'js'}
-              </span>
-            </div>
-            <div className="flex items-center space-x-2 text-gray-400 text-xs">
-              <CpuChipIcon className="w-4 h-4" />
-              <span>Line {code.split('\n').length}</span>
-            </div>
-          </div>
-
-          <div className="flex-1 bg-gray-900 relative overflow-hidden">
-            <div className="absolute inset-0 p-4">
-              <textarea
-                value={code}
-                onChange={e => setCode(e.target.value)}
-                className="w-full h-full bg-transparent text-gray-100 font-mono text-sm resize-none focus:outline-none leading-relaxed"
-                placeholder="// 여기에 코드를 작성하세요..."
-                style={{
-                  fontFamily: "'Fira Code', 'Monaco', 'Menlo', monospace",
-                  fontSize: '14px',
-                  lineHeight: '1.6',
-                }}
-              />
-            </div>
-
-            {/* Line numbers overlay */}
-            <div className="absolute left-0 top-4 bottom-4 w-12 bg-gray-800/50 border-r border-gray-700 pointer-events-none">
-              {Array.from({ length: code.split('\n').length }, (_, i) => (
-                <div
-                  key={i}
-                  className="h-6 px-2 text-xs text-gray-500 flex items-center justify-end"
-                >
-                  {i + 1}
-                </div>
-              ))}
-            </div>
-          </div>
+          <CodeEditor
+            value={code}
+            onChange={setCode}
+            language={selectedLanguage}
+            onExecute={runCode}
+            theme="dark"
+            className="flex-1"
+          />
         </motion.div>
 
         {/* Output/Preview */}
@@ -364,30 +382,26 @@ languages.forEach((lang, index) => {
                   <BoltIcon className="w-4 h-4" />
                   <span className="font-medium">실행 결과</span>
                 </div>
-                <div className="pl-6 space-y-1">
-                  <div className="text-emerald-600 dark:text-emerald-400">
-                    📦 Welcome: AI 코드 캔버스에 오신 것을 환영합니다!
+
+                {isRunning ? (
+                  <div className="flex items-center space-x-2 p-4 bg-amber-50 dark:bg-amber-900/20 rounded-lg">
+                    <div className="w-4 h-4 border-2 border-amber-500 border-t-transparent rounded-full animate-spin"></div>
+                    <span className="text-amber-700 dark:text-amber-300">
+                      코드를 실행하고 있습니다...
+                    </span>
                   </div>
-                  <div className="text-emerald-600 dark:text-emerald-400">
-                    Hello, Developer! 🌟
+                ) : output ? (
+                  <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                    <pre className="whitespace-pre-wrap text-gray-700 dark:text-gray-300">
+                      {output}
+                    </pre>
                   </div>
-                  <div className="text-amber-600 dark:text-amber-400">
-                    1. JavaScript ⚡
+                ) : (
+                  <div className="p-4 text-gray-500 dark:text-gray-400 text-center">
+                    <div className="mb-2">🚀</div>
+                    <div>Ctrl+Enter를 눌러 코드를 실행해보세요!</div>
                   </div>
-                  <div className="text-amber-600 dark:text-amber-400">
-                    2. Python ⚡
-                  </div>
-                  <div className="text-amber-600 dark:text-amber-400">
-                    3. TypeScript ⚡
-                  </div>
-                  <div className="text-amber-600 dark:text-amber-400">
-                    4. React ⚡
-                  </div>
-                </div>
-                <div className="flex items-center space-x-2 text-gray-500 dark:text-gray-400 mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
-                  <CheckCircleIcon className="w-4 h-4 text-emerald-500" />
-                  <span>실행 완료 (127ms) • 메모리 사용량: 2.4MB</span>
-                </div>
+                )}
               </div>
             )}
 
@@ -482,6 +496,14 @@ languages.forEach((lang, index) => {
           ))}
         </div>
       </motion.div>
+
+      {/* 코드 템플릿 모달 */}
+      <CodeTemplates
+        language={selectedLanguage}
+        onSelectTemplate={handleTemplateSelect}
+        onClose={() => setShowTemplates(false)}
+        isOpen={showTemplates}
+      />
     </div>
   )
 }

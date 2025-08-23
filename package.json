@@ -30,6 +30,7 @@
     "eventsource-parser": "^3.0.5",
     "framer-motion": "^12.23.12",
     "lucide-react": "^0.541.0",
+    "monaco-editor": "^0.52.2",
     "next": "15.5.0",
     "openai": "^5.15.0",
     "prism-react-renderer": "^2.4.1",
