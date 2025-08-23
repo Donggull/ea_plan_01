@@ -10,7 +10,10 @@ import {
   CalendarIcon,
   UsersIcon,
 } from '@heroicons/react/24/outline'
-import useProjectStore, { ProjectCategory } from '@/lib/stores/projectStore'
+import useProjectStore, {
+  ProjectCategory,
+  ProjectStatus,
+} from '@/lib/stores/projectStore'
 import { ProjectService } from '@/lib/services/projectService'
 
 interface CreateProjectModalProps {
@@ -132,6 +135,11 @@ export default function CreateProjectModal({
     setIsSubmitting(true)
 
     try {
+      console.log(
+        'CreateProjectModal: Starting project creation with data:',
+        formData
+      )
+
       // Create project in Supabase
       const result = await ProjectService.createProject({
         name: formData.name,
@@ -147,25 +155,39 @@ export default function CreateProjectModal({
         },
       })
 
+      console.log(
+        'CreateProjectModal: ProjectService.createProject result:',
+        result
+      )
+
       if (result.success && result.data) {
+        console.log(
+          'CreateProjectModal: Project created successfully, adding to store'
+        )
+
         // Add to local store for immediate UI update
+        const now = new Date().toISOString()
         addProject({
           id: result.data.id,
           name: result.data.name,
           description: result.data.description || '',
           category: result.data.category as ProjectCategory,
-          status: 'active',
+          status: result.data.status as ProjectStatus,
           progress: 0,
           team: formData.team,
           deadline: formData.deadline,
           avatar: avatarOptions[formData.category],
           color: colorOptions[formData.category],
           bgColor: bgColorOptions[formData.category],
-          createdAt: result.data.created_at || new Date().toISOString(),
-          updatedAt: result.data.updated_at || new Date().toISOString(),
+          createdAt: result.data.created_at || now,
+          updatedAt: result.data.updated_at || now,
           created_at: result.data.created_at,
           updated_at: result.data.updated_at,
           metadata: result.data.metadata,
+          conversationCount: 0,
+          documentCount: 0,
+          imageCount: 0,
+          lastActivity: result.data.updated_at || now,
         })
 
         // Reset form
@@ -178,8 +200,19 @@ export default function CreateProjectModal({
           teamInput: '',
         })
         setErrors({})
+
+        console.log('CreateProjectModal: Project added to store, closing modal')
         onClose()
+
+        // Reload the page to ensure the new project appears
+        setTimeout(() => {
+          window.location.reload()
+        }, 500)
       } else {
+        console.log(
+          'CreateProjectModal: Project creation failed:',
+          result.error
+        )
         setErrors({ general: result.error || 'Failed to create project' })
       }
     } catch (error) {
