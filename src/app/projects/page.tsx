@@ -49,7 +49,23 @@ export default function ProjectsPage() {
     setError(null)
 
     try {
-      const result = await ProjectService.listProjects()
+      console.log('Loading projects...')
+
+      // 타임아웃 설정 (10초)
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(
+          () =>
+            reject(new Error('로딩 시간이 초과되었습니다. 다시 시도해주세요.')),
+          10000
+        )
+      })
+
+      const result = (await Promise.race([
+        ProjectService.listProjects(),
+        timeoutPromise,
+      ])) as Awaited<ReturnType<typeof ProjectService.listProjects>>
+
+      console.log('Projects loaded:', result)
 
       if (result.success && result.data) {
         // Clear existing projects and add from database
@@ -168,8 +184,11 @@ export default function ProjectsPage() {
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
           <div className="w-16 h-16 border-4 border-slate-200 border-t-slate-600 rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600 dark:text-gray-400">
+          <p className="text-gray-600 dark:text-gray-400 mb-2">
             프로젝트를 불러오는 중...
+          </p>
+          <p className="text-xs text-gray-500 dark:text-gray-500">
+            로딩이 오래 걸리는 경우 페이지를 새로고침해주세요
           </p>
         </div>
       </div>

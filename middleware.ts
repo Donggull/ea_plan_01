@@ -4,36 +4,25 @@ import type { NextRequest } from 'next/server'
 import type { Database } from '@/lib/supabase'
 
 // 인증이 필요한 경로들
+// 데모 모드를 위해 일부 경로는 인증 불필요
 const protectedPaths = [
-  '/dashboard',
-  '/projects',
-  '/chat',
-  '/canvas',
-  '/images',
-  '/profile',
-  '/settings',
+  // '/dashboard',  // 데모 모드에서는 대시보드 접근 허용
+  // '/projects',   // 데모 모드에서는 프로젝트 접근 허용
+  // '/chat',       // 데모 모드에서는 채팅 접근 허용
+  // '/canvas',     // 데모 모드에서는 캔버스 접근 허용
+  // '/images',     // 데모 모드에서는 이미지 접근 허용
+  '/profile', // 프로필은 여전히 인증 필요
+  '/settings', // 설정은 여전히 인증 필요
 ]
 
 // 인증된 사용자가 접근할 수 없는 경로들
-const authPaths = [
-  '/auth/login',
-  '/auth/signup',
-  '/auth/reset-password',
-]
+const authPaths = ['/auth/login', '/auth/signup', '/auth/reset-password']
 
 // Pro 구독이 필요한 경로들
-const proPaths = [
-  '/chat/advanced',
-  '/projects/unlimited',
-  '/images/bulk',
-]
+const proPaths = ['/chat/advanced', '/projects/unlimited', '/images/bulk']
 
 // Enterprise 구독이 필요한 경로들
-const enterprisePaths = [
-  '/admin',
-  '/analytics',
-  '/team-management',
-]
+const enterprisePaths = ['/admin', '/analytics', '/team-management']
 
 export async function middleware(req: NextRequest) {
   const res = NextResponse.next()
@@ -64,7 +53,7 @@ export async function middleware(req: NextRequest) {
           get(name: string) {
             return req.cookies.get(name)?.value
           },
-          set(name: string, value: string, options: any) {
+          set(name: string, value: string, options: Record<string, unknown>) {
             req.cookies.set({
               name,
               value,
@@ -76,7 +65,7 @@ export async function middleware(req: NextRequest) {
               ...options,
             })
           },
-          remove(name: string, options: any) {
+          remove(name: string, options: Record<string, unknown>) {
             req.cookies.set({
               name,
               value: '',
@@ -105,21 +94,17 @@ export async function middleware(req: NextRequest) {
     const user = session?.user
 
     // 보호된 경로 체크
-    const isProtectedPath = protectedPaths.some(path => 
+    const isProtectedPath = protectedPaths.some(path =>
       pathname.startsWith(path)
     )
 
     // 인증 경로 체크
-    const isAuthPath = authPaths.some(path => 
-      pathname.startsWith(path)
-    )
+    const isAuthPath = authPaths.some(path => pathname.startsWith(path))
 
     // 구독 레벨 체크
-    const isProPath = proPaths.some(path => 
-      pathname.startsWith(path)
-    )
+    const isProPath = proPaths.some(path => pathname.startsWith(path))
 
-    const isEnterprisePath = enterprisePaths.some(path => 
+    const isEnterprisePath = enterprisePaths.some(path =>
       pathname.startsWith(path)
     )
 
@@ -131,7 +116,7 @@ export async function middleware(req: NextRequest) {
         .select('subscription_tier')
         .eq('id', user.id)
         .single()
-      
+
       userProfile = profile
     }
 
@@ -171,22 +156,19 @@ export async function middleware(req: NextRequest) {
 
     // 4. 루트 경로 처리
     if (pathname === '/') {
-      if (user) {
-        const redirectUrl = new URL('/dashboard', req.url)
-        return NextResponse.redirect(redirectUrl)
-      } else {
-        const redirectUrl = new URL('/auth/login', req.url)
-        return NextResponse.redirect(redirectUrl)
-      }
+      // 데모 모드: 항상 대시보드로 리다이렉트
+      const redirectUrl = new URL('/dashboard', req.url)
+      return NextResponse.redirect(redirectUrl)
     }
 
     return res
   } catch (error) {
     console.error('Middleware error:', error)
-    
+
     // 에러 발생 시 기본 동작
     if (pathname === '/') {
-      const redirectUrl = new URL('/auth/login', req.url)
+      // 데모 모드: 에러 발생해도 대시보드로 리다이렉트
+      const redirectUrl = new URL('/dashboard', req.url)
       return NextResponse.redirect(redirectUrl)
     }
 
