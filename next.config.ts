@@ -2,14 +2,11 @@ import type { NextConfig } from 'next'
 
 const nextConfig: NextConfig = {
   // Vercel 배포 최적화
-  experimental: {
-    // Edge Runtime 지원
-    serverComponentsExternalPackages: [
-      '@google/generative-ai',
-      'openai',
-      '@anthropic-ai/sdk',
-    ],
-  },
+  serverExternalPackages: [
+    '@google/generative-ai',
+    'openai',
+    '@anthropic-ai/sdk',
+  ],
 
   // 환경 변수 최적화
   env: {

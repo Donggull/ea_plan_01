@@ -17,6 +17,7 @@ import {
 import useProjectStore from '@/lib/stores/projectStore'
 import CreateProjectModal from '@/components/project/CreateProjectModal'
 import ProjectCard from '@/components/project/ProjectCard'
+import { ProjectService } from '@/lib/services/projectService'
 
 export default function ProjectsPage() {
   const {
@@ -34,45 +35,106 @@ export default function ProjectsPage() {
 
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
   const [showSortMenu, setShowSortMenu] = useState(false)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
-  // Load sample projects on first load
+  // Load projects from Supabase
   useEffect(() => {
-    if (projects.length === 0) {
-      const sampleProjects = [
-        {
-          name: 'AI 챗봇 플랫폼',
-          description: '멀티모델 AI를 활용한 차세대 고객 서비스 플랫폼 구축',
-          category: 'proposal' as const,
-          status: 'active' as const,
-          progress: 85,
-          team: ['김철수', '이영희', '박민수', '정수진'],
-          deadline: '2024-03-15',
-          avatar: '🤖',
-          color: 'from-slate-600 to-slate-700',
-          bgColor:
-            'bg-gradient-to-br from-slate-50/80 to-gray-50/80 dark:from-slate-800/40 dark:to-gray-800/40',
-        },
-        {
-          name: '모바일 앱 리뉴얼',
-          description: 'React Native 기반 크로스 플랫폼 앱 전면 리뉴얼',
-          category: 'development' as const,
-          status: 'active' as const,
-          progress: 65,
-          team: ['정수진', '최동현', '강민지'],
-          deadline: '2024-04-20',
-          avatar: '📱',
-          color: 'from-indigo-500 to-indigo-600',
-          bgColor:
-            'bg-gradient-to-br from-indigo-50/80 to-indigo-100/60 dark:from-indigo-900/30 dark:to-indigo-800/30',
-        },
-      ]
-
-      sampleProjects.forEach(project => {
-        useProjectStore.getState().addProject(project)
-      })
-    }
+    loadProjects()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  const loadProjects = async () => {
+    setLoading(true)
+    setError(null)
+
+    try {
+      const result = await ProjectService.listProjects()
+
+      if (result.success && result.data) {
+        // Clear existing projects and add from database
+        useProjectStore.getState().clearProjects()
+
+        result.data.forEach(project => {
+          useProjectStore.getState().addProject({
+            id: project.id,
+            name: project.name,
+            description: project.description || '',
+            category: project.category as
+              | 'proposal'
+              | 'development'
+              | 'operation',
+            status: project.status as
+              | 'active'
+              | 'completed'
+              | 'archived'
+              | 'paused',
+            progress: Math.floor(Math.random() * 100), // Sample progress
+            team: [], // Sample team data
+            deadline: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+              .toISOString()
+              .split('T')[0], // Sample deadline
+            avatar: getAvatarByCategory(project.category),
+            color: getColorByCategory(project.category),
+            bgColor: getBgColorByCategory(project.category),
+            conversationCount: project.conversationCount || 0,
+            documentCount: project.documentCount || 0,
+            imageCount: project.imageCount || 0,
+            lastActivity: project.lastActivity,
+            created_at: project.created_at,
+            updated_at: project.updated_at,
+            metadata: project.metadata,
+          })
+        })
+      } else {
+        setError(result.error || 'Failed to load projects')
+      }
+    } catch (err) {
+      setError('Unexpected error occurred')
+      console.error('Load projects error:', err)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const getAvatarByCategory = (category: string) => {
+    switch (category) {
+      case 'proposal':
+        return '📋'
+      case 'development':
+        return '🔧'
+      case 'operation':
+        return '⚙️'
+      default:
+        return '📁'
+    }
+  }
+
+  const getColorByCategory = (category: string) => {
+    switch (category) {
+      case 'proposal':
+        return 'from-blue-600 to-blue-700'
+      case 'development':
+        return 'from-green-600 to-green-700'
+      case 'operation':
+        return 'from-purple-600 to-purple-700'
+      default:
+        return 'from-gray-600 to-gray-700'
+    }
+  }
+
+  const getBgColorByCategory = (category: string) => {
+    switch (category) {
+      case 'proposal':
+        return 'bg-gradient-to-br from-blue-50/80 to-blue-100/60 dark:from-blue-900/30 dark:to-blue-800/30'
+      case 'development':
+        return 'bg-gradient-to-br from-green-50/80 to-green-100/60 dark:from-green-900/30 dark:to-green-800/30'
+      case 'operation':
+        return 'bg-gradient-to-br from-purple-50/80 to-purple-100/60 dark:from-purple-900/30 dark:to-purple-800/30'
+      default:
+        return 'bg-gradient-to-br from-gray-50/80 to-gray-100/60 dark:from-gray-900/30 dark:to-gray-800/30'
+    }
+  }
 
   const filterOptions = [
     { id: 'all', label: '전체', icon: FolderIcon },
@@ -89,6 +151,43 @@ export default function ProjectsPage() {
   ]
 
   const filteredProjects = getFilteredProjects()
+
+  // Loading state
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-slate-200 border-t-slate-600 rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600 dark:text-gray-400">
+            프로젝트를 불러오는 중...
+          </p>
+        </div>
+      </div>
+    )
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="w-16 h-16 bg-red-100 dark:bg-red-900/20 rounded-full flex items-center justify-center mx-auto mb-4">
+            <span className="text-2xl">❌</span>
+          </div>
+          <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+            프로젝트를 불러올 수 없습니다
+          </h3>
+          <p className="text-gray-500 dark:text-gray-400 mb-4">{error}</p>
+          <button
+            onClick={loadProjects}
+            className="bg-slate-600 text-white px-4 py-2 rounded-lg hover:bg-slate-700 transition-colors"
+          >
+            다시 시도
+          </button>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-8 p-6">

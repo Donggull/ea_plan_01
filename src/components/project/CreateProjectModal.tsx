@@ -11,6 +11,7 @@ import {
   UsersIcon,
 } from '@heroicons/react/24/outline'
 import useProjectStore, { ProjectCategory } from '@/lib/stores/projectStore'
+import { ProjectService } from '@/lib/services/projectService'
 
 interface CreateProjectModalProps {
   isOpen: boolean
@@ -33,6 +34,7 @@ export default function CreateProjectModal({
   })
 
   const [errors, setErrors] = useState<Record<string, string>>({})
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   const categoryOptions = [
     {
@@ -120,37 +122,72 @@ export default function CreateProjectModal({
     })
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (!validate()) {
+    if (!validate() || isSubmitting) {
       return
     }
 
-    addProject({
-      name: formData.name,
-      description: formData.description,
-      category: formData.category,
-      status: 'planning',
-      progress: 0,
-      team: formData.team,
-      deadline: formData.deadline,
-      avatar: avatarOptions[formData.category],
-      color: colorOptions[formData.category],
-      bgColor: bgColorOptions[formData.category],
-    })
+    setIsSubmitting(true)
 
-    // Reset form
-    setFormData({
-      name: '',
-      description: '',
-      category: 'proposal',
-      deadline: '',
-      team: [],
-      teamInput: '',
-    })
-    setErrors({})
-    onClose()
+    try {
+      // Create project in Supabase
+      const result = await ProjectService.createProject({
+        name: formData.name,
+        description: formData.description,
+        category: formData.category,
+        status: 'active',
+        metadata: {
+          team: formData.team,
+          deadline: formData.deadline,
+          avatar: avatarOptions[formData.category],
+          color: colorOptions[formData.category],
+          bgColor: bgColorOptions[formData.category],
+        },
+      })
+
+      if (result.success && result.data) {
+        // Add to local store for immediate UI update
+        addProject({
+          id: result.data.id,
+          name: result.data.name,
+          description: result.data.description || '',
+          category: result.data.category as ProjectCategory,
+          status: 'active',
+          progress: 0,
+          team: formData.team,
+          deadline: formData.deadline,
+          avatar: avatarOptions[formData.category],
+          color: colorOptions[formData.category],
+          bgColor: bgColorOptions[formData.category],
+          createdAt: result.data.created_at || new Date().toISOString(),
+          updatedAt: result.data.updated_at || new Date().toISOString(),
+          created_at: result.data.created_at,
+          updated_at: result.data.updated_at,
+          metadata: result.data.metadata,
+        })
+
+        // Reset form
+        setFormData({
+          name: '',
+          description: '',
+          category: 'proposal',
+          deadline: '',
+          team: [],
+          teamInput: '',
+        })
+        setErrors({})
+        onClose()
+      } else {
+        setErrors({ general: result.error || 'Failed to create project' })
+      }
+    } catch (error) {
+      console.error('Create project error:', error)
+      setErrors({ general: 'Unexpected error occurred' })
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   return (
@@ -194,6 +231,14 @@ export default function CreateProjectModal({
                     <XMarkIcon className="h-5 w-5 text-gray-500" />
                   </button>
                 </Dialog.Title>
+
+                {errors.general && (
+                  <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl">
+                    <p className="text-sm text-red-700 dark:text-red-300">
+                      {errors.general}
+                    </p>
+                  </div>
+                )}
 
                 <form onSubmit={handleSubmit} className="space-y-6">
                   {/* Project Name */}
@@ -390,9 +435,15 @@ export default function CreateProjectModal({
                     </button>
                     <button
                       type="submit"
-                      className="px-6 py-3 rounded-xl bg-gradient-to-r from-slate-600 to-slate-700 text-white hover:shadow-lg transition-all"
+                      disabled={isSubmitting}
+                      className="px-6 py-3 rounded-xl bg-gradient-to-r from-slate-600 to-slate-700 text-white hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
                     >
-                      프로젝트 생성
+                      {isSubmitting && (
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      )}
+                      <span>
+                        {isSubmitting ? '생성 중...' : '프로젝트 생성'}
+                      </span>
                     </button>
                   </div>
                 </form>

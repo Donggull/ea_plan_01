@@ -2,7 +2,12 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 
 export type ProjectCategory = 'proposal' | 'development' | 'operation'
-export type ProjectStatus = 'planning' | 'active' | 'completed' | 'archived'
+export type ProjectStatus =
+  | 'planning'
+  | 'active'
+  | 'completed'
+  | 'archived'
+  | 'paused'
 export type ViewMode = 'grid' | 'list'
 export type SortBy = 'created' | 'updated' | 'name' | 'progress'
 
@@ -22,6 +27,14 @@ export interface Project {
   updatedAt: string
   documents?: Document[]
   tags?: string[]
+  // Supabase fields
+  conversationCount?: number
+  documentCount?: number
+  imageCount?: number
+  lastActivity?: string
+  created_at?: string
+  updated_at?: string
+  metadata?: Record<string, unknown>
 }
 
 export interface Document {
@@ -41,9 +54,17 @@ interface ProjectState {
   selectedCategory: string
 
   // Actions
-  addProject: (project: Omit<Project, 'id' | 'createdAt' | 'updatedAt'>) => void
+  addProject: (
+    project: Partial<Project> & {
+      name: string
+      description: string
+      category: ProjectCategory
+      status: ProjectStatus
+    }
+  ) => void
   updateProject: (id: string, updates: Partial<Project>) => void
   deleteProject: (id: string) => void
+  clearProjects: () => void
   setSelectedProject: (project: Project | null) => void
   setViewMode: (mode: ViewMode) => void
   setSortBy: (sortBy: SortBy) => void
@@ -64,10 +85,28 @@ const useProjectStore = create<ProjectState>()(
 
       addProject: projectData => {
         const newProject: Project = {
-          ...projectData,
-          id: `project-${Date.now()}`,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
+          id: projectData.id || `project-${Date.now()}`,
+          name: projectData.name,
+          description: projectData.description,
+          category: projectData.category,
+          status: projectData.status,
+          progress: projectData.progress || 0,
+          team: projectData.team || [],
+          deadline: projectData.deadline || '',
+          avatar: projectData.avatar,
+          color: projectData.color,
+          bgColor: projectData.bgColor,
+          createdAt: projectData.createdAt || new Date().toISOString(),
+          updatedAt: projectData.updatedAt || new Date().toISOString(),
+          documents: projectData.documents,
+          tags: projectData.tags,
+          conversationCount: projectData.conversationCount,
+          documentCount: projectData.documentCount,
+          imageCount: projectData.imageCount,
+          lastActivity: projectData.lastActivity,
+          created_at: projectData.created_at,
+          updated_at: projectData.updated_at,
+          metadata: projectData.metadata,
         }
         set(state => ({
           projects: [...state.projects, newProject],
@@ -90,6 +129,10 @@ const useProjectStore = create<ProjectState>()(
           selectedProject:
             state.selectedProject?.id === id ? null : state.selectedProject,
         }))
+      },
+
+      clearProjects: () => {
+        set({ projects: [] })
       },
 
       setSelectedProject: project => {
