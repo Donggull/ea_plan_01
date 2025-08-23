@@ -15,18 +15,17 @@ import {
   ClockIcon,
   BoltIcon,
   DocumentTextIcon,
-  CpuChipIcon,
-  CheckCircleIcon,
   DocumentPlusIcon,
 } from '@heroicons/react/24/outline'
 import CodeEditor, { getLanguageTemplate } from '@/components/canvas/CodeEditor'
 import CodeTemplates, {
   type CodeTemplate,
 } from '@/components/canvas/CodeTemplates'
+import PreviewRenderer from '@/components/canvas/PreviewRenderer'
 
 export default function CanvasPage() {
   const [selectedLanguage, setSelectedLanguage] = useState('javascript')
-  const [selectedTab, setSelectedTab] = useState('output')
+  const [selectedTab, setSelectedTab] = useState('preview')
   const [isRunning, setIsRunning] = useState(false)
   const [code, setCode] = useState(() => getLanguageTemplate('javascript'))
   const [showTemplates, setShowTemplates] = useState(false)
@@ -375,59 +374,45 @@ export default function CanvasPage() {
             </motion.button>
           </div>
 
-          <div className="flex-1 p-4 bg-white dark:bg-gray-900 font-mono text-sm overflow-auto">
+          <div className="flex-1 flex flex-col overflow-hidden">
             {selectedTab === 'output' && (
-              <div className="space-y-2">
-                <div className="flex items-center space-x-2 text-slate-600 dark:text-slate-400">
-                  <BoltIcon className="w-4 h-4" />
-                  <span className="font-medium">실행 결과</span>
-                </div>
+              <div className="flex-1 p-4 bg-white dark:bg-gray-900 font-mono text-sm overflow-auto">
+                <div className="space-y-2">
+                  <div className="flex items-center space-x-2 text-slate-600 dark:text-slate-400">
+                    <BoltIcon className="w-4 h-4" />
+                    <span className="font-medium">실행 결과</span>
+                  </div>
 
-                {isRunning ? (
-                  <div className="flex items-center space-x-2 p-4 bg-amber-50 dark:bg-amber-900/20 rounded-lg">
-                    <div className="w-4 h-4 border-2 border-amber-500 border-t-transparent rounded-full animate-spin"></div>
-                    <span className="text-amber-700 dark:text-amber-300">
-                      코드를 실행하고 있습니다...
-                    </span>
-                  </div>
-                ) : output ? (
-                  <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                    <pre className="whitespace-pre-wrap text-gray-700 dark:text-gray-300">
-                      {output}
-                    </pre>
-                  </div>
-                ) : (
-                  <div className="p-4 text-gray-500 dark:text-gray-400 text-center">
-                    <div className="mb-2">🚀</div>
-                    <div>Ctrl+Enter를 눌러 코드를 실행해보세요!</div>
-                  </div>
-                )}
+                  {isRunning ? (
+                    <div className="flex items-center space-x-2 p-4 bg-amber-50 dark:bg-amber-900/20 rounded-lg">
+                      <div className="w-4 h-4 border-2 border-amber-500 border-t-transparent rounded-full animate-spin"></div>
+                      <span className="text-amber-700 dark:text-amber-300">
+                        코드를 실행하고 있습니다...
+                      </span>
+                    </div>
+                  ) : output ? (
+                    <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                      <pre className="whitespace-pre-wrap text-gray-700 dark:text-gray-300">
+                        {output}
+                      </pre>
+                    </div>
+                  ) : (
+                    <div className="p-4 text-gray-500 dark:text-gray-400 text-center">
+                      <div className="mb-2">🚀</div>
+                      <div>Ctrl+Enter를 눌러 코드를 실행해보세요!</div>
+                    </div>
+                  )}
+                </div>
               </div>
             )}
 
             {selectedTab === 'preview' && (
-              <div className="space-y-4">
-                <div className="p-4 bg-gradient-to-br from-slate-50 to-gray-50 dark:from-slate-900/20 dark:to-gray-900/20 rounded-lg border border-slate-200/50 dark:border-gray-700/50">
-                  <h3 className="font-bold text-gray-900 dark:text-white mb-2">
-                    🌟 Welcome Card
-                  </h3>
-                  <p className="text-gray-600 dark:text-gray-300">
-                    AI 코드 캔버스에 오신 것을 환영합니다!
-                  </p>
-                  <div className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-                    {new Date().toISOString()}
-                  </div>
-                </div>
-
-                <div className="p-4 bg-gradient-to-br from-emerald-50 to-emerald-100 dark:from-emerald-900/20 dark:to-emerald-800/20 rounded-lg border border-emerald-200/50 dark:border-emerald-700/50">
-                  <h3 className="font-bold text-gray-900 dark:text-white mb-2">
-                    👋 Greeting
-                  </h3>
-                  <p className="text-gray-600 dark:text-gray-300">
-                    Hello, Developer! 🌟
-                  </p>
-                </div>
-              </div>
+              <PreviewRenderer
+                code={code}
+                language={selectedLanguage}
+                onExecute={runCode}
+                className="flex-1"
+              />
             )}
           </div>
         </motion.div>
