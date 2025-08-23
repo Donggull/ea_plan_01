@@ -15,6 +15,7 @@ import {
   AdjustmentsHorizontalIcon,
 } from '@heroicons/react/24/outline'
 import useProjectStore from '@/lib/stores/projectStore'
+import { useModalStore } from '@/stores/modalStore'
 import CreateProjectModal from '@/components/project/CreateProjectModal'
 import ProjectCard from '@/components/project/ProjectCard'
 import { ProjectService } from '@/lib/services/projectService'
@@ -33,7 +34,11 @@ export default function ProjectsPage() {
     getFilteredProjects,
   } = useProjectStore()
 
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
+  const {
+    isCreateProjectModalOpen,
+    openCreateProjectModal,
+    closeCreateProjectModal,
+  } = useModalStore()
   const [showSortMenu, setShowSortMenu] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -247,7 +252,7 @@ export default function ProjectsPage() {
           className="mt-4 md:mt-0"
         >
           <button
-            onClick={() => setIsCreateModalOpen(true)}
+            onClick={openCreateProjectModal}
             className="bg-gradient-to-r from-slate-600 to-slate-700 text-white px-6 py-3 rounded-xl font-medium hover:shadow-lg transition-all duration-300 flex items-center space-x-2"
           >
             <BoltIcon className="w-5 h-5" />
@@ -496,8 +501,8 @@ export default function ProjectsPage() {
 
       {/* Create Project Modal */}
       <CreateProjectModal
-        isOpen={isCreateModalOpen}
-        onClose={() => setIsCreateModalOpen(false)}
+        isOpen={isCreateProjectModalOpen}
+        onClose={closeCreateProjectModal}
       />
     </div>
   )

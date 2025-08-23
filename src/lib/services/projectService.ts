@@ -351,7 +351,10 @@ export class ProjectService {
 
         if (!memberError && memberProjects) {
           const memberWithRole = memberProjects
-            .filter(member => member.projects.owner_id !== defaultUserId)
+            .filter(
+              member =>
+                member.projects && member.projects.owner_id !== defaultUserId
+            )
             .map(member => ({
               ...member.projects,
               userRole: member.role,

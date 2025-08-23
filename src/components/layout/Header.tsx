@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { usePathname } from 'next/navigation'
 import Link from 'next/link'
 import { useThemeStore } from '@/stores/theme'
+import { useModalStore } from '@/stores/modalStore'
 import {
   Bars3Icon,
   BellIcon,
@@ -43,6 +44,7 @@ const projectCategories = [
 
 export default function Header({ onMenuToggle }: HeaderProps) {
   const { isDarkMode, toggleTheme } = useThemeStore()
+  const { openCreateProjectModal } = useModalStore()
   const [searchQuery, setSearchQuery] = useState('')
   const pathname = usePathname()
 
@@ -165,13 +167,13 @@ export default function Header({ onMenuToggle }: HeaderProps) {
             </div>
 
             {/* New Project Button */}
-            <Link
-              href="/projects/new"
+            <button
+              onClick={openCreateProjectModal}
               className="bg-slate-600 hover:bg-slate-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors flex items-center space-x-2"
             >
               <PlusIcon className="w-4 h-4" />
               <span className="hidden sm:inline">새 프로젝트</span>
-            </Link>
+            </button>
 
             {/* Theme toggle */}
             <button
