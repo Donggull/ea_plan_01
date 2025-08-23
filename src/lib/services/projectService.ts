@@ -12,6 +12,8 @@ export interface CreateProjectData {
   status?: 'active' | 'completed' | 'archived' | 'paused'
   tags?: string[]
   metadata?: Record<string, unknown>
+  is_public?: boolean
+  visibility_level?: 'private' | 'shared' | 'public'
 }
 
 export interface UpdateProjectData {
@@ -21,6 +23,8 @@ export interface UpdateProjectData {
   status?: 'active' | 'completed' | 'archived' | 'paused'
   tags?: string[]
   metadata?: Record<string, unknown>
+  is_public?: boolean
+  visibility_level?: 'private' | 'shared' | 'public'
 }
 
 export interface ProjectListFilters {
@@ -30,6 +34,8 @@ export interface ProjectListFilters {
   search?: string
   limit?: number
   offset?: number
+  project_type?: 'owned' | 'shared' | 'member' | 'public' | 'all'
+  visibility_level?: 'private' | 'shared' | 'public'
 }
 
 export interface ProjectServiceResponse<T = unknown> {
@@ -43,6 +49,9 @@ export interface ProjectWithStats extends Project {
   documentCount?: number
   imageCount?: number
   lastActivity?: string
+  userRole?: 'owner' | 'admin' | 'member' | 'viewer' | null
+  isOwner?: boolean
+  isMember?: boolean
 }
 
 export class ProjectService {
@@ -55,12 +64,15 @@ export class ProjectService {
 
       const insertData: ProjectInsert = {
         user_id: defaultUserId,
+        owner_id: defaultUserId,
         name: projectData.name,
         description: projectData.description,
         category: projectData.category,
         status: projectData.status || 'active',
         tags: projectData.tags || [],
         metadata: projectData.metadata || {},
+        is_public: projectData.is_public || false,
+        visibility_level: projectData.visibility_level || 'private',
       }
 
       const { data: newProject, error: insertError } = await supabase
@@ -298,78 +310,139 @@ export class ProjectService {
     filters: ProjectListFilters = {}
   ): Promise<ProjectServiceResponse<ProjectWithStats[]>> {
     try {
-      // For now, skip authentication check to allow demo mode
-      // TODO: Re-enable authentication when auth system is properly configured
-      /*
-      const {
-        data: { user },
-        error: authError,
-      } = await supabase.auth.getUser()
+      // For demo mode, use default user ID
+      const defaultUserId = 'c8b9c8d7-0c5a-4914-812e-5eedc4fd3a3d' // Sample user ID
 
-      if (authError || !user) {
-        return {
-          data: null,
-          error: 'User must be authenticated',
-          success: false,
+      const projectsWithAccess: (Project & {
+        userRole?: string | null
+        isOwner?: boolean
+        isMember?: boolean
+      })[] = []
+
+      // Determine which projects to fetch based on project_type filter
+      const projectType = filters.project_type || 'all'
+
+      if (projectType === 'owned' || projectType === 'all') {
+        // Get projects owned by the user
+        const ownedQuery = supabase
+          .from('projects')
+          .select('*, project_members!left(*)')
+          .eq('owner_id', defaultUserId)
+
+        const { data: ownedProjects, error: ownedError } = await ownedQuery
+
+        if (!ownedError && ownedProjects) {
+          const ownedWithRole = ownedProjects.map(project => ({
+            ...project,
+            userRole: 'owner' as const,
+            isOwner: true,
+            isMember: false,
+          }))
+          projectsWithAccess.push(...ownedWithRole)
         }
       }
-      */
 
-      // Get all projects for demo purposes - remove .eq('user_id', user.id)
-      let query = supabase.from('projects').select('*')
+      if (projectType === 'member' || projectType === 'all') {
+        // Get projects where user is a member (but not owner)
+        const { data: memberProjects, error: memberError } = await supabase
+          .from('project_members')
+          .select('*, projects(*)')
+          .eq('user_id', defaultUserId)
 
-      // Apply filters
+        if (!memberError && memberProjects) {
+          const memberWithRole = memberProjects
+            .filter(member => member.projects.owner_id !== defaultUserId)
+            .map(member => ({
+              ...member.projects,
+              userRole: member.role,
+              isOwner: false,
+              isMember: true,
+            }))
+          projectsWithAccess.push(...memberWithRole)
+        }
+      }
+
+      if (projectType === 'public' || projectType === 'all') {
+        // Get public projects (excluding already included ones)
+        const { data: publicProjects, error: publicError } = await supabase
+          .from('projects')
+          .select('*')
+          .eq('is_public', true)
+          .eq('visibility_level', 'public')
+
+        if (!publicError && publicProjects) {
+          const existingIds = new Set(projectsWithAccess.map(p => p.id))
+          const publicWithRole = publicProjects
+            .filter(project => !existingIds.has(project.id))
+            .map(project => ({
+              ...project,
+              userRole: null,
+              isOwner: false,
+              isMember: false,
+            }))
+          projectsWithAccess.push(...publicWithRole)
+        }
+      }
+
+      // Apply additional filters
+      let filteredProjects = projectsWithAccess
+
       if (filters.category) {
-        query = query.eq('category', filters.category)
+        filteredProjects = filteredProjects.filter(
+          p => p.category === filters.category
+        )
       }
 
       if (filters.status) {
-        query = query.eq('status', filters.status)
+        filteredProjects = filteredProjects.filter(
+          p => p.status === filters.status
+        )
+      }
+
+      if (filters.visibility_level) {
+        filteredProjects = filteredProjects.filter(
+          p => p.visibility_level === filters.visibility_level
+        )
       }
 
       if (filters.tags && filters.tags.length > 0) {
-        query = query.overlaps('tags', filters.tags)
+        filteredProjects = filteredProjects.filter(
+          p =>
+            p.tags && p.tags.some((tag: string) => filters.tags!.includes(tag))
+        )
       }
 
       if (filters.search) {
-        query = query.or(
-          `name.ilike.%${filters.search}%,description.ilike.%${filters.search}%`
+        const searchLower = filters.search.toLowerCase()
+        filteredProjects = filteredProjects.filter(
+          p =>
+            p.name.toLowerCase().includes(searchLower) ||
+            (p.description && p.description.toLowerCase().includes(searchLower))
         )
       }
+
+      // Sort by updated_at descending
+      filteredProjects.sort(
+        (a, b) =>
+          new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
+      )
 
       // Apply pagination
-      if (filters.limit) {
-        query = query.limit(filters.limit)
+      let paginatedProjects = filteredProjects
+      if (filters.offset || filters.limit) {
+        const offset = filters.offset || 0
+        const limit = filters.limit || 10
+        paginatedProjects = filteredProjects.slice(offset, offset + limit)
       }
 
-      if (filters.offset) {
-        query = query.range(
-          filters.offset,
-          filters.offset + (filters.limit || 10) - 1
-        )
-      }
-
-      // Order by updated_at descending
-      query = query.order('updated_at', { ascending: false })
-
-      const { data: projects, error: projectsError } = await query
-
-      if (projectsError) {
-        return {
-          data: null,
-          error: `Failed to fetch projects: ${projectsError.message}`,
-          success: false,
-        }
-      }
-
-      // For demo mode, simplify stats calculation to avoid complex queries
-      const projectsWithStats: ProjectWithStats[] = (projects || []).map(
+      // Add sample stats for demo
+      const projectsWithStats: ProjectWithStats[] = paginatedProjects.map(
         project => ({
           ...project,
-          conversationCount: Math.floor(Math.random() * 10), // Sample data
-          documentCount: Math.floor(Math.random() * 5), // Sample data
-          imageCount: Math.floor(Math.random() * 3), // Sample data
-          lastActivity: project.updated_at, // Use project's updated_at
+          conversationCount: Math.floor(Math.random() * 10),
+          documentCount: Math.floor(Math.random() * 5),
+          imageCount: Math.floor(Math.random() * 3),
+          lastActivity: project.updated_at,
         })
       )
 
@@ -532,6 +605,182 @@ export class ProjectService {
     searchTerm: string
   ): Promise<ProjectServiceResponse<ProjectWithStats[]>> {
     return this.listProjects({ search: searchTerm })
+  }
+
+  // Project sharing and member management methods
+  static async addProjectMember(
+    projectId: string,
+    userId: string,
+    role: 'admin' | 'member' | 'viewer' = 'member'
+  ): Promise<
+    ProjectServiceResponse<
+      Database['public']['Tables']['project_members']['Row']
+    >
+  > {
+    try {
+      const defaultUserId = 'c8b9c8d7-0c5a-4914-812e-5eedc4fd3a3d'
+
+      const { data, error } = await supabase
+        .from('project_members')
+        .insert({
+          project_id: projectId,
+          user_id: userId,
+          role,
+          invited_by: defaultUserId,
+        })
+        .select()
+        .single()
+
+      if (error) {
+        return {
+          data: null,
+          error: `Failed to add project member: ${error.message}`,
+          success: false,
+        }
+      }
+
+      return {
+        data,
+        error: null,
+        success: true,
+      }
+    } catch (error) {
+      return {
+        data: null,
+        error: `Unexpected error: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        success: false,
+      }
+    }
+  }
+
+  static async removeProjectMember(
+    projectId: string,
+    userId: string
+  ): Promise<ProjectServiceResponse<boolean>> {
+    try {
+      const { error } = await supabase
+        .from('project_members')
+        .delete()
+        .eq('project_id', projectId)
+        .eq('user_id', userId)
+
+      if (error) {
+        return {
+          data: null,
+          error: `Failed to remove project member: ${error.message}`,
+          success: false,
+        }
+      }
+
+      return {
+        data: true,
+        error: null,
+        success: true,
+      }
+    } catch (error) {
+      return {
+        data: null,
+        error: `Unexpected error: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        success: false,
+      }
+    }
+  }
+
+  static async getProjectMembers(
+    projectId: string
+  ): Promise<
+    ProjectServiceResponse<
+      Database['public']['Tables']['project_members']['Row'][]
+    >
+  > {
+    try {
+      const { data, error } = await supabase
+        .from('project_members')
+        .select('*')
+        .eq('project_id', projectId)
+        .order('created_at', { ascending: false })
+
+      if (error) {
+        return {
+          data: null,
+          error: `Failed to fetch project members: ${error.message}`,
+          success: false,
+        }
+      }
+
+      return {
+        data: data || [],
+        error: null,
+        success: true,
+      }
+    } catch (error) {
+      return {
+        data: null,
+        error: `Unexpected error: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        success: false,
+      }
+    }
+  }
+
+  static async updateProjectVisibility(
+    projectId: string,
+    isPublic: boolean,
+    visibilityLevel: 'private' | 'shared' | 'public'
+  ): Promise<ProjectServiceResponse<Project>> {
+    try {
+      const defaultUserId = 'c8b9c8d7-0c5a-4914-812e-5eedc4fd3a3d'
+
+      const { data, error } = await supabase
+        .from('projects')
+        .update({
+          is_public: isPublic,
+          visibility_level: visibilityLevel,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', projectId)
+        .eq('owner_id', defaultUserId)
+        .select()
+        .single()
+
+      if (error) {
+        return {
+          data: null,
+          error: `Failed to update project visibility: ${error.message}`,
+          success: false,
+        }
+      }
+
+      return {
+        data,
+        error: null,
+        success: true,
+      }
+    } catch (error) {
+      return {
+        data: null,
+        error: `Unexpected error: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        success: false,
+      }
+    }
+  }
+
+  // Helper methods for getting projects by access type
+  static async getOwnedProjects(): Promise<
+    ProjectServiceResponse<ProjectWithStats[]>
+  > {
+    return this.listProjects({ project_type: 'owned' })
+  }
+
+  static async getSharedProjects(): Promise<
+    ProjectServiceResponse<ProjectWithStats[]>
+  > {
+    return this.listProjects({ project_type: 'member' })
+  }
+
+  static async getPublicProjects(): Promise<
+    ProjectServiceResponse<ProjectWithStats[]>
+  > {
+    return this.listProjects({ project_type: 'public' })
   }
 
   private static async logProjectActivity(

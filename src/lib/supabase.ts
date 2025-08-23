@@ -36,24 +36,30 @@ export type Database = {
         Row: {
           id: string
           user_id: string
+          owner_id: string
           name: string
           description?: string
           category: 'proposal' | 'development' | 'operation'
           status: 'active' | 'completed' | 'archived' | 'paused'
           tags: string[]
           metadata: Record<string, unknown>
+          is_public: boolean
+          visibility_level: 'private' | 'shared' | 'public'
           created_at: string
           updated_at: string
         }
         Insert: {
           id?: string
           user_id: string
+          owner_id?: string
           name: string
           description?: string
           category: 'proposal' | 'development' | 'operation'
           status?: 'active' | 'completed' | 'archived' | 'paused'
           tags?: string[]
           metadata?: Record<string, unknown>
+          is_public?: boolean
+          visibility_level?: 'private' | 'shared' | 'public'
           created_at?: string
           updated_at?: string
         }
@@ -64,6 +70,34 @@ export type Database = {
           status?: 'active' | 'completed' | 'archived' | 'paused'
           tags?: string[]
           metadata?: Record<string, unknown>
+          is_public?: boolean
+          visibility_level?: 'private' | 'shared' | 'public'
+          updated_at?: string
+        }
+      }
+      project_members: {
+        Row: {
+          id: string
+          project_id: string
+          user_id: string
+          role: 'owner' | 'admin' | 'member' | 'viewer'
+          invited_by?: string
+          joined_at: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          project_id: string
+          user_id: string
+          role?: 'owner' | 'admin' | 'member' | 'viewer'
+          invited_by?: string
+          joined_at?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          role?: 'owner' | 'admin' | 'member' | 'viewer'
           updated_at?: string
         }
       }
