@@ -14,6 +14,13 @@ interface RFPUploadProps {
   projectId: string
 }
 
+interface AIModel {
+  id: string
+  name: string
+  description: string
+  icon: string
+}
+
 export interface RFPAnalysisResult {
   projectTitle: string
   client: string
@@ -35,88 +42,152 @@ export interface RFPAnalysisResult {
 }
 
 export default function RFPUpload({ onUpload, projectId }: RFPUploadProps) {
-  const [uploadStatus, setUploadStatus] = useState<'idle' | 'uploading' | 'analyzing' | 'success' | 'error'>('idle')
+  const [uploadStatus, setUploadStatus] = useState<
+    'idle' | 'uploading' | 'analyzing' | 'success' | 'error'
+  >('idle')
   const [error, setError] = useState<string | null>(null)
   const [analysisProgress, setAnalysisProgress] = useState(0)
+  const [selectedModel, setSelectedModel] = useState<string>('gemini')
 
-  const onDrop = useCallback(async (acceptedFiles: File[]) => {
-    if (acceptedFiles.length === 0) return
+  const aiModels: AIModel[] = [
+    {
+      id: 'gemini',
+      name: 'Google Gemini',
+      description: '빠른 분석 속도, 비용 효율적',
+      icon: '🔮',
+    },
+    {
+      id: 'chatgpt',
+      name: 'ChatGPT-4',
+      description: '고품질 텍스트 분석, 정확성 높음',
+      icon: '🤖',
+    },
+    {
+      id: 'claude',
+      name: 'Claude Sonnet',
+      description: '도구 연동 지원, 구조화된 분석',
+      icon: '🧠',
+    },
+  ]
 
-    const file = acceptedFiles[0]
-    setUploadStatus('uploading')
-    setError(null)
+  const onDrop = useCallback(
+    async (acceptedFiles: File[]) => {
+      if (acceptedFiles.length === 0) return
 
-    try {
-      // 파일 업로드
-      const formData = new FormData()
-      formData.append('file', file)
-      formData.append('projectId', projectId)
+      const file = acceptedFiles[0]
+      setUploadStatus('uploading')
+      setError(null)
 
-      const uploadResponse = await fetch('/api/proposal/upload-rfp', {
-        method: 'POST',
-        body: formData,
-      })
+      try {
+        // 파일 크기 검증
+        if (file.size > 50 * 1024 * 1024) {
+          throw new Error('파일 크기가 50MB를 초과합니다.')
+        }
 
-      if (!uploadResponse.ok) {
-        throw new Error('파일 업로드에 실패했습니다.')
-      }
+        // 파일 업로드
+        const formData = new FormData()
+        formData.append('file', file)
+        formData.append('projectId', projectId)
 
-      const { fileUrl, textContent } = await uploadResponse.json()
+        console.log(
+          'Uploading file:',
+          file.name,
+          'Size:',
+          file.size,
+          'Type:',
+          file.type
+        )
 
-      // AI 분석 시작
-      setUploadStatus('analyzing')
-      
-      // 분석 진행률 시뮬레이션
-      const progressInterval = setInterval(() => {
-        setAnalysisProgress(prev => {
-          if (prev >= 90) {
-            clearInterval(progressInterval)
-            return prev
-          }
-          return prev + Math.random() * 20
+        const uploadResponse = await fetch('/api/proposal/upload-rfp', {
+          method: 'POST',
+          body: formData,
         })
-      }, 500)
 
-      const analysisResponse = await fetch('/api/proposal/analyze-rfp', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          textContent,
-          fileName: file.name,
-          projectId,
-        }),
-      })
+        console.log('Upload response status:', uploadResponse.status)
 
-      clearInterval(progressInterval)
+        if (!uploadResponse.ok) {
+          const errorText = await uploadResponse.text()
+          console.error('Upload error response:', errorText)
 
-      if (!analysisResponse.ok) {
-        throw new Error('RFP 분석에 실패했습니다.')
+          let errorData
+          try {
+            errorData = JSON.parse(errorText)
+          } catch {
+            errorData = {
+              error: `HTTP ${uploadResponse.status}: ${uploadResponse.statusText}`,
+            }
+          }
+
+          throw new Error(errorData.error || '파일 업로드에 실패했습니다.')
+        }
+
+        const uploadResult = await uploadResponse.json()
+        console.log('Upload result:', uploadResult)
+        const { textContent } = uploadResult
+
+        // AI 분석 시작
+        setUploadStatus('analyzing')
+
+        // 분석 진행률 시뮬레이션
+        const progressInterval = setInterval(() => {
+          setAnalysisProgress(prev => {
+            if (prev >= 90) {
+              clearInterval(progressInterval)
+              return prev
+            }
+            return prev + Math.random() * 20
+          })
+        }, 500)
+
+        const analysisResponse = await fetch('/api/proposal/analyze-rfp', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            textContent,
+            fileName: file.name,
+            projectId,
+            aiModel: selectedModel,
+          }),
+        })
+
+        clearInterval(progressInterval)
+
+        if (!analysisResponse.ok) {
+          const errorText = await analysisResponse.text()
+          console.error('Analysis error response:', errorText)
+          throw new Error('RFP 분석에 실패했습니다.')
+        }
+
+        const analysisResult: RFPAnalysisResult = await analysisResponse.json()
+        console.log('Analysis result:', analysisResult)
+
+        setAnalysisProgress(100)
+        setUploadStatus('success')
+
+        // 분석 완료 후 콜백 호출
+        setTimeout(() => {
+          onUpload(file, analysisResult)
+        }, 1000)
+      } catch (err) {
+        console.error('Upload/Analysis error:', err)
+        setUploadStatus('error')
+        setError(
+          err instanceof Error ? err.message : '알 수 없는 오류가 발생했습니다.'
+        )
       }
-
-      const analysisResult: RFPAnalysisResult = await analysisResponse.json()
-      
-      setAnalysisProgress(100)
-      setUploadStatus('success')
-      
-      // 분석 완료 후 콜백 호출
-      setTimeout(() => {
-        onUpload(file, analysisResult)
-      }, 1000)
-
-    } catch (err) {
-      setUploadStatus('error')
-      setError(err instanceof Error ? err.message : '알 수 없는 오류가 발생했습니다.')
-    }
-  }, [onUpload, projectId])
+    },
+    [onUpload, projectId, selectedModel]
+  )
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
     accept: {
       'application/pdf': ['.pdf'],
       'application/msword': ['.doc'],
-      'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx'],
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document':
+        ['.docx'],
       'application/haansofthwp': ['.hwp'],
       'text/plain': ['.txt'],
     },
@@ -127,9 +198,13 @@ export default function RFPUpload({ onUpload, projectId }: RFPUploadProps) {
   const getStatusIcon = () => {
     switch (uploadStatus) {
       case 'uploading':
-        return <CloudArrowUpIcon className="w-8 h-8 text-blue-500 animate-pulse" />
+        return (
+          <CloudArrowUpIcon className="w-8 h-8 text-blue-500 animate-pulse" />
+        )
       case 'analyzing':
-        return <DocumentTextIcon className="w-8 h-8 text-indigo-500 animate-spin" />
+        return (
+          <DocumentTextIcon className="w-8 h-8 text-indigo-500 animate-spin" />
+        )
       case 'success':
         return <CheckCircleIcon className="w-8 h-8 text-green-500" />
       case 'error':
@@ -165,28 +240,68 @@ export default function RFPUpload({ onUpload, projectId }: RFPUploadProps) {
         </p>
       </div>
 
+      {/* AI Model Selection */}
+      <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
+        <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-3">
+          분석에 사용할 AI 모델을 선택하세요
+        </h4>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          {aiModels.map(model => (
+            <button
+              key={model.id}
+              onClick={() => setSelectedModel(model.id)}
+              disabled={
+                uploadStatus === 'uploading' || uploadStatus === 'analyzing'
+              }
+              className={`p-3 rounded-lg border-2 transition-all text-left ${
+                selectedModel === model.id
+                  ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
+                  : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500'
+              } ${
+                uploadStatus === 'uploading' || uploadStatus === 'analyzing'
+                  ? 'opacity-50 cursor-not-allowed'
+                  : 'cursor-pointer'
+              }`}
+            >
+              <div className="flex items-center space-x-2 mb-2">
+                <span className="text-lg">{model.icon}</span>
+                <span className="font-medium text-gray-900 dark:text-white text-sm">
+                  {model.name}
+                </span>
+                {selectedModel === model.id && (
+                  <div className="w-2 h-2 bg-blue-500 rounded-full ml-auto" />
+                )}
+              </div>
+              <p className="text-xs text-gray-600 dark:text-gray-400">
+                {model.description}
+              </p>
+            </button>
+          ))}
+        </div>
+      </div>
+
       <div
         {...getRootProps()}
         className={`relative border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-all duration-200 ${
           isDragActive
             ? 'border-blue-400 bg-blue-50 dark:bg-blue-900/20'
             : uploadStatus === 'error'
-            ? 'border-red-300 bg-red-50 dark:bg-red-900/20'
-            : uploadStatus === 'success'
-            ? 'border-green-300 bg-green-50 dark:bg-green-900/20'
-            : 'border-gray-300 dark:border-gray-700 hover:border-gray-400 dark:hover:border-gray-600'
+              ? 'border-red-300 bg-red-50 dark:bg-red-900/20'
+              : uploadStatus === 'success'
+                ? 'border-green-300 bg-green-50 dark:bg-green-900/20'
+                : 'border-gray-300 dark:border-gray-700 hover:border-gray-400 dark:hover:border-gray-600'
         } ${uploadStatus === 'uploading' || uploadStatus === 'analyzing' ? 'pointer-events-none' : ''}`}
       >
         <input {...getInputProps()} />
-        
+
         <div className="flex flex-col items-center space-y-4">
           {getStatusIcon()}
-          
+
           <div>
             <p className="text-lg font-medium text-gray-900 dark:text-white">
               {getStatusText()}
             </p>
-            
+
             {uploadStatus === 'idle' && (
               <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
                 {isDragActive
@@ -224,7 +339,8 @@ export default function RFPUpload({ onUpload, projectId }: RFPUploadProps) {
                 분석 완료
               </h4>
               <p className="text-sm text-green-600 dark:text-green-300 mt-1">
-                RFP 문서가 성공적으로 분석되었습니다. 결과를 확인하고 필요시 수정하세요.
+                RFP 문서가 성공적으로 분석되었습니다. 결과를 확인하고 필요시
+                수정하세요.
               </p>
             </div>
           </div>

@@ -2,7 +2,12 @@ import { NextRequest, NextResponse } from 'next/server'
 
 export async function POST(request: NextRequest) {
   try {
-    const { textContent, fileName, projectId } = await request.json()
+    const {
+      textContent,
+      fileName,
+      projectId,
+      aiModel = 'gemini',
+    } = await request.json()
 
     if (!textContent || !fileName) {
       return NextResponse.json(
@@ -11,28 +16,35 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Simulate AI analysis with a realistic delay
-    await new Promise(resolve => setTimeout(resolve, 3000))
+    console.log(
+      `Starting RFP analysis with ${aiModel} model for file: ${fileName}`
+    )
+
+    // Simulate AI analysis with different delays based on model
+    const analysisDelay =
+      aiModel === 'gemini' ? 2000 : aiModel === 'chatgpt' ? 4000 : 3000
+    await new Promise(resolve => setTimeout(resolve, analysisDelay))
 
     // For demo purposes, generate a mock analysis based on keywords
+    // In real implementation, this would call the selected AI model's API
     const analysis = {
-      projectTitle: extractProjectTitle(textContent, fileName),
+      projectTitle: extractProjectTitle(textContent, fileName, aiModel),
       client: extractClient(textContent),
       deadline: extractDeadline(textContent),
       budget: extractBudget(textContent),
       requirements: {
-        functional: extractFunctionalRequirements(textContent),
-        technical: extractTechnicalRequirements(textContent),
-        design: extractDesignRequirements(textContent),
+        functional: extractFunctionalRequirements(textContent, aiModel),
+        technical: extractTechnicalRequirements(textContent, aiModel),
+        design: extractDesignRequirements(textContent, aiModel),
       },
       scope: extractScope(textContent),
       deliverables: extractDeliverables(textContent),
-      riskFactors: extractRiskFactors(textContent),
-      keyPoints: extractKeyPoints(textContent),
+      riskFactors: extractRiskFactors(textContent, aiModel),
+      keyPoints: extractKeyPoints(textContent, aiModel),
     }
 
+    console.log(`RFP analysis completed using ${aiModel} model`)
     return NextResponse.json(analysis)
-
   } catch (error) {
     console.error('RFP analysis error:', error)
     return NextResponse.json(
@@ -42,7 +54,11 @@ export async function POST(request: NextRequest) {
   }
 }
 
-function extractProjectTitle(content: string, fileName: string): string {
+function extractProjectTitle(
+  content: string,
+  fileName: string,
+  aiModel?: string
+): string {
   // Look for project title patterns
   const titlePatterns = [
     /프로젝트\s*명?\s*[:：]\s*(.+)/i,
@@ -134,12 +150,27 @@ function extractBudget(content: string) {
   }
 }
 
-function extractFunctionalRequirements(content: string): string[] {
+function extractFunctionalRequirements(
+  content: string,
+  aiModel?: string
+): string[] {
   const requirements = []
-  
+
   // Look for common functional requirement keywords
-  const keywords = ['사용자 관리', '로그인', '회원가입', '게시판', '검색', '결제', '주문', '관리자', '대시보드', '리포트', '알림']
-  
+  const keywords = [
+    '사용자 관리',
+    '로그인',
+    '회원가입',
+    '게시판',
+    '검색',
+    '결제',
+    '주문',
+    '관리자',
+    '대시보드',
+    '리포트',
+    '알림',
+  ]
+
   for (const keyword of keywords) {
     if (content.includes(keyword)) {
       requirements.push(`${keyword} 기능 구현`)
@@ -159,9 +190,12 @@ function extractFunctionalRequirements(content: string): string[] {
   return requirements
 }
 
-function extractTechnicalRequirements(content: string): string[] {
+function extractTechnicalRequirements(
+  content: string,
+  aiModel?: string
+): string[] {
   const requirements = []
-  
+
   // Look for technical keywords
   const techKeywords = [
     { keyword: 'React', requirement: 'React 프레임워크 사용' },
@@ -192,12 +226,23 @@ function extractTechnicalRequirements(content: string): string[] {
   return requirements
 }
 
-function extractDesignRequirements(content: string): string[] {
+function extractDesignRequirements(
+  content: string,
+  aiModel?: string
+): string[] {
   const requirements = []
-  
+
   // Look for design keywords
-  const designKeywords = ['디자인', '브랜드', '로고', 'UI', 'UX', '사용성', '접근성']
-  
+  const designKeywords = [
+    '디자인',
+    '브랜드',
+    '로고',
+    'UI',
+    'UX',
+    '사용성',
+    '접근성',
+  ]
+
   for (const keyword of designKeywords) {
     if (content.includes(keyword)) {
       requirements.push(`${keyword} 가이드라인 준수`)
@@ -236,10 +281,10 @@ function extractScope(content: string): string {
 
 function extractDeliverables(content: string): string[] {
   const deliverables = []
-  
+
   // Look for deliverable keywords
   const keywords = ['소스코드', '문서', '매뉴얼', '설계서', '테스트', '교육']
-  
+
   for (const keyword of keywords) {
     if (content.includes(keyword)) {
       deliverables.push(`${keyword} 제공`)
@@ -260,22 +305,22 @@ function extractDeliverables(content: string): string[] {
   return deliverables
 }
 
-function extractRiskFactors(content: string): string[] {
+function extractRiskFactors(content: string, aiModel?: string): string[] {
   return [
     '요구사항 변경에 따른 일정 지연 가능성',
     '외부 API 연동 시 기술적 제약사항',
     '브라우저 호환성 이슈',
     '데이터 마이그레이션 복잡성',
-    '성능 최적화 요구사항'
+    '성능 최적화 요구사항',
   ]
 }
 
-function extractKeyPoints(content: string): string[] {
+function extractKeyPoints(content: string, aiModel?: string): string[] {
   return [
     '사용자 경험(UX) 최적화에 중점',
     '확장 가능한 아키텍처 설계',
     '보안 및 개인정보 보호 강화',
     '유지보수 용이성 고려',
-    '프로젝트 일정 및 품질 관리'
+    '프로젝트 일정 및 품질 관리',
   ]
 }
