@@ -30,14 +30,13 @@ interface HeaderProps {
 
 const mainNavigation = [
   { name: '대시보드', href: '/dashboard', icon: HomeIcon },
-  { name: '프로젝트', href: '/projects', icon: FolderIcon },
   { name: 'AI 채팅', href: '/chat', icon: ChatBubbleLeftRightIcon },
   { name: '코드 캔버스', href: '/canvas', icon: CodeBracketIcon },
   { name: '이미지 생성', href: '/images', icon: PhotoIcon },
-  { name: '운영 관리', href: '/operation', icon: Cog6ToothIcon },
 ]
 
 const projectCategories = [
+  { name: '전체 프로젝트', href: '/projects' },
   { name: '제안 진행', href: '/projects?category=proposal' },
   { name: '구축 관리', href: '/projects?category=development' },
   { name: '운영 관리', href: '/projects?category=operation' },
@@ -102,7 +101,7 @@ export default function Header({ onMenuToggle }: HeaderProps) {
             <Menu as="div" className="relative">
               <Menu.Button className="flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium text-gray-300 hover:text-white hover:bg-gray-700 transition-colors">
                 <FolderIcon className="w-5 h-5" />
-                <span>프로젝트 관리</span>
+                <span>프로젝트</span>
                 <svg
                   className="w-4 h-4"
                   fill="none"
@@ -216,8 +215,8 @@ export default function Header({ onMenuToggle }: HeaderProps) {
                 <Menu.Items className="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg py-1 bg-white dark:bg-gray-800 ring-1 ring-black ring-opacity-5 focus:outline-none z-50">
                   <Menu.Item>
                     {({ active }) => (
-                      <a
-                        href="#"
+                      <Link
+                        href="/profile"
                         className={`${
                           active
                             ? 'bg-gray-100 dark:bg-gray-700'
@@ -225,13 +224,13 @@ export default function Header({ onMenuToggle }: HeaderProps) {
                         } group flex px-4 py-2 text-sm`}
                       >
                         <UserCircleIcon className="mr-3 h-5 w-5" />내 프로필
-                      </a>
+                      </Link>
                     )}
                   </Menu.Item>
                   <Menu.Item>
                     {({ active }) => (
-                      <a
-                        href="#"
+                      <Link
+                        href="/settings"
                         className={`${
                           active
                             ? 'bg-gray-100 dark:bg-gray-700'
@@ -240,22 +239,25 @@ export default function Header({ onMenuToggle }: HeaderProps) {
                       >
                         <Cog6ToothIcon className="mr-3 h-5 w-5" />
                         설정
-                      </a>
+                      </Link>
                     )}
                   </Menu.Item>
                   <Menu.Item>
                     {({ active }) => (
-                      <a
-                        href="#"
+                      <button
+                        onClick={() => {
+                          // TODO: 로그아웃 로직 구현
+                          console.log('로그아웃')
+                        }}
                         className={`${
                           active
                             ? 'bg-gray-100 dark:bg-gray-700'
                             : 'text-gray-700 dark:text-gray-300'
-                        } group flex px-4 py-2 text-sm`}
+                        } group flex px-4 py-2 text-sm w-full text-left`}
                       >
                         <ArrowRightOnRectangleIcon className="mr-3 h-5 w-5" />
                         로그아웃
-                      </a>
+                      </button>
                     )}
                   </Menu.Item>
                 </Menu.Items>
