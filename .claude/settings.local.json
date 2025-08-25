@@ -23,7 +23,8 @@
       "mcp__playwright-stealth__playwright_screenshot",
       "mcp__playwright-stealth__playwright_close",
       "Bash(npx tsc:*)",
-      "Bash(npx eslint:*)"
+      "Bash(npx eslint:*)",
+      "Bash(killall:*)"
     ],
     "deny": [],
     "ask": []

@@ -34,6 +34,7 @@ const mainNavigation = [
   { name: 'AI 채팅', href: '/chat', icon: ChatBubbleLeftRightIcon },
   { name: '코드 캔버스', href: '/canvas', icon: CodeBracketIcon },
   { name: '이미지 생성', href: '/images', icon: PhotoIcon },
+  { name: '운영 관리', href: '/operation', icon: Cog6ToothIcon },
 ]
 
 const projectCategories = [

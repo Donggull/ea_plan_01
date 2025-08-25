@@ -21,6 +21,7 @@ import {
 import useProjectStore, { Project } from '@/lib/stores/projectStore'
 import ProposalWorkflow from '@/components/proposal/ProposalWorkflow'
 import DevelopmentWorkflow from '@/components/development/DevelopmentWorkflow'
+import OperationWorkflow from '@/components/operation/OperationWorkflow'
 
 interface TabContent {
   id: string
@@ -267,29 +268,14 @@ export default function ProjectDetailPage() {
             />
           )}
 
-          {/* Operation Category - Placeholder content */}
-          {project.category === 'operation' &&
-            tabs.find(tab => tab.id === activeTab) && (
-              <div className="text-center py-12">
-                <div className="w-16 h-16 bg-gradient-to-r from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-600 rounded-full flex items-center justify-center mx-auto mb-6">
-                  {React.createElement(
-                    tabs.find(tab => tab.id === activeTab)!.icon,
-                    {
-                      className: 'w-8 h-8 text-gray-500 dark:text-gray-400',
-                    }
-                  )}
-                </div>
-                <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
-                  {tabs.find(tab => tab.id === activeTab)?.label}
-                </h3>
-                <p className="text-gray-600 dark:text-gray-400 mb-6 max-w-md mx-auto">
-                  {tabs.find(tab => tab.id === activeTab)?.description}
-                </p>
-                <button className="px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl hover:shadow-lg transition-all">
-                  시작하기
-                </button>
-              </div>
-            )}
+          {/* Operation Category - Use OperationWorkflow */}
+          {project.category === 'operation' && (
+            <OperationWorkflow
+              projectId={project.id}
+              projectTitle={project.name}
+              projectCategory={project.category}
+            />
+          )}
         </motion.div>
       </div>
     </div>

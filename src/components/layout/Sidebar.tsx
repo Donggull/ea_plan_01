@@ -26,6 +26,8 @@ export default function Sidebar({ onClose }: SidebarProps) {
       return <CanvasSidebar />
     } else if (pathname === '/images') {
       return <ImagesSidebar />
+    } else if (pathname.startsWith('/operation')) {
+      return <OperationSidebar />
     }
     return <DefaultSidebar />
   }
@@ -731,6 +733,143 @@ function ProjectDetailSidebar() {
             <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
             <span className="text-xs text-gray-600 dark:text-gray-400">
               시장조사 문서 업로드
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// Operation Sidebar
+function OperationSidebar() {
+  const pathname = usePathname()
+
+  const operationModules = [
+    {
+      id: 'requirements',
+      name: '요건 관리',
+      href: '/operation/requirements',
+      icon: '📋',
+    },
+    {
+      id: 'task-distribution',
+      name: '업무 분배',
+      href: '/operation/task-distribution',
+      icon: '👥',
+    },
+    {
+      id: 'schedule',
+      name: '일정 관리',
+      href: '/operation/schedule',
+      icon: '📅',
+    },
+    {
+      id: 'performance',
+      name: '성과 관리',
+      href: '/operation/performance',
+      icon: '📊',
+    },
+    {
+      id: 'communication',
+      name: '커뮤니케이션',
+      href: '/operation/communication',
+      icon: '💬',
+    },
+    {
+      id: 'reports',
+      name: '운영 보고서',
+      href: '/operation/reports',
+      icon: '📈',
+    },
+    {
+      id: 'workflow',
+      name: '통합 워크플로우',
+      href: '/operation/workflow',
+      icon: '🔄',
+    },
+  ]
+
+  return (
+    <div className="p-6 space-y-6">
+      <div>
+        <h3 className="text-sm font-medium text-gray-900 dark:text-white mb-4">
+          운영 관리 모듈
+        </h3>
+        <div className="space-y-2">
+          {operationModules.map(module => {
+            const isActive = pathname === module.href
+            return (
+              <a
+                key={module.id}
+                href={module.href}
+                className={`flex items-center space-x-3 p-3 rounded-lg transition-colors ${
+                  isActive
+                    ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
+                    : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700'
+                }`}
+              >
+                <span className="text-lg">{module.icon}</span>
+                <span className="text-sm font-medium">{module.name}</span>
+              </a>
+            )
+          })}
+        </div>
+      </div>
+
+      <div>
+        <h3 className="text-sm font-medium text-gray-900 dark:text-white mb-4">
+          빠른 통계
+        </h3>
+        <div className="space-y-3">
+          <div className="flex justify-between items-center">
+            <span className="text-sm text-gray-600 dark:text-gray-400">
+              활성 요건
+            </span>
+            <span className="text-sm font-medium text-gray-900 dark:text-white">
+              24
+            </span>
+          </div>
+          <div className="flex justify-between items-center">
+            <span className="text-sm text-gray-600 dark:text-gray-400">
+              진행 중인 업무
+            </span>
+            <span className="text-sm font-medium text-gray-900 dark:text-white">
+              18
+            </span>
+          </div>
+          <div className="flex justify-between items-center">
+            <span className="text-sm text-gray-600 dark:text-gray-400">
+              완료율
+            </span>
+            <span className="text-sm font-medium text-gray-900 dark:text-white">
+              92%
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <h3 className="text-sm font-medium text-gray-900 dark:text-white mb-4">
+          최근 활동
+        </h3>
+        <div className="space-y-2">
+          <div className="flex items-center space-x-2">
+            <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+            <span className="text-xs text-gray-600 dark:text-gray-400">
+              새 요건 승인됨
+            </span>
+          </div>
+          <div className="flex items-center space-x-2">
+            <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+            <span className="text-xs text-gray-600 dark:text-gray-400">
+              스프린트 #23 시작
+            </span>
+          </div>
+          <div className="flex items-center space-x-2">
+            <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+            <span className="text-xs text-gray-600 dark:text-gray-400">
+              월간 보고서 생성
             </span>
           </div>
         </div>
