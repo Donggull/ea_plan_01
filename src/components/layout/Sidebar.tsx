@@ -17,6 +17,8 @@ export default function Sidebar({ onClose }: SidebarProps) {
       return <DashboardSidebar />
     } else if (pathname === '/projects') {
       return <ProjectsSidebar />
+    } else if (pathname.startsWith('/projects/')) {
+      return <ProjectDetailSidebar />
     } else if (pathname === '/chat') {
       return <ChatSidebar />
     } else if (pathname === '/canvas') {
@@ -548,6 +550,181 @@ function ImagesSidebar() {
               </span>
             </div>
           ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// Project Detail Sidebar
+function ProjectDetailSidebar() {
+  // This would ideally get project data from a store or context
+  const mockProject = {
+    name: 'ABC 기업 웹사이트 리뉴얼 제안',
+    avatar: '📋',
+    progress: 83,
+    deadline: '2024-09-05',
+  }
+
+  return (
+    <div className="p-4 space-y-6">
+      {/* Project Info Card */}
+      <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3">
+        <div className="flex items-center space-x-3">
+          <div className="text-2xl">{mockProject.avatar}</div>
+          <div className="flex-1">
+            <h3 className="font-semibold text-gray-900 dark:text-white text-sm">
+              {mockProject.name}
+            </h3>
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              제안 진행
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Progress Section */}
+      <div className="mb-4">
+        <h4 className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">
+          진행률
+        </h4>
+        <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 mb-1">
+          <div
+            className="bg-blue-500 h-2 rounded-full transition-all duration-500"
+            style={{ width: `${mockProject.progress}%` }}
+          />
+        </div>
+        <p className="text-right text-xs text-gray-500 dark:text-gray-400">
+          {mockProject.progress}%
+        </p>
+      </div>
+
+      {/* Key Metrics */}
+      <div className="mb-6">
+        <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+          주요 지표
+        </h4>
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <div className="w-4 h-4 bg-blue-500 rounded"></div>
+              <span className="text-xs text-gray-600 dark:text-gray-400">
+                진행률
+              </span>
+            </div>
+            <span className="text-sm font-medium text-gray-900 dark:text-white">
+              {mockProject.progress}%
+            </span>
+          </div>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <div className="w-4 h-4 bg-purple-500 rounded"></div>
+              <span className="text-xs text-gray-600 dark:text-gray-400">
+                마감일
+              </span>
+            </div>
+            <span className="text-sm font-medium text-gray-900 dark:text-white">
+              9월 5일
+            </span>
+          </div>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <div className="w-4 h-4 bg-green-500 rounded"></div>
+              <span className="text-xs text-gray-600 dark:text-gray-400">
+                팀원
+              </span>
+            </div>
+            <span className="text-sm font-medium text-gray-900 dark:text-white">
+              1명
+            </span>
+          </div>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <div className="w-4 h-4 bg-orange-500 rounded"></div>
+              <span className="text-xs text-gray-600 dark:text-gray-400">
+                남은 기간
+              </span>
+            </div>
+            <span className="text-sm font-medium text-gray-900 dark:text-white">
+              11일
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* Quick Actions */}
+      <div className="mb-6">
+        <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+          빠른 실행
+        </h4>
+        <div className="grid grid-cols-2 gap-2">
+          <button className="p-2 bg-blue-500 text-white text-xs rounded-lg hover:bg-blue-600 transition-colors">
+            새 작업
+          </button>
+          <button className="p-2 bg-green-500 text-white text-xs rounded-lg hover:bg-green-600 transition-colors">
+            노트 추가
+          </button>
+          <button className="p-2 bg-purple-500 text-white text-xs rounded-lg hover:bg-purple-600 transition-colors">
+            공유
+          </button>
+          <button className="p-2 bg-orange-500 text-white text-xs rounded-lg hover:bg-orange-600 transition-colors">
+            백업
+          </button>
+        </div>
+      </div>
+
+      {/* Workflow Navigation */}
+      <div className="mb-6">
+        <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+          워크플로우
+        </h4>
+        <div className="space-y-1">
+          {[
+            { id: 'rfp', label: 'RFP 분석' },
+            { id: 'analysis', label: 'RFP 분석' },
+            { id: 'research', label: '시장 조사' },
+            { id: 'proposal', label: '제안서 작성' },
+            { id: 'cost', label: '비용 산정' },
+          ].map((tab, index) => (
+            <button
+              key={tab.id}
+              className={`w-full flex items-center space-x-3 px-3 py-2 text-left rounded-lg transition-colors ${
+                index === 0
+                  ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
+                  : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800'
+              }`}
+            >
+              <div className="w-4 h-4"></div>
+              <span className="text-xs">{tab.label}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Recent Activity */}
+      <div>
+        <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+          최근 활동
+        </h4>
+        <div className="space-y-2">
+          <div className="flex items-center space-x-2">
+            <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+            <span className="text-xs text-gray-600 dark:text-gray-400">
+              RFP 분석 완료
+            </span>
+          </div>
+          <div className="flex items-center space-x-2">
+            <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+            <span className="text-xs text-gray-600 dark:text-gray-400">
+              제안서 초안 검토 추가
+            </span>
+          </div>
+          <div className="flex items-center space-x-2">
+            <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+            <span className="text-xs text-gray-600 dark:text-gray-400">
+              시장조사 문서 업로드
+            </span>
+          </div>
         </div>
       </div>
     </div>

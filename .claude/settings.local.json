@@ -20,7 +20,8 @@
       "Bash(npm install:*)",
       "Bash(npm run build:*)",
       "mcp__playwright-stealth__playwright_navigate",
-      "mcp__playwright-stealth__playwright_screenshot"
+      "mcp__playwright-stealth__playwright_screenshot",
+      "mcp__playwright-stealth__playwright_close"
     ],
     "deny": [],
     "ask": []

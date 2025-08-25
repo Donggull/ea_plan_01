@@ -5,31 +5,18 @@ import { useParams, useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import {
   ArrowLeftIcon,
-  SparklesIcon,
-  ChartBarIcon,
-  CogIcon,
-  DocumentTextIcon,
   PencilIcon,
+  DocumentTextIcon,
   ChartPieIcon,
   ClipboardDocumentListIcon,
-  ComputerDesktopIcon,
-  WrenchScrewdriverIcon,
-  BeakerIcon,
   ChartBarSquareIcon,
   LightBulbIcon,
+  ComputerDesktopIcon,
+  ChartBarIcon,
+  BeakerIcon,
   UsersIcon,
-  PlusIcon,
-  CheckCircleIcon,
   CalendarIcon,
-  ClockIcon,
-  LinkIcon,
-  BookmarkIcon,
-  ChatBubbleLeftRightIcon,
   ArrowTrendingUpIcon,
-  GlobeAltIcon,
-  CommandLineIcon,
-  TagIcon,
-  FolderIcon,
 } from '@heroicons/react/24/outline'
 import useProjectStore, { Project } from '@/lib/stores/projectStore'
 import ProposalWorkflow from '@/components/proposal/ProposalWorkflow'
@@ -108,34 +95,34 @@ const categoryTabs: Record<string, TabContent[]> = {
     {
       id: 'insights',
       label: '종합 인사이트',
-      icon: SparklesIcon,
-      description: '프로젝트 통계 및 인사이트',
+      icon: ChartBarSquareIcon,
+      description: '프로젝트 대시보드 및 분석',
     },
   ],
   operation: [
     {
       id: 'requirements',
       label: '요건 관리',
-      icon: ClipboardDocumentListIcon,
-      description: '고객 요청사항 관리',
+      icon: DocumentTextIcon,
+      description: '고객 요청사항 접수 및 관리',
     },
     {
-      id: 'tasks',
+      id: 'planning',
       label: '업무 분배',
-      icon: WrenchScrewdriverIcon,
+      icon: UsersIcon,
       description: '팀별 업무 할당 및 관리',
     },
     {
       id: 'schedule',
       label: '일정 관리',
-      icon: ChartBarIcon,
-      description: '프로젝트 일정 계획 및 추적',
+      icon: CalendarIcon,
+      description: '스프린트 계획 및 추적',
     },
     {
       id: 'performance',
       label: '성과 관리',
-      icon: SparklesIcon,
-      description: 'KPI 모니터링 및 성과 분석',
+      icon: ArrowTrendingUpIcon,
+      description: 'KPI 모니터링 및 개선',
     },
   ],
 }
@@ -143,35 +130,31 @@ const categoryTabs: Record<string, TabContent[]> = {
 export default function ProjectDetailPage() {
   const params = useParams()
   const router = useRouter()
-  const { projects, fetchProjects } = useProjectStore()
-  const [activeTab, setActiveTab] = useState('rfp')
-
-  const projectId = params?.id as string
-  const project = projects.find((p: Project) => p.id === projectId)
+  const { getProjectById } = useProjectStore()
+  const [project, setProject] = useState<Project | null>(null)
+  const [activeTab, setActiveTab] = useState<string>('rfp')
 
   useEffect(() => {
-    if (projects.length === 0) {
-      fetchProjects()
-    }
-  }, [projects.length, fetchProjects])
-
-  useEffect(() => {
-    if (project) {
-      const tabs = categoryTabs[project.category] || []
-      if (tabs.length > 0 && !tabs.find(tab => tab.id === activeTab)) {
-        setActiveTab(tabs[0].id)
+    if (params?.id) {
+      const projectData = getProjectById(params.id as string)
+      if (projectData) {
+        setProject(projectData)
+        // Set initial active tab based on project category
+        const tabs = categoryTabs[projectData.category] || []
+        if (tabs.length > 0) {
+          setActiveTab(tabs[0].id)
+        }
+      } else {
+        router.push('/projects')
       }
     }
-  }, [project, activeTab])
+  }, [params?.id, getProjectById, router])
 
   if (!project) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
-        <div className="text-center">
-          <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600 dark:text-gray-400">
-            프로젝트를 불러오는 중...
-          </p>
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-gray-500 dark:text-gray-400">
+          프로젝트를 불러오는 중...
         </div>
       </div>
     )
@@ -204,286 +187,83 @@ export default function ProjectDetailPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
-      <div className="flex">
-        {/* Left Sidebar - Exact Match to Image */}
-        <div className="w-64 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 min-h-screen overflow-y-auto">
-          {/* Settings Header */}
-          <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-            <h2 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-4">
-              설정
-            </h2>
+      {/* Header */}
+      <div className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
+        <div className="px-6 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <button
+                onClick={() => router.push('/projects')}
+                className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+              >
+                <ArrowLeftIcon className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+              </button>
 
-            {/* Project Info Card */}
-            <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3 mb-4">
-              <div className="flex items-center space-x-3 mb-3">
-                <div className="text-2xl">{project.avatar}</div>
-                <div className="flex-1">
-                  <h3 className="font-semibold text-gray-900 dark:text-white text-sm">
-                    {project.name}
-                  </h3>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
-                    제안 진행
-                  </p>
-                </div>
+              <div>
+                <h1 className="text-xl font-bold text-gray-900 dark:text-white">
+                  {project.name}
+                </h1>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  {project.description}
+                </p>
               </div>
             </div>
 
-            {/* Progress Section */}
-            <div className="mb-4">
-              <h4 className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">
-                진행률
-              </h4>
-              <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 mb-1">
-                <div
-                  className="bg-blue-500 h-2 rounded-full transition-all duration-500"
-                  style={{ width: `${project.progress}%` }}
-                />
-              </div>
-              <p className="text-right text-xs text-gray-500 dark:text-gray-400">
-                {project.progress}%
-              </p>
-            </div>
-          </div>
-
-          {/* Main Sections */}
-          <div className="p-4">
-            {/* Key Metrics */}
-            <div className="mb-6">
-              <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-                주요 지표
-              </h4>
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-2">
-                    <ChartBarIcon className="w-4 h-4 text-blue-500" />
-                    <span className="text-xs text-gray-600 dark:text-gray-400">
-                      진행률
-                    </span>
-                  </div>
-                  <span className="text-sm font-medium text-gray-900 dark:text-white">
-                    {project.progress}%
-                  </span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-2">
-                    <CalendarIcon className="w-4 h-4 text-purple-500" />
-                    <span className="text-xs text-gray-600 dark:text-gray-400">
-                      마감일
-                    </span>
-                  </div>
-                  <span className="text-sm font-medium text-gray-900 dark:text-white">
-                    {new Date(project.deadline).toLocaleDateString('ko-KR', {
-                      month: 'short',
-                      day: 'numeric',
-                    })}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-2">
-                    <UsersIcon className="w-4 h-4 text-green-500" />
-                    <span className="text-xs text-gray-600 dark:text-gray-400">
-                      팀원
-                    </span>
-                  </div>
-                  <span className="text-sm font-medium text-gray-900 dark:text-white">
-                    {project.team?.length || 1}명
-                  </span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-2">
-                    <ClockIcon className="w-4 h-4 text-orange-500" />
-                    <span className="text-xs text-gray-600 dark:text-gray-400">
-                      남은 기간
-                    </span>
-                  </div>
-                  <span className="text-sm font-medium text-gray-900 dark:text-white">
-                    {Math.max(
-                      0,
-                      Math.ceil(
-                        (new Date(project.deadline).getTime() -
-                          new Date().getTime()) /
-                          (1000 * 60 * 60 * 24)
-                      )
-                    )}
-                    일
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Quick Actions */}
-            <div className="mb-6">
-              <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-                빠른 실행
-              </h4>
-              <div className="grid grid-cols-2 gap-2">
-                <button className="flex items-center justify-center space-x-1 p-2 rounded-lg bg-blue-500 hover:bg-blue-600 text-white text-xs transition-colors">
-                  새 작업
-                </button>
-                <button className="flex items-center justify-center space-x-1 p-2 rounded-lg bg-green-500 hover:bg-green-600 text-white text-xs transition-colors">
-                  노트 추가
-                </button>
-                <button className="flex items-center justify-center space-x-1 p-2 rounded-lg bg-purple-500 hover:bg-purple-600 text-white text-xs transition-colors">
-                  공유
-                </button>
-                <button className="flex items-center justify-center space-x-1 p-2 rounded-lg bg-yellow-500 hover:bg-yellow-600 text-white text-xs transition-colors">
-                  북마크
-                </button>
-              </div>
-            </div>
-
-            {/* Workflow Navigation */}
-            <div className="mb-6">
-              <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-                워크플로우
-              </h4>
-              <div className="space-y-1">
-                {tabs.map(tab => {
-                  const Icon = tab.icon
-                  const isActive = activeTab === tab.id
-                  return (
-                    <button
-                      key={tab.id}
-                      onClick={() => setActiveTab(tab.id)}
-                      className={`w-full flex items-center space-x-3 p-2 rounded-lg text-left transition-colors ${
-                        isActive
-                          ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400'
-                          : 'hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300'
-                      }`}
-                    >
-                      <Icon className="w-4 h-4" />
-                      <span className="text-sm font-medium">{tab.label}</span>
-                    </button>
-                  )
-                })}
-              </div>
-            </div>
-
-            {/* Recent Activities */}
-            <div className="mb-6">
-              <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-                최근 활동
-              </h4>
-              <div className="space-y-3">
-                <div className="flex items-start space-x-2">
-                  <div className="w-2 h-2 bg-green-500 rounded-full mt-2"></div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs text-gray-900 dark:text-white font-medium">
-                      RFP 분석 완료
-                    </p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">
-                      김개발자 • 2시간 전
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-start space-x-2">
-                  <div className="w-2 h-2 bg-blue-500 rounded-full mt-2"></div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs text-gray-900 dark:text-white font-medium">
-                      제안서 초안에 댓글 추가
-                    </p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">
-                      박기획자 • 4시간 전
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-start space-x-2">
-                  <div className="w-2 h-2 bg-purple-500 rounded-full mt-2"></div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs text-gray-900 dark:text-white font-medium">
-                      시장조사 문서 업로드
-                    </p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">
-                      이분석가 • 6시간 전
-                    </p>
-                  </div>
-                </div>
-              </div>
+            <div className="flex items-center space-x-3">
+              <span
+                className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${statusBadge.className}`}
+              >
+                {statusBadge.label}
+              </span>
+              <button className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+                <PencilIcon className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+              </button>
             </div>
           </div>
         </div>
+      </div>
 
-        {/* Main Content Area */}
-        <div className="flex-1 min-h-screen">
-          {/* Header */}
-          <div className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
-            <div className="px-6 py-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-4">
-                  <button
-                    onClick={() => router.push('/projects')}
-                    className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-                  >
-                    <ArrowLeftIcon className="w-5 h-5 text-gray-600 dark:text-gray-400" />
-                  </button>
+      {/* Main Content */}
+      <div className="p-6">
+        <motion.div
+          key={activeTab}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
+        >
+          {/* Proposal Category - Use ProposalWorkflow */}
+          {project.category === 'proposal' && (
+            <ProposalWorkflow
+              projectId={project.id}
+              projectTitle={project.name}
+              projectCategory={project.category}
+            />
+          )}
 
-                  <div>
-                    <h1 className="text-xl font-bold text-gray-900 dark:text-white">
-                      {project.name}
-                    </h1>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
-                      {project.description}
-                    </p>
-                  </div>
+          {/* Development and Operation Categories - Placeholder content */}
+          {project.category !== 'proposal' &&
+            tabs.find(tab => tab.id === activeTab) && (
+              <div className="text-center py-12">
+                <div className="w-16 h-16 bg-gradient-to-r from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-600 rounded-full flex items-center justify-center mx-auto mb-6">
+                  {React.createElement(
+                    tabs.find(tab => tab.id === activeTab)!.icon,
+                    {
+                      className: 'w-8 h-8 text-gray-500 dark:text-gray-400',
+                    }
+                  )}
                 </div>
-
-                <div className="flex items-center space-x-3">
-                  <span
-                    className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${statusBadge.className}`}
-                  >
-                    {statusBadge.label}
-                  </span>
-                  <button className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
-                    <PencilIcon className="w-4 h-4 text-gray-600 dark:text-gray-400" />
-                  </button>
-                </div>
+                <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+                  {tabs.find(tab => tab.id === activeTab)?.label}
+                </h3>
+                <p className="text-gray-600 dark:text-gray-400 mb-6 max-w-md mx-auto">
+                  {tabs.find(tab => tab.id === activeTab)?.description}
+                </p>
+                <button className="px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl hover:shadow-lg transition-all">
+                  시작하기
+                </button>
               </div>
-            </div>
-          </div>
-
-          {/* Content Area */}
-          <div className="p-6">
-            <motion.div
-              key={activeTab}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3 }}
-            >
-              {/* Proposal Category - Use ProposalWorkflow */}
-              {project.category === 'proposal' && (
-                <ProposalWorkflow
-                  projectId={project.id}
-                  projectTitle={project.name}
-                  projectCategory={project.category}
-                />
-              )}
-
-              {/* Development and Operation Categories - Placeholder content */}
-              {project.category !== 'proposal' &&
-                tabs.find(tab => tab.id === activeTab) && (
-                  <div className="text-center py-12">
-                    <div className="w-16 h-16 bg-gradient-to-r from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-600 rounded-full flex items-center justify-center mx-auto mb-6">
-                      {React.createElement(
-                        tabs.find(tab => tab.id === activeTab)!.icon,
-                        {
-                          className: 'w-8 h-8 text-gray-500 dark:text-gray-400',
-                        }
-                      )}
-                    </div>
-                    <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
-                      {tabs.find(tab => tab.id === activeTab)?.label}
-                    </h3>
-                    <p className="text-gray-600 dark:text-gray-400 mb-6 max-w-md mx-auto">
-                      {tabs.find(tab => tab.id === activeTab)?.description}
-                    </p>
-                    <button className="px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl hover:shadow-lg transition-all">
-                      시작하기
-                    </button>
-                  </div>
-                )}
-            </motion.div>
-          </div>
-        </div>
+            )}
+        </motion.div>
       </div>
     </div>
   )
