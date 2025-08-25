@@ -16,6 +16,8 @@ import {
   ChartBarIcon,
   UserIcon,
   CogIcon,
+  ArrowDownTrayIcon,
+  DocumentArrowUpIcon,
 } from '@heroicons/react/24/outline'
 import { StarIcon as StarIconSolid } from '@heroicons/react/24/solid'
 
@@ -33,11 +35,25 @@ interface Requirement {
   dueDate?: string
 }
 
-interface RequirementManagerProps {
-  projectId: string
+interface RFPRequirement {
+  id: string
+  title: string
+  description: string
+  requirement_type: 'functional' | 'non_functional' | 'business' | 'technical' | 'constraint'
+  priority: 'critical' | 'high' | 'medium' | 'low'
+  category: string
+  acceptance_criteria: string[]
+  business_value: number
+  estimated_effort: number
+  risk_level: 'critical' | 'high' | 'medium' | 'low'
 }
 
-export default function RequirementManager({ projectId }: RequirementManagerProps) {
+interface RequirementManagerProps {
+  projectId: string
+  importedRFPRequirements?: RFPRequirement[]
+}
+
+export default function RequirementManager({ projectId, importedRFPRequirements }: RequirementManagerProps) {
   const [activeTab, setActiveTab] = useState<'all' | 'functional' | 'non-functional' | 'business' | 'technical'>('all')
   const [editingRequirement, setEditingRequirement] = useState<string | null>(null)
   const [showAddForm, setShowAddForm] = useState(false)
@@ -234,15 +250,63 @@ export default function RequirementManager({ projectId }: RequirementManagerProp
     ))
   }
 
+  const importRFPRequirements = () => {
+    if (!importedRFPRequirements) return
+
+    const convertedRequirements: Requirement[] = importedRFPRequirements.map(rfpReq => ({
+      id: `rfp_${rfpReq.id}`,
+      title: rfpReq.title,
+      description: rfpReq.description,
+      type: rfpReq.requirement_type === 'constraint' ? 'technical' : rfpReq.requirement_type as 'functional' | 'non_functional' | 'business' | 'technical',
+      priority: convertPriority(rfpReq.priority),
+      status: 'draft' as const,
+      acceptanceCriteria: rfpReq.acceptance_criteria,
+      estimatedEffort: rfpReq.estimated_effort,
+      dependencies: []
+    }))
+
+    // 기존 요구사항에 추가 (중복 제거)
+    setRequirements(prev => {
+      const existingIds = new Set(prev.map(req => req.id))
+      const newRequirements = convertedRequirements.filter(req => !existingIds.has(req.id))
+      return [...prev, ...newRequirements]
+    })
+
+    alert(`${convertedRequirements.length}개의 RFP 요구사항을 가져왔습니다.`)
+  }
+
+  const convertPriority = (rfpPriority: 'critical' | 'high' | 'medium' | 'low'): 'must-have' | 'should-have' | 'could-have' | 'wont-have' => {
+    switch (rfpPriority) {
+      case 'critical': return 'must-have'
+      case 'high': return 'must-have'
+      case 'medium': return 'should-have'
+      case 'low': return 'could-have'
+    }
+  }
+
   return (
     <div className="space-y-6">
-      <div className="text-center">
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-          요구사항 관리
-        </h2>
-        <p className="text-gray-600 dark:text-gray-400">
-          프로젝트의 기능 및 비기능 요구사항을 체계적으로 관리합니다
-        </p>
+      <div className="flex items-center justify-between">
+        <div className="text-center flex-1">
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+            요구사항 관리
+          </h2>
+          <p className="text-gray-600 dark:text-gray-400">
+            프로젝트의 기능 및 비기능 요구사항을 체계적으로 관리합니다
+          </p>
+        </div>
+        
+        {importedRFPRequirements && importedRFPRequirements.length > 0 && (
+          <div className="ml-6">
+            <button
+              onClick={importRFPRequirements}
+              className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              <ArrowDownTrayIcon className="w-4 h-4" />
+              <span>RFP 요구사항 가져오기 ({importedRFPRequirements.length}개)</span>
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Type Navigation */}

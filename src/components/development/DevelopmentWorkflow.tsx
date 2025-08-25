@@ -10,6 +10,7 @@ import {
   ChartBarIcon,
   BeakerIcon,
   ChartBarSquareIcon,
+  DocumentArrowUpIcon,
 } from '@heroicons/react/24/outline'
 import CurrentAnalysis from './CurrentAnalysis'
 import RequirementManager from './RequirementManager'
@@ -18,6 +19,7 @@ import ScreenDesign from './ScreenDesign'
 import WBSManager from './WBSManager'
 import QAManager from './QAManager'
 import ProjectDashboard from './ProjectDashboard'
+import RFPIntegration from './RFPIntegration'
 
 interface DevelopmentWorkflowProps {
   projectId: string
@@ -26,6 +28,14 @@ interface DevelopmentWorkflowProps {
 }
 
 const developmentSteps = [
+  {
+    id: 'rfp_integration',
+    label: 'RFP 연동',
+    icon: DocumentArrowUpIcon,
+    description: 'RFP 문서 분석 및 요구사항 추출',
+    color: 'indigo',
+    component: RFPIntegration
+  },
   {
     id: 'analysis',
     label: '현황 분석',
@@ -89,7 +99,8 @@ export default function DevelopmentWorkflow({
   projectTitle, 
   projectCategory 
 }: DevelopmentWorkflowProps) {
-  const [activeStep, setActiveStep] = useState('analysis')
+  const [activeStep, setActiveStep] = useState('rfp_integration')
+  const [rfpRequirements, setRfpRequirements] = useState<any[]>([])
 
   const getStepStatus = (stepId: string) => {
     const stepIndex = developmentSteps.findIndex(step => step.id === stepId)
@@ -111,6 +122,29 @@ export default function DevelopmentWorkflow({
 
   const ActiveComponent = developmentSteps.find(step => step.id === activeStep)?.component
 
+  const handleRFPRequirementsImported = (requirements: any[]) => {
+    setRfpRequirements(requirements)
+    // RFP 분석이 완료되면 자동으로 다음 단계로 이동
+    setTimeout(() => {
+      setActiveStep('requirements')
+    }, 1000)
+  }
+
+  const renderActiveComponent = () => {
+    if (!ActiveComponent) return null
+
+    const props: any = { projectId }
+
+    // 각 컴포넌트별로 추가 props 전달
+    if (activeStep === 'rfp_integration') {
+      props.onRequirementsImported = handleRFPRequirementsImported
+    } else if (activeStep === 'requirements') {
+      props.importedRFPRequirements = rfpRequirements
+    }
+
+    return <ActiveComponent {...props} />
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -125,7 +159,7 @@ export default function DevelopmentWorkflow({
 
       {/* Step Navigation */}
       <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-8 gap-4">
           {developmentSteps.map((step, index) => {
             const IconComponent = step.icon
             const status = getStepStatus(step.id)
@@ -200,7 +234,7 @@ export default function DevelopmentWorkflow({
         transition={{ duration: 0.3 }}
         className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6"
       >
-        {ActiveComponent && <ActiveComponent projectId={projectId} />}
+        {renderActiveComponent()}
       </motion.div>
     </div>
   )
