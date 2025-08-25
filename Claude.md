@@ -1,8 +1,11 @@
 **너는 MCP를 사용할 수 있어. 적용되어 있는 MCP를 우선적으로 사용하면서 작업을 진행해줘.**
 
-# Recent Development Updates (2025-08-23)
+# Recent Development Updates (2025-08-25)
 
-- ✅ Fixed recurring project loading errors by simplifying database queries
+- ✅ Fixed project loading errors by updating default user ID in ProjectService
+- ✅ Fixed infinite recursion error in project creation by updating Supabase RLS policies
+- ✅ Updated RLS policies to use correct UUID (afd2a12c-75a5-4914-812e-5eedc4fd3a3d)
+- ✅ Tested project creation functionality - working correctly
 - ✅ Improved error handling and logging in project service
 - ✅ Optimized performance by removing complex joins
 - ✅ Enhanced debugging capabilities with comprehensive console logging
