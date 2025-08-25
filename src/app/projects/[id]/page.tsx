@@ -20,6 +20,7 @@ import {
 } from '@heroicons/react/24/outline'
 import useProjectStore, { Project } from '@/lib/stores/projectStore'
 import ProposalWorkflow from '@/components/proposal/ProposalWorkflow'
+import DevelopmentWorkflow from '@/components/development/DevelopmentWorkflow'
 
 interface TabContent {
   id: string
@@ -148,21 +149,21 @@ export default function ProjectDetailPage() {
         // Create a mock project if none exists (for demo purposes)
         const mockProject: Project = {
           id: params.id as string,
-          name: 'ABC 기업 웹사이트 리뉴얼 제안',
-          description: 'ABC 기업의 기업 홈페이지 리뉴얼을 위한 제안서 작성',
-          category: 'proposal',
+          name: 'E-커머스 플랫폼 개발',
+          description: '차세대 온라인 쇼핑몰 플랫폼 구축 프로젝트',
+          category: 'development',
           status: 'active',
-          progress: 83,
-          team: ['김기획자'],
-          deadline: '2024-09-05',
-          avatar: '📋',
-          color: '#3B82F6',
-          bgColor: '#EBF8FF',
+          progress: 68,
+          team: ['김개발자', '이기획자', '박디자이너'],
+          deadline: '2024-11-30',
+          avatar: '🚀',
+          color: '#10B981',
+          bgColor: '#ECFDF5',
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
         }
         setProject(mockProject)
-        setActiveTab('rfp')
+        setActiveTab('analysis')
       }
     }
   }, [params?.id, getProjectById, router])
@@ -257,8 +258,17 @@ export default function ProjectDetailPage() {
             />
           )}
 
-          {/* Development and Operation Categories - Placeholder content */}
-          {project.category !== 'proposal' &&
+          {/* Development Category - Use DevelopmentWorkflow */}
+          {project.category === 'development' && (
+            <DevelopmentWorkflow
+              projectId={project.id}
+              projectTitle={project.name}
+              projectCategory={project.category}
+            />
+          )}
+
+          {/* Operation Category - Placeholder content */}
+          {project.category === 'operation' &&
             tabs.find(tab => tab.id === activeTab) && (
               <div className="text-center py-12">
                 <div className="w-16 h-16 bg-gradient-to-r from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-600 rounded-full flex items-center justify-center mx-auto mb-6">
