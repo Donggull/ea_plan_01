@@ -207,50 +207,42 @@ export default function ProjectDetailPage() {
       <div className="flex">
         {/* Left Sidebar - Settings */}
         <div className="w-64 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 min-h-screen overflow-y-auto">
-          {/* Settings Header */}
+          {/* Settings Header with Project Info */}
           <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-            <h2 className="text-sm font-medium text-gray-700 dark:text-gray-300">
+            <h2 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
               설정
             </h2>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-              페이지별 설정이 여기에 표시됩니다.
-            </p>
-          </div>
 
-          {/* Integrated Project Information */}
-          <div className="p-4 space-y-6">
-            {/* Project Basic Info */}
-            <div>
-              <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-                프로젝트 정보
-              </h4>
-              <div className="flex items-center space-x-3 mb-4">
-                <div className="text-2xl">{project.avatar}</div>
-                <div>
-                  <h3 className="font-semibold text-gray-900 dark:text-white text-sm">
-                    {project.name}
-                  </h3>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
-                    제안 진행
-                  </p>
-                </div>
-              </div>
-
-              {/* Progress Bar */}
-              <div className="mb-4">
-                <div className="flex items-center justify-between text-xs text-gray-600 dark:text-gray-400 mb-1">
-                  <span>진행률</span>
-                  <span>{project.progress}%</span>
-                </div>
-                <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                  <div
-                    className="bg-blue-500 h-2 rounded-full transition-all duration-500"
-                    style={{ width: `${project.progress}%` }}
-                  />
-                </div>
+            {/* Project Basic Info directly in settings header area */}
+            <div className="flex items-center space-x-3 mb-4">
+              <div className="text-2xl">{project.avatar}</div>
+              <div>
+                <h3 className="font-semibold text-gray-900 dark:text-white text-sm">
+                  {project.name}
+                </h3>
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  제안 진행
+                </p>
               </div>
             </div>
 
+            {/* Progress Bar */}
+            <div className="mb-4">
+              <div className="flex items-center justify-between text-xs text-gray-600 dark:text-gray-400 mb-1">
+                <span>진행률</span>
+                <span>{project.progress}%</span>
+              </div>
+              <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                <div
+                  className="bg-blue-500 h-2 rounded-full transition-all duration-500"
+                  style={{ width: `${project.progress}%` }}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* All other content in main body */}
+          <div className="p-4 space-y-6">
             {/* Key Metrics */}
             <div>
               <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
