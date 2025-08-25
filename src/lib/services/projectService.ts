@@ -61,12 +61,17 @@ export class ProjectService {
     try {
       console.log('ProjectService.createProject called with:', projectData)
 
-      // For demo mode, we'll use the regular client and rely on service role RLS policies
-      const defaultUserId = 'afd2a12c-75a5-4914-812e-5eedc4fd3a3d' // Sample user ID from actual DB
+      // Try to get authenticated user first, fallback to default for demo
+      const {
+        data: { user },
+        error: authError,
+      } = await supabase.auth.getUser()
+
+      const userId = user?.id || 'afd2a12c-75a5-4914-812e-5eedc4fd3a3d' // Fallback to super admin ID
 
       const insertData: ProjectInsert = {
-        user_id: defaultUserId,
-        owner_id: defaultUserId,
+        user_id: userId,
+        owner_id: userId,
         name: projectData.name,
         description: projectData.description,
         category: projectData.category,
@@ -98,11 +103,11 @@ export class ProjectService {
         }
       }
 
-      // Log the activity (skip for demo mode)
-      // await this.logProjectActivity(newProject.id, defaultUserId, 'project_created', {
-      //   project_name: projectData.name,
-      //   category: projectData.category,
-      // })
+      // Log the activity
+      await this.logProjectActivity(newProject.id, userId, 'project_created', {
+        project_name: projectData.name,
+        category: projectData.category,
+      })
 
       return {
         data: newProject,
@@ -321,9 +326,14 @@ export class ProjectService {
     console.log('ProjectService.listProjects called with filters:', filters)
 
     try {
-      // For demo mode, use default user ID (matching the actual data in Supabase)
-      const defaultUserId = 'afd2a12c-75a5-4914-812e-5eedc4fd3a3d' // Sample user ID from actual DB
-      console.log('Using default user ID:', defaultUserId)
+      // Try to get authenticated user first, fallback to default for demo
+      const {
+        data: { user },
+        error: authError,
+      } = await supabase.auth.getUser()
+
+      const userId = user?.id || 'afd2a12c-75a5-4914-812e-5eedc4fd3a3d' // Fallback to super admin ID
+      console.log('Using user ID:', userId, 'Auth error:', authError)
 
       const projectsWithAccess: (Project & {
         userRole?: string | null
@@ -341,7 +351,7 @@ export class ProjectService {
           const { data: ownedProjects, error: ownedError } = await supabase
             .from('projects')
             .select('*')
-            .eq('owner_id', defaultUserId)
+            .eq('owner_id', userId)
             .order('updated_at', { ascending: false })
 
           console.log('Owned projects query result:', {

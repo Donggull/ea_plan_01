@@ -5,6 +5,9 @@
 - ✅ Fixed project loading errors by updating default user ID in ProjectService
 - ✅ Fixed infinite recursion error in project creation by updating Supabase RLS policies
 - ✅ Updated RLS policies to use correct UUID (afd2a12c-75a5-4914-812e-5eedc4fd3a3d)
+- ✅ Upgraded 안동균 (dg.an@eluocnc.com) to super_admin role with enterprise subscription
+- ✅ Added super admin RLS policy for full project access
+- ✅ Updated ProjectService to use authenticated users with fallback
 - ✅ Tested project creation functionality - working correctly
 - ✅ Improved error handling and logging in project service
 - ✅ Optimized performance by removing complex joins
