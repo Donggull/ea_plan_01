@@ -17,10 +17,12 @@ import {
   BeakerIcon,
   ChartBarSquareIcon,
   LightBulbIcon,
+  UsersIcon,
+  PlusIcon,
+  CheckCircleIcon,
 } from '@heroicons/react/24/outline'
 import useProjectStore, { Project } from '@/lib/stores/projectStore'
 import ProposalWorkflow from '@/components/proposal/ProposalWorkflow'
-import ProjectSidebar from '@/components/project/ProjectSidebar'
 
 interface TabContent {
   id: string
@@ -157,18 +159,22 @@ export default function ProjectDetailPage() {
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
         <div className="text-center">
           <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600 dark:text-gray-400">프로젝트를 불러오는 중...</p>
+          <p className="text-gray-600 dark:text-gray-400">
+            프로젝트를 불러오는 중...
+          </p>
         </div>
       </div>
     )
   }
 
-
   const getStatusBadge = (status: string) => {
     const badges = {
-      active: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300',
-      completed: 'bg-slate-100 text-slate-800 dark:bg-slate-900/30 dark:text-slate-300',
-      planning: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300',
+      active:
+        'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300',
+      completed:
+        'bg-slate-100 text-slate-800 dark:bg-slate-900/30 dark:text-slate-300',
+      planning:
+        'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300',
       archived: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300',
     }
     const labels = {
@@ -188,90 +194,221 @@ export default function ProjectDetailPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
-      {/* Sidebar */}
-      <ProjectSidebar
-        project={project}
-        activeTab={activeTab}
-        onTabChange={setActiveTab}
-        tabs={tabs}
-      />
+      <div className="flex">
+        {/* Left Sidebar - Project Info */}
+        <div className="w-64 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 min-h-screen">
+          {/* Project Header */}
+          <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+            <h2 className="text-sm font-medium text-gray-700 dark:text-gray-300">
+              프로젝트 정보
+            </h2>
+          </div>
 
-      {/* Main Content */}
-      <div className="ml-80 min-h-screen">
-        {/* Header */}
-        <div className={`${project.bgColor} backdrop-blur-xl border-b border-white/20 dark:border-gray-700/50`}>
-          <div className="max-w-6xl mx-auto px-6 py-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-4">
-                <button
-                  onClick={() => router.push('/projects')}
-                  className="p-2 rounded-lg hover:bg-white/20 dark:hover:bg-gray-700/50 transition-colors"
-                >
-                  <ArrowLeftIcon className="w-5 h-5 text-gray-600 dark:text-gray-400" />
-                </button>
+          {/* Project Basic Info */}
+          <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+            <div className="flex items-center space-x-3 mb-4">
+              <div className="text-2xl">{project.avatar}</div>
+              <div>
+                <h3 className="font-semibold text-gray-900 dark:text-white text-sm">
+                  {project.name}
+                </h3>
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  제안 진행
+                </p>
+              </div>
+            </div>
 
+            {/* Progress Bar */}
+            <div className="mb-4">
+              <div className="flex items-center justify-between text-xs text-gray-600 dark:text-gray-400 mb-1">
+                <span>진행률</span>
+                <span>{project.progress}%</span>
+              </div>
+              <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                <div
+                  className="bg-blue-500 h-2 rounded-full transition-all duration-500"
+                  style={{ width: `${project.progress}%` }}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Key Metrics */}
+          <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+            <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+              주요 지표
+            </h4>
+            <div className="space-y-3">
+              <div className="flex items-center space-x-3">
+                <ChartBarIcon className="w-4 h-4 text-blue-500" />
                 <div>
-                  <h1 className="text-xl font-bold text-gray-900 dark:text-white">
-                    {project.name}
-                  </h1>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
-                    {project.description}
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    진행률
+                  </p>
+                  <p className="text-sm font-medium text-gray-900 dark:text-white">
+                    {project.progress}%
                   </p>
                 </div>
               </div>
-
               <div className="flex items-center space-x-3">
-                <span
-                  className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${statusBadge.className}`}
-                >
-                  {statusBadge.label}
-                </span>
-                <button className="p-2 rounded-lg hover:bg-white/20 dark:hover:bg-gray-700/50 transition-colors">
-                  <PencilIcon className="w-4 h-4 text-gray-600 dark:text-gray-400" />
-                </button>
+                <UsersIcon className="w-4 h-4 text-green-500" />
+                <div>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    팀원
+                  </p>
+                  <p className="text-sm font-medium text-gray-900 dark:text-white">
+                    1명
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Quick Actions */}
+          <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+            <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+              빠른 실행
+            </h4>
+            <div className="grid grid-cols-2 gap-2">
+              <button className="flex items-center space-x-1 p-2 rounded-lg bg-blue-500 hover:bg-blue-600 text-white text-xs transition-colors">
+                <PlusIcon className="w-3 h-3" />
+                <span>새 작업</span>
+              </button>
+              <button className="flex items-center space-x-1 p-2 rounded-lg bg-green-500 hover:bg-green-600 text-white text-xs transition-colors">
+                <DocumentTextIcon className="w-3 h-3" />
+                <span>노트 추가</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Workflow Navigation */}
+          <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+            <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+              워크플로우
+            </h4>
+            <div className="space-y-1">
+              {tabs.map(tab => {
+                const Icon = tab.icon
+                const isActive = activeTab === tab.id
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id)}
+                    className={`w-full flex items-center space-x-3 p-2 rounded-lg text-left transition-colors ${
+                      isActive
+                        ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400'
+                        : 'hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300'
+                    }`}
+                  >
+                    <Icon className="w-4 h-4" />
+                    <span className="text-sm font-medium">{tab.label}</span>
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+
+          {/* Recent Activities */}
+          <div className="p-4">
+            <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+              최근 활동
+            </h4>
+            <div className="space-y-3 text-xs">
+              <div className="flex items-start space-x-2">
+                <CheckCircleIcon className="w-4 h-4 mt-0.5 text-green-500" />
+                <div className="flex-1">
+                  <p className="text-gray-900 dark:text-white font-medium">
+                    RFP 분석 완료
+                  </p>
+                  <p className="text-gray-500 dark:text-gray-400">
+                    김개발자 • 2시간 전
+                  </p>
+                </div>
               </div>
             </div>
           </div>
         </div>
 
         {/* Main Content Area */}
-        <div className="p-6">
-          <motion.div
-            key={activeTab}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3 }}
-            className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl border border-white/20 dark:border-gray-700/50 rounded-2xl p-6"
-          >
-            {/* Proposal Category - Use ProposalWorkflow */}
-            {project.category === 'proposal' && (
-              <ProposalWorkflow
-                projectId={project.id}
-                projectTitle={project.name}
-                projectCategory={project.category}
-              />
-            )}
+        <div className="flex-1 min-h-screen">
+          {/* Header */}
+          <div className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
+            <div className="px-6 py-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-4">
+                  <button
+                    onClick={() => router.push('/projects')}
+                    className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                  >
+                    <ArrowLeftIcon className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+                  </button>
 
-            {/* Development and Operation Categories - Placeholder content */}
-            {project.category !== 'proposal' && tabs.find(tab => tab.id === activeTab) && (
-              <div className="text-center py-12">
-                <div className="w-16 h-16 bg-gradient-to-r from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-600 rounded-full flex items-center justify-center mx-auto mb-6">
-                  {React.createElement(tabs.find(tab => tab.id === activeTab)!.icon, {
-                    className: 'w-8 h-8 text-gray-500 dark:text-gray-400',
-                  })}
+                  <div>
+                    <h1 className="text-xl font-bold text-gray-900 dark:text-white">
+                      {project.name}
+                    </h1>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                      {project.description}
+                    </p>
+                  </div>
                 </div>
-                <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
-                  {tabs.find(tab => tab.id === activeTab)?.label}
-                </h3>
-                <p className="text-gray-600 dark:text-gray-400 mb-6 max-w-md mx-auto">
-                  {tabs.find(tab => tab.id === activeTab)?.description}
-                </p>
-                <button className="px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl hover:shadow-lg transition-all">
-                  시작하기
-                </button>
+
+                <div className="flex items-center space-x-3">
+                  <span
+                    className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${statusBadge.className}`}
+                  >
+                    {statusBadge.label}
+                  </span>
+                  <button className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+                    <PencilIcon className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                  </button>
+                </div>
               </div>
-            )}
-          </motion.div>
+            </div>
+          </div>
+
+          {/* Content Area */}
+          <div className="p-6">
+            <motion.div
+              key={activeTab}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3 }}
+            >
+              {/* Proposal Category - Use ProposalWorkflow */}
+              {project.category === 'proposal' && (
+                <ProposalWorkflow
+                  projectId={project.id}
+                  projectTitle={project.name}
+                  projectCategory={project.category}
+                />
+              )}
+
+              {/* Development and Operation Categories - Placeholder content */}
+              {project.category !== 'proposal' &&
+                tabs.find(tab => tab.id === activeTab) && (
+                  <div className="text-center py-12">
+                    <div className="w-16 h-16 bg-gradient-to-r from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-600 rounded-full flex items-center justify-center mx-auto mb-6">
+                      {React.createElement(
+                        tabs.find(tab => tab.id === activeTab)!.icon,
+                        {
+                          className: 'w-8 h-8 text-gray-500 dark:text-gray-400',
+                        }
+                      )}
+                    </div>
+                    <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+                      {tabs.find(tab => tab.id === activeTab)?.label}
+                    </h3>
+                    <p className="text-gray-600 dark:text-gray-400 mb-6 max-w-md mx-auto">
+                      {tabs.find(tab => tab.id === activeTab)?.description}
+                    </p>
+                    <button className="px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl hover:shadow-lg transition-all">
+                      시작하기
+                    </button>
+                  </div>
+                )}
+            </motion.div>
+          </div>
         </div>
       </div>
     </div>
