@@ -61,60 +61,33 @@ export class ProjectService {
     try {
       console.log('ProjectService.createProject called with:', projectData)
 
-      // Try to get authenticated user first, fallback to default for demo
-      const {
-        data: { user },
-        error: authError,
-      } = await supabase.auth.getUser()
-
-      const userId = user?.id || 'afd2a12c-75a5-4914-812e-5eedc4fd3a3d' // Fallback to super admin ID
-
-      const insertData: ProjectInsert = {
-        user_id: userId,
-        owner_id: userId,
-        name: projectData.name,
-        description: projectData.description,
-        category: projectData.category,
-        status: projectData.status || 'active',
-        tags: projectData.tags || [],
-        metadata: projectData.metadata || {},
-        is_public: projectData.is_public || false,
-        visibility_level: projectData.visibility_level || 'private',
-      }
-
-      console.log('Insert data prepared:', insertData)
-
-      const { data: newProject, error: insertError } = await supabase
-        .from('projects')
-        .insert(insertData)
-        .select()
-        .single()
-
-      console.log('Supabase insert result:', {
-        data: newProject,
-        error: insertError,
+      const response = await fetch('/api/projects', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(projectData),
       })
 
-      if (insertError) {
+      const result = await response.json()
+
+      if (!response.ok || !result.success) {
         return {
           data: null,
-          error: `Failed to create project: ${insertError.message}`,
+          error: result.error || 'Failed to create project',
           success: false,
         }
       }
 
-      // Log the activity
-      await this.logProjectActivity(newProject.id, userId, 'project_created', {
-        project_name: projectData.name,
-        category: projectData.category,
-      })
+      console.log('Project created successfully:', result.data)
 
       return {
-        data: newProject,
+        data: result.data,
         error: null,
         success: true,
       }
     } catch (error) {
+      console.error('ProjectService.createProject error:', error)
       return {
         data: null,
         error: `Unexpected error: ${error instanceof Error ? error.message : 'Unknown error'}`,
@@ -326,149 +299,64 @@ export class ProjectService {
     console.log('ProjectService.listProjects called with filters:', filters)
 
     try {
-      // Try to get authenticated user first, fallback to default for demo
-      const {
-        data: { user },
-        error: authError,
-      } = await supabase.auth.getUser()
+      // Build query parameters
+      const params = new URLSearchParams()
 
-      const userId = user?.id || 'afd2a12c-75a5-4914-812e-5eedc4fd3a3d' // Fallback to super admin ID
-      console.log('Using user ID:', userId, 'Auth error:', authError)
+      if (filters.project_type)
+        params.append('project_type', filters.project_type)
+      if (filters.category) params.append('category', filters.category)
+      if (filters.status) params.append('status', filters.status)
+      if (filters.search) params.append('search', filters.search)
+      if (filters.visibility_level)
+        params.append('visibility_level', filters.visibility_level)
 
-      const projectsWithAccess: (Project & {
-        userRole?: string | null
-        isOwner?: boolean
-        isMember?: boolean
-      })[] = []
+      const response = await fetch(`/api/projects?${params.toString()}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      })
 
-      // Determine which projects to fetch based on project_type filter
-      const projectType = filters.project_type || 'all'
-      console.log('Project type to fetch:', projectType)
+      const result = await response.json()
 
-      if (projectType === 'owned' || projectType === 'all') {
-        // Get projects owned by the user - simplified without joins
-        try {
-          const { data: ownedProjects, error: ownedError } = await supabase
-            .from('projects')
-            .select('*')
-            .eq('owner_id', userId)
-            .order('updated_at', { ascending: false })
-
-          console.log('Owned projects query result:', {
-            data: ownedProjects,
-            error: ownedError,
-          })
-
-          if (!ownedError && ownedProjects) {
-            const ownedWithRole = ownedProjects.map(project => ({
-              ...project,
-              userRole: 'owner' as const,
-              isOwner: true,
-              isMember: false,
-            }))
-            projectsWithAccess.push(...ownedWithRole)
-          }
-        } catch (err) {
-          console.error('Error fetching owned projects:', err)
+      if (!response.ok || !result.success) {
+        console.error('API error:', result.error)
+        return {
+          data: null,
+          error: result.error || 'Failed to fetch projects',
+          success: false,
         }
       }
 
-      if (projectType === 'member' || projectType === 'all') {
-        // Skip member projects for demo mode to avoid complex joins
-        console.log('Skipping member projects query for demo mode')
-      }
+      // Add sample stats for demo and apply client-side filters that weren't handled server-side
+      let projects = result.data || []
 
-      if (projectType === 'public' || projectType === 'all') {
-        // Get public projects (excluding already included ones)
-        try {
-          const { data: publicProjects, error: publicError } = await supabase
-            .from('projects')
-            .select('*')
-            .eq('is_public', true)
-            .eq('visibility_level', 'public')
-            .order('updated_at', { ascending: false })
-
-          console.log('Public projects query result:', {
-            data: publicProjects,
-            error: publicError,
-          })
-
-          if (!publicError && publicProjects) {
-            const existingIds = new Set(projectsWithAccess.map(p => p.id))
-            const publicWithRole = publicProjects
-              .filter(project => !existingIds.has(project.id))
-              .map(project => ({
-                ...project,
-                userRole: null,
-                isOwner: false,
-                isMember: false,
-              }))
-            projectsWithAccess.push(...publicWithRole)
-          }
-        } catch (err) {
-          console.error('Error fetching public projects:', err)
-        }
-      }
-
-      // Apply additional filters
-      let filteredProjects = projectsWithAccess
-
-      if (filters.category) {
-        filteredProjects = filteredProjects.filter(
-          p => p.category === filters.category
-        )
-      }
-
-      if (filters.status) {
-        filteredProjects = filteredProjects.filter(
-          p => p.status === filters.status
-        )
-      }
-
-      if (filters.visibility_level) {
-        filteredProjects = filteredProjects.filter(
-          p => p.visibility_level === filters.visibility_level
-        )
-      }
-
+      // Apply tags filter (client-side)
       if (filters.tags && filters.tags.length > 0) {
-        filteredProjects = filteredProjects.filter(
-          p =>
+        projects = projects.filter(
+          (p: Project) =>
             p.tags && p.tags.some((tag: string) => filters.tags!.includes(tag))
         )
       }
 
-      if (filters.search) {
-        const searchLower = filters.search.toLowerCase()
-        filteredProjects = filteredProjects.filter(
-          p =>
-            p.name.toLowerCase().includes(searchLower) ||
-            (p.description && p.description.toLowerCase().includes(searchLower))
-        )
-      }
-
-      // Sort by updated_at descending
-      filteredProjects.sort(
-        (a, b) =>
-          new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
-      )
-
-      // Apply pagination
-      let paginatedProjects = filteredProjects
+      // Apply pagination (client-side)
       if (filters.offset || filters.limit) {
         const offset = filters.offset || 0
         const limit = filters.limit || 10
-        paginatedProjects = filteredProjects.slice(offset, offset + limit)
+        projects = projects.slice(offset, offset + limit)
       }
 
       // Add sample stats for demo
-      const projectsWithStats: ProjectWithStats[] = paginatedProjects.map(
-        project => ({
+      const projectsWithStats: ProjectWithStats[] = projects.map(
+        (project: Project) => ({
           ...project,
           conversationCount: Math.floor(Math.random() * 10),
           documentCount: Math.floor(Math.random() * 5),
           imageCount: Math.floor(Math.random() * 3),
           lastActivity: project.updated_at,
+          userRole: 'owner' as const,
+          isOwner: true,
+          isMember: false,
         })
       )
 

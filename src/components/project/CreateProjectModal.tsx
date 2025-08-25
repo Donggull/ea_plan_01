@@ -204,10 +204,7 @@ export default function CreateProjectModal({
         console.log('CreateProjectModal: Project added to store, closing modal')
         onClose()
 
-        // Reload the page to ensure the new project appears
-        setTimeout(() => {
-          window.location.reload()
-        }, 500)
+        // No need to reload the page anymore since we fixed the authentication issues
       } else {
         console.log(
           'CreateProjectModal: Project creation failed:',

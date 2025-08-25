@@ -4,7 +4,19 @@
       "Bash(find:*)",
       "Bash(git ls-tree:*)",
       "Bash(curl:*)",
-      "mcp__github-mcp__git-diff"
+      "mcp__github-mcp__git-diff",
+      "Bash(npm run dev:*)",
+      "mcp__supabase__list_tables",
+      "mcp__supabase__execute_sql",
+      "mcp__github-mcp__git-status",
+      "mcp__github-mcp__git-add",
+      "mcp__github-mcp__git-commit",
+      "mcp__github-mcp__git-push",
+      "mcp__supabase__apply_migration",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "mcp__github-mcp__git-add-all"
     ],
     "deny": [],
     "ask": []
