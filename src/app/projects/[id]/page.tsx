@@ -145,7 +145,24 @@ export default function ProjectDetailPage() {
           setActiveTab(tabs[0].id)
         }
       } else {
-        router.push('/projects')
+        // Create a mock project if none exists (for demo purposes)
+        const mockProject: Project = {
+          id: params.id as string,
+          name: 'ABC 기업 웹사이트 리뉴얼 제안',
+          description: 'ABC 기업의 기업 홈페이지 리뉴얼을 위한 제안서 작성',
+          category: 'proposal',
+          status: 'active',
+          progress: 83,
+          team: ['김기획자'],
+          deadline: '2024-09-05',
+          avatar: '📋',
+          color: '#3B82F6',
+          bgColor: '#EBF8FF',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        }
+        setProject(mockProject)
+        setActiveTab('rfp')
       }
     }
   }, [params?.id, getProjectById, router])

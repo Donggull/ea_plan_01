@@ -2,6 +2,7 @@
 
 import { usePathname } from 'next/navigation'
 import { useThemeStore } from '@/stores/theme'
+import useProjectStore from '@/lib/stores/projectStore'
 
 interface SidebarProps {
   onClose?: () => void
@@ -558,8 +559,15 @@ function ImagesSidebar() {
 
 // Project Detail Sidebar
 function ProjectDetailSidebar() {
-  // This would ideally get project data from a store or context
-  const mockProject = {
+  const pathname = usePathname()
+  const { getProjectById } = useProjectStore()
+
+  // Extract project ID from pathname
+  const projectId = pathname.split('/projects/')[1]
+  const project = projectId ? getProjectById(projectId) : null
+
+  // Default project data if no project is found
+  const projectData = project || {
     name: 'ABC 기업 웹사이트 리뉴얼 제안',
     avatar: '📋',
     progress: 83,
@@ -571,10 +579,10 @@ function ProjectDetailSidebar() {
       {/* Project Info Card */}
       <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3">
         <div className="flex items-center space-x-3">
-          <div className="text-2xl">{mockProject.avatar}</div>
+          <div className="text-2xl">{projectData.avatar}</div>
           <div className="flex-1">
             <h3 className="font-semibold text-gray-900 dark:text-white text-sm">
-              {mockProject.name}
+              {projectData.name}
             </h3>
             <p className="text-xs text-gray-500 dark:text-gray-400">
               제안 진행
@@ -591,11 +599,11 @@ function ProjectDetailSidebar() {
         <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 mb-1">
           <div
             className="bg-blue-500 h-2 rounded-full transition-all duration-500"
-            style={{ width: `${mockProject.progress}%` }}
+            style={{ width: `${projectData.progress}%` }}
           />
         </div>
         <p className="text-right text-xs text-gray-500 dark:text-gray-400">
-          {mockProject.progress}%
+          {projectData.progress}%
         </p>
       </div>
 
@@ -613,7 +621,7 @@ function ProjectDetailSidebar() {
               </span>
             </div>
             <span className="text-sm font-medium text-gray-900 dark:text-white">
-              {mockProject.progress}%
+              {projectData.progress}%
             </span>
           </div>
           <div className="flex items-center justify-between">

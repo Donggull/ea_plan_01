@@ -71,6 +71,7 @@ interface ProjectState {
   setSearchQuery: (query: string) => void
   setSelectedCategory: (category: string) => void
   getFilteredProjects: () => Project[]
+  getProjectById: (id: string) => Project | null
 }
 
 const useProjectStore = create<ProjectState>()(
@@ -197,6 +198,11 @@ const useProjectStore = create<ProjectState>()(
         })
 
         return filtered
+      },
+
+      getProjectById: (id: string) => {
+        const state = get()
+        return state.projects.find(project => project.id === id) || null
       },
     }),
     {
