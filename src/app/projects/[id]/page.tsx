@@ -205,264 +205,273 @@ export default function ProjectDetailPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
       <div className="flex">
-        {/* Left Sidebar - Project Info */}
-        <div className="w-64 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 min-h-screen">
-          {/* Project Header */}
+        {/* Left Sidebar - Settings */}
+        <div className="w-64 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 min-h-screen overflow-y-auto">
+          {/* Settings Header */}
           <div className="p-4 border-b border-gray-200 dark:border-gray-700">
             <h2 className="text-sm font-medium text-gray-700 dark:text-gray-300">
-              프로젝트 정보
+              설정
             </h2>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+              페이지별 설정이 여기에 표시됩니다.
+            </p>
           </div>
 
-          {/* Project Basic Info */}
-          <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-            <div className="flex items-center space-x-3 mb-4">
-              <div className="text-2xl">{project.avatar}</div>
-              <div>
-                <h3 className="font-semibold text-gray-900 dark:text-white text-sm">
-                  {project.name}
-                </h3>
-                <p className="text-xs text-gray-500 dark:text-gray-400">
-                  제안 진행
-                </p>
-              </div>
-            </div>
-
-            {/* Progress Bar */}
-            <div className="mb-4">
-              <div className="flex items-center justify-between text-xs text-gray-600 dark:text-gray-400 mb-1">
-                <span>진행률</span>
-                <span>{project.progress}%</span>
-              </div>
-              <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                <div
-                  className="bg-blue-500 h-2 rounded-full transition-all duration-500"
-                  style={{ width: `${project.progress}%` }}
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Key Metrics */}
-          <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-            <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-              주요 지표
-            </h4>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="flex items-center space-x-2 p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
-                <ChartBarIcon className="w-4 h-4 text-blue-500" />
+          {/* Integrated Project Information */}
+          <div className="p-4 space-y-6">
+            {/* Project Basic Info */}
+            <div>
+              <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                프로젝트 정보
+              </h4>
+              <div className="flex items-center space-x-3 mb-4">
+                <div className="text-2xl">{project.avatar}</div>
                 <div>
+                  <h3 className="font-semibold text-gray-900 dark:text-white text-sm">
+                    {project.name}
+                  </h3>
                   <p className="text-xs text-gray-500 dark:text-gray-400">
-                    진행률
-                  </p>
-                  <p className="text-sm font-medium text-gray-900 dark:text-white">
-                    {project.progress}%
+                    제안 진행
                   </p>
                 </div>
               </div>
-              <div className="flex items-center space-x-2 p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
-                <CalendarIcon className="w-4 h-4 text-purple-500" />
-                <div>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
-                    마감일
-                  </p>
-                  <p className="text-sm font-medium text-gray-900 dark:text-white">
-                    {new Date(project.deadline).toLocaleDateString('ko-KR', {
-                      month: 'short',
-                      day: 'numeric',
-                    })}
-                  </p>
+
+              {/* Progress Bar */}
+              <div className="mb-4">
+                <div className="flex items-center justify-between text-xs text-gray-600 dark:text-gray-400 mb-1">
+                  <span>진행률</span>
+                  <span>{project.progress}%</span>
                 </div>
-              </div>
-              <div className="flex items-center space-x-2 p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
-                <UsersIcon className="w-4 h-4 text-green-500" />
-                <div>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
-                    팀원
-                  </p>
-                  <p className="text-sm font-medium text-gray-900 dark:text-white">
-                    {project.team?.length || 1}명
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center space-x-2 p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
-                <ClockIcon className="w-4 h-4 text-orange-500" />
-                <div>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
-                    남은 기간
-                  </p>
-                  <p className="text-sm font-medium text-gray-900 dark:text-white">
-                    {Math.max(
-                      0,
-                      Math.ceil(
-                        (new Date(project.deadline).getTime() -
-                          new Date().getTime()) /
-                          (1000 * 60 * 60 * 24)
-                      )
-                    )}
-                    일
-                  </p>
+                <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                  <div
+                    className="bg-blue-500 h-2 rounded-full transition-all duration-500"
+                    style={{ width: `${project.progress}%` }}
+                  />
                 </div>
               </div>
             </div>
-          </div>
 
-          {/* Quick Actions */}
-          <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-            <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-              빠른 실행
-            </h4>
-            <div className="grid grid-cols-2 gap-2">
-              <button className="flex items-center space-x-2 p-2 rounded-lg bg-blue-500 hover:bg-blue-600 text-white text-xs transition-colors">
-                <PlusIcon className="w-3 h-3" />
-                <span>새 작업</span>
-              </button>
-              <button className="flex items-center space-x-2 p-2 rounded-lg bg-green-500 hover:bg-green-600 text-white text-xs transition-colors">
-                <DocumentTextIcon className="w-3 h-3" />
-                <span>노트 추가</span>
-              </button>
-              <button className="flex items-center space-x-2 p-2 rounded-lg bg-purple-500 hover:bg-purple-600 text-white text-xs transition-colors">
-                <LinkIcon className="w-3 h-3" />
-                <span>공유</span>
-              </button>
-              <button className="flex items-center space-x-2 p-2 rounded-lg bg-yellow-500 hover:bg-yellow-600 text-white text-xs transition-colors">
-                <BookmarkIcon className="w-3 h-3" />
-                <span>북마크</span>
-              </button>
-            </div>
-          </div>
-
-          {/* Workflow Navigation */}
-          <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-            <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-              워크플로우
-            </h4>
-            <div className="space-y-1">
-              {tabs.map(tab => {
-                const Icon = tab.icon
-                const isActive = activeTab === tab.id
-                return (
-                  <button
-                    key={tab.id}
-                    onClick={() => setActiveTab(tab.id)}
-                    className={`w-full flex items-center space-x-3 p-2 rounded-lg text-left transition-colors ${
-                      isActive
-                        ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400'
-                        : 'hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300'
-                    }`}
-                  >
-                    <Icon className="w-4 h-4" />
-                    <span className="text-sm font-medium">{tab.label}</span>
-                  </button>
-                )
-              })}
-            </div>
-          </div>
-
-          {/* Recent Activities */}
-          <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-            <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-              최근 활동
-            </h4>
-            <div className="space-y-3">
-              <div className="flex items-start space-x-2">
-                <CheckCircleIcon className="w-4 h-4 mt-0.5 text-green-500" />
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs text-gray-900 dark:text-white font-medium truncate">
-                    RFP 분석 완료
-                  </p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
-                    김개발자 • 2시간 전
-                  </p>
+            {/* Key Metrics */}
+            <div>
+              <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                주요 지표
+              </h4>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="flex items-center space-x-2 p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                  <ChartBarIcon className="w-4 h-4 text-blue-500" />
+                  <div>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      진행률
+                    </p>
+                    <p className="text-sm font-medium text-gray-900 dark:text-white">
+                      {project.progress}%
+                    </p>
+                  </div>
                 </div>
-              </div>
-              <div className="flex items-start space-x-2">
-                <ChatBubbleLeftRightIcon className="w-4 h-4 mt-0.5 text-blue-500" />
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs text-gray-900 dark:text-white font-medium truncate">
-                    제안서 초안에 댓글 추가
-                  </p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
-                    박기획자 • 4시간 전
-                  </p>
+                <div className="flex items-center space-x-2 p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                  <CalendarIcon className="w-4 h-4 text-purple-500" />
+                  <div>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      마감일
+                    </p>
+                    <p className="text-sm font-medium text-gray-900 dark:text-white">
+                      {new Date(project.deadline).toLocaleDateString('ko-KR', {
+                        month: 'short',
+                        day: 'numeric',
+                      })}
+                    </p>
+                  </div>
                 </div>
-              </div>
-              <div className="flex items-start space-x-2">
-                <DocumentTextIcon className="w-4 h-4 mt-0.5 text-purple-500" />
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs text-gray-900 dark:text-white font-medium truncate">
-                    시장조사 문서 업로드
-                  </p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
-                    이분석가 • 6시간 전
-                  </p>
+                <div className="flex items-center space-x-2 p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                  <UsersIcon className="w-4 h-4 text-green-500" />
+                  <div>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      팀원
+                    </p>
+                    <p className="text-sm font-medium text-gray-900 dark:text-white">
+                      {project.team?.length || 1}명
+                    </p>
+                  </div>
                 </div>
-              </div>
-              <div className="flex items-start space-x-2">
-                <ArrowTrendingUpIcon className="w-4 h-4 mt-0.5 text-yellow-500" />
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs text-gray-900 dark:text-white font-medium truncate">
-                    요구사항 분석 완료
-                  </p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
-                    1일 전
-                  </p>
+                <div className="flex items-center space-x-2 p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                  <ClockIcon className="w-4 h-4 text-orange-500" />
+                  <div>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      남은 기간
+                    </p>
+                    <p className="text-sm font-medium text-gray-900 dark:text-white">
+                      {Math.max(
+                        0,
+                        Math.ceil(
+                          (new Date(project.deadline).getTime() -
+                            new Date().getTime()) /
+                            (1000 * 60 * 60 * 24)
+                        )
+                      )}
+                      일
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
 
-          {/* Related Resources */}
-          <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-            <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-              관련 리소스
-            </h4>
-            <div className="space-y-2">
-              <button className="w-full flex items-center space-x-2 p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 text-left transition-colors">
-                <DocumentTextIcon className="w-3 h-3 text-gray-500" />
-                <span className="text-xs text-gray-700 dark:text-gray-300 truncate">
-                  RFP 원본 문서
+            {/* Quick Actions */}
+            <div>
+              <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                빠른 실행
+              </h4>
+              <div className="grid grid-cols-2 gap-2">
+                <button className="flex items-center space-x-2 p-2 rounded-lg bg-blue-500 hover:bg-blue-600 text-white text-xs transition-colors">
+                  <PlusIcon className="w-3 h-3" />
+                  <span>새 작업</span>
+                </button>
+                <button className="flex items-center space-x-2 p-2 rounded-lg bg-green-500 hover:bg-green-600 text-white text-xs transition-colors">
+                  <DocumentTextIcon className="w-3 h-3" />
+                  <span>노트 추가</span>
+                </button>
+                <button className="flex items-center space-x-2 p-2 rounded-lg bg-purple-500 hover:bg-purple-600 text-white text-xs transition-colors">
+                  <LinkIcon className="w-3 h-3" />
+                  <span>공유</span>
+                </button>
+                <button className="flex items-center space-x-2 p-2 rounded-lg bg-yellow-500 hover:bg-yellow-600 text-white text-xs transition-colors">
+                  <BookmarkIcon className="w-3 h-3" />
+                  <span>북마크</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Workflow Navigation */}
+            <div>
+              <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                워크플로우
+              </h4>
+              <div className="space-y-1">
+                {tabs.map(tab => {
+                  const Icon = tab.icon
+                  const isActive = activeTab === tab.id
+                  return (
+                    <button
+                      key={tab.id}
+                      onClick={() => setActiveTab(tab.id)}
+                      className={`w-full flex items-center space-x-3 p-2 rounded-lg text-left transition-colors ${
+                        isActive
+                          ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400'
+                          : 'hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300'
+                      }`}
+                    >
+                      <Icon className="w-4 h-4" />
+                      <span className="text-sm font-medium">{tab.label}</span>
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+
+            {/* Recent Activities */}
+            <div>
+              <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                최근 활동
+              </h4>
+              <div className="space-y-3">
+                <div className="flex items-start space-x-2">
+                  <CheckCircleIcon className="w-4 h-4 mt-0.5 text-green-500" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs text-gray-900 dark:text-white font-medium truncate">
+                      RFP 분석 완료
+                    </p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      김개발자 • 2시간 전
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-start space-x-2">
+                  <ChatBubbleLeftRightIcon className="w-4 h-4 mt-0.5 text-blue-500" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs text-gray-900 dark:text-white font-medium truncate">
+                      제안서 초안에 댓글 추가
+                    </p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      박기획자 • 4시간 전
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-start space-x-2">
+                  <DocumentTextIcon className="w-4 h-4 mt-0.5 text-purple-500" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs text-gray-900 dark:text-white font-medium truncate">
+                      시장조사 문서 업로드
+                    </p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      이분석가 • 6시간 전
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-start space-x-2">
+                  <ArrowTrendingUpIcon className="w-4 h-4 mt-0.5 text-yellow-500" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs text-gray-900 dark:text-white font-medium truncate">
+                      요구사항 분석 완료
+                    </p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      1일 전
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Related Resources */}
+            <div>
+              <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                관련 리소스
+              </h4>
+              <div className="space-y-2">
+                <button className="w-full flex items-center space-x-2 p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 text-left transition-colors">
+                  <DocumentTextIcon className="w-3 h-3 text-gray-500" />
+                  <span className="text-xs text-gray-700 dark:text-gray-300 truncate">
+                    RFP 원본 문서
+                  </span>
+                </button>
+                <button className="w-full flex items-center space-x-2 p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 text-left transition-colors">
+                  <ChartBarIcon className="w-3 h-3 text-gray-500" />
+                  <span className="text-xs text-gray-700 dark:text-gray-300 truncate">
+                    경쟁사 분석 자료
+                  </span>
+                </button>
+                <button className="w-full flex items-center space-x-2 p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 text-left transition-colors">
+                  <CommandLineIcon className="w-3 h-3 text-gray-500" />
+                  <span className="text-xs text-gray-700 dark:text-gray-300 truncate">
+                    기술 스택 문서
+                  </span>
+                </button>
+                <button className="w-full flex items-center space-x-2 p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 text-left transition-colors">
+                  <GlobeAltIcon className="w-3 h-3 text-gray-500" />
+                  <span className="text-xs text-gray-700 dark:text-gray-300 truncate">
+                    프로젝트 웹사이트
+                  </span>
+                </button>
+              </div>
+            </div>
+
+            {/* Project Tags */}
+            <div>
+              <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                프로젝트 태그
+              </h4>
+              <div className="flex flex-wrap gap-2">
+                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300">
+                  <TagIcon className="w-3 h-3 mr-1" />
+                  웹개발
                 </span>
-              </button>
-              <button className="w-full flex items-center space-x-2 p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 text-left transition-colors">
-                <ChartBarIcon className="w-3 h-3 text-gray-500" />
-                <span className="text-xs text-gray-700 dark:text-gray-300 truncate">
-                  경쟁사 분석 자료
+                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300">
+                  <TagIcon className="w-3 h-3 mr-1" />
+                  리뉴얼
                 </span>
-              </button>
-              <button className="w-full flex items-center space-x-2 p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 text-left transition-colors">
-                <CommandLineIcon className="w-3 h-3 text-gray-500" />
-                <span className="text-xs text-gray-700 dark:text-gray-300 truncate">
-                  기술 스택 문서
+                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300">
+                  <TagIcon className="w-3 h-3 mr-1" />
+                  제안
                 </span>
-              </button>
-              <button className="w-full flex items-center space-x-2 p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 text-left transition-colors">
-                <GlobeAltIcon className="w-3 h-3 text-gray-500" />
-                <span className="text-xs text-gray-700 dark:text-gray-300 truncate">
-                  프로젝트 웹사이트
-                </span>
-              </button>
-            </div>
-          </div>
-
-          {/* Project Tags */}
-          <div className="p-4">
-            <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-              프로젝트 태그
-            </h4>
-            <div className="flex flex-wrap gap-2">
-              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300">
-                <TagIcon className="w-3 h-3 mr-1" />
-                웹개발
-              </span>
-              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300">
-                <TagIcon className="w-3 h-3 mr-1" />
-                리뉴얼
-              </span>
-              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300">
-                <TagIcon className="w-3 h-3 mr-1" />
-                제안
-              </span>
+              </div>
             </div>
           </div>
         </div>
