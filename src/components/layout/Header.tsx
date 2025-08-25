@@ -30,13 +30,13 @@ interface HeaderProps {
 
 const mainNavigation = [
   { name: '대시보드', href: '/dashboard', icon: HomeIcon },
+  { name: '프로젝트', href: '/projects', icon: FolderIcon },
   { name: 'AI 채팅', href: '/chat', icon: ChatBubbleLeftRightIcon },
   { name: '코드 캔버스', href: '/canvas', icon: CodeBracketIcon },
   { name: '이미지 생성', href: '/images', icon: PhotoIcon },
 ]
 
 const projectCategories = [
-  { name: '전체 프로젝트', href: '/projects' },
   { name: '제안 진행', href: '/projects?category=proposal' },
   { name: '구축 관리', href: '/projects?category=development' },
   { name: '운영 관리', href: '/projects?category=operation' },
