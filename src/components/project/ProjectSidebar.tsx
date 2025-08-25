@@ -398,5 +398,6 @@ export default function ProjectSidebar({ project, activeTab, onTabChange, tabs }
         </div>
       </div>
     </motion.div>
+    </>
   )
 }

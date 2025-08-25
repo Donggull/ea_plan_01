@@ -163,14 +163,6 @@ export default function ProjectDetailPage() {
     )
   }
 
-  const getCategoryIcon = (category: string) => {
-    const icons = {
-      proposal: SparklesIcon,
-      development: ChartBarIcon,
-      operation: CogIcon,
-    }
-    return icons[category as keyof typeof icons] || SparklesIcon
-  }
 
   const getStatusBadge = (status: string) => {
     const badges = {

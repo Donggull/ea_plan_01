@@ -6,7 +6,7 @@ import {
   ChartBarIcon,
   CurrencyDollarIcon,
   ClockIcon,
-  TrendingUpIcon,
+  ArrowTrendingUpIcon,
   GlobeAltIcon,
   ExclamationCircleIcon,
   ArrowPathIcon,
@@ -285,7 +285,7 @@ export default function MarketResearch({
           {/* 시장 트렌드 */}
           <div className="space-y-4">
             <h4 className="text-lg font-medium text-gray-900 dark:text-white flex items-center space-x-2">
-              <TrendingUpIcon className="w-5 h-5" />
+              <ArrowTrendingUpIcon className="w-5 h-5" />
               <span>시장 트렌드</span>
             </h4>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
