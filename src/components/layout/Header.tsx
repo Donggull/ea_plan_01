@@ -78,9 +78,78 @@ export default function Header({ onMenuToggle }: HeaderProps) {
 
           {/* Center - Main Navigation */}
           <nav className="hidden lg:flex items-center space-x-8">
-            {mainNavigation.map(item => {
+            {mainNavigation.map((item, index) => {
               const Icon = item.icon
               const isActive = pathname === item.href
+              const isProjectMenu = item.name === '프로젝트'
+
+              if (isProjectMenu) {
+                return (
+                  <Menu key={item.name} as="div" className="relative">
+                    {({ open }) => (
+                      <>
+                        <Link href={item.href}>
+                          <Menu.Button
+                            className={`group flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                              isActive
+                                ? 'bg-blue-600 text-white'
+                                : 'text-gray-300 hover:text-white hover:bg-gray-700'
+                            }`}
+                          >
+                            <Icon className="w-5 h-5" />
+                            <span>{item.name}</span>
+                            <svg
+                              className={`w-4 h-4 transition-transform duration-200 ${
+                                open ? 'rotate-180' : ''
+                              }`}
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M19 9l-7 7-7-7"
+                              />
+                            </svg>
+                          </Menu.Button>
+                        </Link>
+
+                        <Transition
+                          as={Fragment}
+                          enter="transition ease-out duration-100"
+                          enterFrom="transform opacity-0 scale-95"
+                          enterTo="transform opacity-100 scale-100"
+                          leave="transition ease-in duration-75"
+                          leaveFrom="transform opacity-100 scale-100"
+                          leaveTo="transform opacity-0 scale-95"
+                        >
+                          <Menu.Items className="origin-top-center absolute left-1/2 transform -translate-x-1/2 mt-2 w-48 rounded-md shadow-lg py-1 bg-white dark:bg-gray-800 ring-1 ring-black ring-opacity-5 focus:outline-none z-50">
+                            {projectCategories.map(category => (
+                              <Menu.Item key={category.name}>
+                                {({ active }) => (
+                                  <Link
+                                    href={category.href}
+                                    className={`${
+                                      active
+                                        ? 'bg-gray-100 dark:bg-gray-700'
+                                        : 'text-gray-700 dark:text-gray-300'
+                                    } block px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700`}
+                                  >
+                                    {category.name}
+                                  </Link>
+                                )}
+                              </Menu.Item>
+                            ))}
+                          </Menu.Items>
+                        </Transition>
+                      </>
+                    )}
+                  </Menu>
+                )
+              }
+
               return (
                 <Link
                   key={item.name}
@@ -96,56 +165,6 @@ export default function Header({ onMenuToggle }: HeaderProps) {
                 </Link>
               )
             })}
-
-            {/* Project Categories Dropdown */}
-            <Menu as="div" className="relative">
-              <Menu.Button className="flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium text-gray-300 hover:text-white hover:bg-gray-700 transition-colors">
-                <FolderIcon className="w-5 h-5" />
-                <span>프로젝트</span>
-                <svg
-                  className="w-4 h-4"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M19 9l-7 7-7-7"
-                  />
-                </svg>
-              </Menu.Button>
-
-              <Transition
-                as={Fragment}
-                enter="transition ease-out duration-100"
-                enterFrom="transform opacity-0 scale-95"
-                enterTo="transform opacity-100 scale-100"
-                leave="transition ease-in duration-75"
-                leaveFrom="transform opacity-100 scale-100"
-                leaveTo="transform opacity-0 scale-95"
-              >
-                <Menu.Items className="origin-top-center absolute left-1/2 transform -translate-x-1/2 mt-2 w-48 rounded-md shadow-lg py-1 bg-white dark:bg-gray-800 ring-1 ring-black ring-opacity-5 focus:outline-none z-50">
-                  {projectCategories.map(category => (
-                    <Menu.Item key={category.name}>
-                      {({ active }) => (
-                        <Link
-                          href={category.href}
-                          className={`${
-                            active
-                              ? 'bg-gray-100 dark:bg-gray-700'
-                              : 'text-gray-700 dark:text-gray-300'
-                          } block px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700`}
-                        >
-                          {category.name}
-                        </Link>
-                      )}
-                    </Menu.Item>
-                  ))}
-                </Menu.Items>
-              </Transition>
-            </Menu>
           </nav>
 
           {/* Right side */}
