@@ -62,7 +62,7 @@ export class ProjectService {
       console.log('ProjectService.createProject called with:', projectData)
 
       // For demo mode, we'll use the regular client and rely on service role RLS policies
-      const defaultUserId = 'c8b9c8d7-0c5a-4a0f-9f8c-6c5b9a3e4d2f' // Sample user ID
+      const defaultUserId = 'afd2a12c-75a5-4914-812e-5eedc4fd3a3d' // Sample user ID from actual DB
 
       const insertData: ProjectInsert = {
         user_id: defaultUserId,
@@ -321,8 +321,8 @@ export class ProjectService {
     console.log('ProjectService.listProjects called with filters:', filters)
 
     try {
-      // For demo mode, use default user ID
-      const defaultUserId = 'c8b9c8d7-0c5a-4914-812e-5eedc4fd3a3d' // Sample user ID
+      // For demo mode, use default user ID (matching the actual data in Supabase)
+      const defaultUserId = 'afd2a12c-75a5-4914-812e-5eedc4fd3a3d' // Sample user ID from actual DB
       console.log('Using default user ID:', defaultUserId)
 
       const projectsWithAccess: (Project & {
@@ -641,7 +641,7 @@ export class ProjectService {
     >
   > {
     try {
-      const defaultUserId = 'c8b9c8d7-0c5a-4914-812e-5eedc4fd3a3d'
+      const defaultUserId = 'afd2a12c-75a5-4914-812e-5eedc4fd3a3d'
 
       const { data, error } = await supabase
         .from('project_members')
@@ -751,7 +751,7 @@ export class ProjectService {
     visibilityLevel: 'private' | 'shared' | 'public'
   ): Promise<ProjectServiceResponse<Project>> {
     try {
-      const defaultUserId = 'c8b9c8d7-0c5a-4914-812e-5eedc4fd3a3d'
+      const defaultUserId = 'afd2a12c-75a5-4914-812e-5eedc4fd3a3d'
 
       const { data, error } = await supabase
         .from('projects')
