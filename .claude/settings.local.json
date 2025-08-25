@@ -16,7 +16,8 @@
       "Bash(git add:*)",
       "Bash(git commit:*)",
       "Bash(git push:*)",
-      "mcp__github-mcp__git-add-all"
+      "mcp__github-mcp__git-add-all",
+      "Bash(npm install:*)"
     ],
     "deny": [],
     "ask": []

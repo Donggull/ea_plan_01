@@ -23,6 +23,7 @@ import {
   LightBulbIcon,
 } from '@heroicons/react/24/outline'
 import useProjectStore, { Project } from '@/lib/stores/projectStore'
+import ProposalWorkflow from '@/components/proposal/ProposalWorkflow'
 
 interface TabContent {
   id: string
@@ -404,7 +405,17 @@ export default function ProjectDetailPage() {
           transition={{ duration: 0.3 }}
           className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl border border-white/20 dark:border-gray-700/50 rounded-2xl p-8"
         >
-          {tabs.find(tab => tab.id === activeTab) && (
+          {/* Proposal Category - Use ProposalWorkflow */}
+          {project.category === 'proposal' && (
+            <ProposalWorkflow
+              projectId={project.id}
+              projectTitle={project.name}
+              projectCategory={project.category}
+            />
+          )}
+
+          {/* Development and Operation Categories - Keep existing layout for now */}
+          {project.category !== 'proposal' && tabs.find(tab => tab.id === activeTab) && (
             <>
               <div className="flex items-center justify-between mb-6">
                 <div>
