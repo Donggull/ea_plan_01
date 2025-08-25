@@ -31,11 +31,12 @@ export default function MainLayout({ children }: MainLayoutProps) {
     }
   }, [setTheme])
 
-  // Check if current page should have the new layout (exclude homepage)
+  // Check if current page should have the new layout (exclude homepage and project detail pages)
   const isHomePage = pathname === '/'
-  const shouldUseSidebarLayout = !isHomePage
+  const isProjectDetailPage = /^\/projects\/[^\/]+$/.test(pathname)
+  const shouldUseSidebarLayout = !isHomePage && !isProjectDetailPage
 
-  if (isHomePage) {
+  if (isHomePage || isProjectDetailPage) {
     return <div className={isDarkMode ? 'dark' : ''}>{children}</div>
   }
 

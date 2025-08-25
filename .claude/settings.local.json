@@ -18,7 +18,9 @@
       "Bash(git push:*)",
       "mcp__github-mcp__git-add-all",
       "Bash(npm install:*)",
-      "Bash(npm run build:*)"
+      "Bash(npm run build:*)",
+      "mcp__playwright-stealth__playwright_navigate",
+      "mcp__playwright-stealth__playwright_screenshot"
     ],
     "deny": [],
     "ask": []
