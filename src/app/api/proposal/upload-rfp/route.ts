@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { writeFile, mkdir } from 'fs/promises'
-import { join } from 'path'
-import { existsSync } from 'fs'
+import { createClient } from '@supabase/supabase-js'
 
 // Handle CORS preflight requests
 export async function OPTIONS(request: NextRequest) {
@@ -18,6 +16,20 @@ export async function OPTIONS(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     console.log('POST /api/proposal/upload-rfp - Starting file upload')
+
+    // Initialize Supabase client
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
+
+    if (!supabaseUrl || !supabaseServiceKey) {
+      console.error('Missing Supabase configuration')
+      return NextResponse.json(
+        { error: 'Server configuration error' },
+        { status: 500 }
+      )
+    }
+
+    const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
     const formData = await request.formData()
     const file = formData.get('file') as File
@@ -74,28 +86,41 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Create uploads directory if it doesn't exist
-    const uploadsDir = join(process.cwd(), 'public', 'uploads', 'rfp')
-    console.log('Upload directory path:', uploadsDir)
-
-    if (!existsSync(uploadsDir)) {
-      console.log('Creating upload directory...')
-      await mkdir(uploadsDir, { recursive: true })
-      console.log('Upload directory created')
-    } else {
-      console.log('Upload directory exists')
-    }
-
-    // Save file
+    // Upload file to Supabase Storage
     console.log('Converting file to buffer...')
     const bytes = await file.arrayBuffer()
     const buffer = Buffer.from(bytes)
     const fileName = `${projectId}_${Date.now()}_${file.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`
-    const filePath = join(uploadsDir, fileName)
+    const filePath = `rfp/${fileName}`
 
-    console.log('Saving file to:', filePath)
-    await writeFile(filePath, buffer)
-    console.log('File saved successfully')
+    console.log('Uploading file to Supabase Storage:', filePath)
+
+    const { data: uploadData, error: uploadError } = await supabase.storage
+      .from('documents')
+      .upload(filePath, buffer, {
+        contentType: file.type,
+        upsert: false,
+      })
+
+    if (uploadError) {
+      console.error('Supabase upload error:', uploadError)
+      return NextResponse.json(
+        {
+          error: 'Failed to upload file to storage',
+          details: uploadError.message,
+        },
+        { status: 500 }
+      )
+    }
+
+    console.log('File uploaded successfully to Supabase:', uploadData.path)
+
+    // Get public URL for the uploaded file
+    const { data: urlData } = supabase.storage
+      .from('documents')
+      .getPublicUrl(filePath)
+
+    console.log('File public URL:', urlData.publicUrl)
 
     // For demo purposes, extract simple text content
     // In a real implementation, you would use libraries like pdf-parse, mammoth, etc.
@@ -111,7 +136,7 @@ export async function POST(request: NextRequest) {
       console.log('Placeholder content generated')
     }
 
-    const fileUrl = `/uploads/rfp/${fileName}`
+    const fileUrl = urlData.publicUrl
     console.log('Upload completed successfully, fileUrl:', fileUrl)
 
     const response = NextResponse.json({
@@ -121,6 +146,7 @@ export async function POST(request: NextRequest) {
       fileName: file.name,
       fileSize: file.size,
       fileType: file.type,
+      storagePath: uploadData.path,
     })
 
     // Add CORS headers (though this should be handled by Next.js automatically for same-origin requests)
