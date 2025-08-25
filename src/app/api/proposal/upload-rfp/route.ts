@@ -3,15 +3,54 @@ import { writeFile, mkdir } from 'fs/promises'
 import { join } from 'path'
 import { existsSync } from 'fs'
 
+// Handle CORS preflight requests
+export async function OPTIONS(request: NextRequest) {
+  return new NextResponse(null, {
+    status: 200,
+    headers: {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type',
+    },
+  })
+}
+
 export async function POST(request: NextRequest) {
   try {
+    console.log('POST /api/proposal/upload-rfp - Starting file upload')
+
     const formData = await request.formData()
     const file = formData.get('file') as File
     const projectId = formData.get('projectId') as string
 
+    console.log('Received data:', {
+      hasFile: !!file,
+      projectId,
+      fileInfo: file
+        ? {
+            name: file.name,
+            size: file.size,
+            type: file.type,
+          }
+        : null,
+    })
+
     if (!file || !projectId) {
+      console.error('Missing required fields:', {
+        hasFile: !!file,
+        hasProjectId: !!projectId,
+      })
       return NextResponse.json(
         { error: 'File and project ID are required' },
+        { status: 400 }
+      )
+    }
+
+    // Validate file size (50MB limit)
+    if (file.size > 50 * 1024 * 1024) {
+      console.error('File size too large:', file.size)
+      return NextResponse.json(
+        { error: 'File size exceeds 50MB limit' },
         { status: 400 }
       )
     }
@@ -26,40 +65,57 @@ export async function POST(request: NextRequest) {
     ]
 
     if (!allowedTypes.includes(file.type)) {
+      console.error('Unsupported file type:', file.type)
       return NextResponse.json(
-        { error: 'Unsupported file type' },
+        {
+          error: `Unsupported file type: ${file.type}. Supported types: ${allowedTypes.join(', ')}`,
+        },
         { status: 400 }
       )
     }
 
     // Create uploads directory if it doesn't exist
     const uploadsDir = join(process.cwd(), 'public', 'uploads', 'rfp')
+    console.log('Upload directory path:', uploadsDir)
+
     if (!existsSync(uploadsDir)) {
+      console.log('Creating upload directory...')
       await mkdir(uploadsDir, { recursive: true })
+      console.log('Upload directory created')
+    } else {
+      console.log('Upload directory exists')
     }
 
     // Save file
+    console.log('Converting file to buffer...')
     const bytes = await file.arrayBuffer()
     const buffer = Buffer.from(bytes)
-    const fileName = `${projectId}_${Date.now()}_${file.name}`
+    const fileName = `${projectId}_${Date.now()}_${file.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`
     const filePath = join(uploadsDir, fileName)
 
+    console.log('Saving file to:', filePath)
     await writeFile(filePath, buffer)
+    console.log('File saved successfully')
 
     // For demo purposes, extract simple text content
     // In a real implementation, you would use libraries like pdf-parse, mammoth, etc.
     let textContent = ''
-    
+
+    console.log('Extracting text content for file type:', file.type)
     if (file.type === 'text/plain') {
       textContent = buffer.toString('utf-8')
+      console.log('Text content extracted, length:', textContent.length)
     } else {
       // For other file types, return a placeholder
-      textContent = `RFP 문서가 업로드되었습니다.\n파일명: ${file.name}\n파일 크기: ${file.size} bytes\n\n실제 구현에서는 PDF, DOC, HWP 파싱 라이브러리를 사용하여 텍스트를 추출합니다.`
+      textContent = `RFP 문서가 업로드되었습니다.\n파일명: ${file.name}\n파일 크기: ${file.size} bytes\n파일 타입: ${file.type}\n\n실제 구현에서는 PDF, DOC, HWP 파싱 라이브러리를 사용하여 텍스트를 추출합니다.\n\n테스트를 위해 다음 정보를 포함합니다:\n- 프로젝트 관련 키워드가 포함된 내용\n- React, Node.js, 데이터베이스 등 기술 스택\n- 사용자 관리, 관리자 시스템 등 기능 요구사항`
+      console.log('Placeholder content generated')
     }
 
     const fileUrl = `/uploads/rfp/${fileName}`
+    console.log('Upload completed successfully, fileUrl:', fileUrl)
 
-    return NextResponse.json({
+    const response = NextResponse.json({
+      success: true,
       fileUrl,
       textContent,
       fileName: file.name,
@@ -67,11 +123,34 @@ export async function POST(request: NextRequest) {
       fileType: file.type,
     })
 
+    // Add CORS headers (though this should be handled by Next.js automatically for same-origin requests)
+    response.headers.set('Access-Control-Allow-Origin', '*')
+    response.headers.set('Access-Control-Allow-Methods', 'POST, OPTIONS')
+    response.headers.set('Access-Control-Allow-Headers', 'Content-Type')
+
+    return response
   } catch (error) {
     console.error('File upload error:', error)
-    return NextResponse.json(
-      { error: 'Failed to upload file' },
+    console.error('Error details:', {
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+    })
+
+    const errorResponse = NextResponse.json(
+      {
+        error: 'Failed to upload file',
+        details:
+          error instanceof Error ? error.message : 'Unknown error occurred',
+        timestamp: new Date().toISOString(),
+      },
       { status: 500 }
     )
+
+    // Add CORS headers to error response as well
+    errorResponse.headers.set('Access-Control-Allow-Origin', '*')
+    errorResponse.headers.set('Access-Control-Allow-Methods', 'POST, OPTIONS')
+    errorResponse.headers.set('Access-Control-Allow-Headers', 'Content-Type')
+
+    return errorResponse
   }
 }

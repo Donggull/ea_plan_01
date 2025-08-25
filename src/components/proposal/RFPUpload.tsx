@@ -84,41 +84,72 @@ export default function RFPUpload({ onUpload, projectId }: RFPUploadProps) {
           throw new Error('파일 크기가 50MB를 초과합니다.')
         }
 
+        // 프로젝트 ID 검증
+        if (!projectId || projectId.trim() === '') {
+          throw new Error('프로젝트 ID가 유효하지 않습니다.')
+        }
+
         // 파일 업로드
         const formData = new FormData()
         formData.append('file', file)
         formData.append('projectId', projectId)
 
+        console.log('=== RFP Upload Request ===')
+        console.log('File info:', {
+          name: file.name,
+          size: file.size,
+          type: file.type,
+          lastModified: file.lastModified,
+        })
+        console.log('Project ID:', projectId)
         console.log(
-          'Uploading file:',
-          file.name,
-          'Size:',
-          file.size,
-          'Type:',
-          file.type
+          'FormData entries:',
+          Array.from(formData.entries()).map(([key, value]) => [
+            key,
+            value instanceof File
+              ? `File: ${value.name} (${value.size} bytes)`
+              : value,
+          ])
         )
 
+        console.log('Sending request to /api/proposal/upload-rfp')
         const uploadResponse = await fetch('/api/proposal/upload-rfp', {
           method: 'POST',
           body: formData,
         })
 
-        console.log('Upload response status:', uploadResponse.status)
+        console.log('=== Upload Response ===')
+        console.log('Status:', uploadResponse.status)
+        console.log('Status Text:', uploadResponse.statusText)
+        console.log(
+          'Headers:',
+          Object.fromEntries(uploadResponse.headers.entries())
+        )
 
         if (!uploadResponse.ok) {
           const errorText = await uploadResponse.text()
           console.error('Upload error response:', errorText)
+          console.error(
+            'Upload response headers:',
+            Object.fromEntries(uploadResponse.headers.entries())
+          )
 
           let errorData
           try {
             errorData = JSON.parse(errorText)
-          } catch {
+          } catch (parseError) {
+            console.error('Failed to parse error response:', parseError)
             errorData = {
               error: `HTTP ${uploadResponse.status}: ${uploadResponse.statusText}`,
+              details: errorText || 'No additional error details available',
             }
           }
 
-          throw new Error(errorData.error || '파일 업로드에 실패했습니다.')
+          const errorMessage = errorData.error || '파일 업로드에 실패했습니다.'
+          const errorDetails = errorData.details
+            ? ` (${errorData.details})`
+            : ''
+          throw new Error(errorMessage + errorDetails)
         }
 
         const uploadResult = await uploadResponse.json()
@@ -171,11 +202,35 @@ export default function RFPUpload({ onUpload, projectId }: RFPUploadProps) {
           onUpload(file, analysisResult)
         }, 1000)
       } catch (err) {
-        console.error('Upload/Analysis error:', err)
-        setUploadStatus('error')
-        setError(
-          err instanceof Error ? err.message : '알 수 없는 오류가 발생했습니다.'
+        console.error('=== Upload/Analysis Error ===')
+        console.error('Error object:', err)
+        console.error('Error type:', typeof err)
+        console.error(
+          'Error name:',
+          err instanceof Error ? err.name : 'Unknown'
         )
+        console.error(
+          'Error message:',
+          err instanceof Error ? err.message : String(err)
+        )
+        console.error(
+          'Error stack:',
+          err instanceof Error ? err.stack : 'No stack trace'
+        )
+
+        setUploadStatus('error')
+
+        let errorMessage = '알 수 없는 오류가 발생했습니다.'
+        if (err instanceof Error) {
+          if (err.name === 'TypeError' && err.message.includes('fetch')) {
+            errorMessage =
+              '서버에 연결할 수 없습니다. 네트워크 연결을 확인해주세요.'
+          } else {
+            errorMessage = err.message
+          }
+        }
+
+        setError(errorMessage)
       }
     },
     [onUpload, projectId, selectedModel]
