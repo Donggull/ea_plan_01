@@ -20,6 +20,7 @@ import {
   CodeBracketIcon,
   PhotoIcon,
   PlusIcon,
+  CpuChipIcon,
 } from '@heroicons/react/24/outline'
 import { Menu, Transition } from '@headlessui/react'
 import { Fragment } from 'react'
@@ -31,6 +32,7 @@ interface HeaderProps {
 const mainNavigation = [
   { name: '대시보드', href: '/dashboard', icon: HomeIcon },
   { name: '프로젝트', href: '/projects', icon: FolderIcon },
+  { name: '뉴엘', href: '/newel', icon: CpuChipIcon },
   { name: 'AI 채팅', href: '/chat', icon: ChatBubbleLeftRightIcon },
   { name: '코드 캔버스', href: '/canvas', icon: CodeBracketIcon },
   { name: '이미지 생성', href: '/images', icon: PhotoIcon },
