@@ -377,7 +377,7 @@ export default function CanvasPage() {
   }
 
   return (
-    <div className="h-full flex flex-col overflow-hidden bg-gradient-to-br from-gray-50 to-white dark:from-gray-900 dark:to-gray-800">
+    <div className="h-screen flex flex-col overflow-hidden bg-gradient-to-br from-gray-50 to-white dark:from-gray-900 dark:to-gray-800">
       {/* Header */}
       <motion.div
         initial={{ y: -50, opacity: 0 }}
@@ -578,7 +578,7 @@ export default function CanvasPage() {
       </motion.div>
 
       {/* Main content with new layout */}
-      <div className="flex-1 overflow-hidden">
+      <div className="flex-1 min-h-0 overflow-hidden">
         <CanvasLayout
           mode={layoutMode}
           onModeChange={setLayoutMode}
@@ -589,7 +589,7 @@ export default function CanvasPage() {
               initial={{ x: -50, opacity: 0 }}
               animate={{ x: 0, opacity: 1 }}
               transition={{ delay: 0.2 }}
-              className="h-full flex flex-col"
+              className="h-full flex flex-col min-h-0"
             >
               <CodeEditor
                 value={code}
@@ -606,7 +606,7 @@ export default function CanvasPage() {
               initial={{ x: 50, opacity: 0 }}
               animate={{ x: 0, opacity: 1 }}
               transition={{ delay: 0.3 }}
-              className="h-full flex flex-col"
+              className="h-full flex flex-col min-h-0"
             >
               <div className="flex items-center justify-between p-3 border-b border-white/20 dark:border-gray-700/50 bg-white/80 dark:bg-gray-800/80 backdrop-blur">
                 <div className="flex space-x-2">
@@ -659,7 +659,7 @@ export default function CanvasPage() {
                 </motion.button>
               </div>
 
-              <div className="flex-1 flex flex-col overflow-hidden">
+              <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
                 {selectedTab === 'output' && (
                   <div className="flex-1 p-4 bg-white dark:bg-gray-900 font-mono text-sm overflow-auto">
                     <div className="space-y-2">
@@ -768,7 +768,7 @@ export default function CanvasPage() {
         initial={{ y: 50, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ delay: 0.4 }}
-        className="h-40 border-t border-white/20 dark:border-gray-700/50 bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl p-4"
+        className="flex-shrink-0 h-40 border-t border-white/20 dark:border-gray-700/50 bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl p-4"
       >
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center space-x-2">

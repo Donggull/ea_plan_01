@@ -183,7 +183,7 @@ export default function CanvasLayout({
       </AnimatePresence>
 
       {/* 메인 컨텐츠 영역 */}
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex-1 flex flex-col min-w-0 min-h-0">
         {/* 레이아웃 컨트롤 바 */}
         <div className="flex items-center justify-between p-2 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
           <div className="flex items-center space-x-2">
@@ -273,7 +273,7 @@ export default function CanvasLayout({
         </div>
 
         {/* 레이아웃별 컨텐츠 */}
-        <div className="flex-1 flex overflow-hidden">
+        <div className="flex-1 flex overflow-hidden min-h-0">
           {/* 분할 뷰 */}
           {mode === 'split' && (
             <>

@@ -376,7 +376,7 @@ export default function CodeEditor({
   }, [])
 
   return (
-    <div className={`relative h-full ${className}`}>
+    <div className={`relative h-full flex flex-col min-h-0 ${className}`}>
       {/* 에디터 헤더 */}
       <div className="flex items-center justify-between p-3 border-b border-white/20 dark:border-gray-700/50 bg-gray-900/90 backdrop-blur">
         <div className="flex items-center space-x-2">
@@ -475,7 +475,7 @@ export default function CodeEditor({
       </div>
 
       {/* Monaco Editor */}
-      <div className="flex-1 h-full">
+      <div className="flex-1 min-h-0">
         <Editor
           height="100%"
           language={language}
