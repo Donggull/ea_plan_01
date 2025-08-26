@@ -1,8 +1,79 @@
 'use client'
 
+import { useState } from 'react'
 import { usePathname } from 'next/navigation'
 import { useThemeStore } from '@/stores/theme'
 import useProjectStore from '@/lib/stores/projectStore'
+import {
+  MagnifyingGlassIcon,
+  HeartIcon,
+  TrashIcon,
+  PlusIcon,
+  EllipsisVerticalIcon,
+  StarIcon,
+  ClockIcon,
+  FolderIcon,
+} from '@heroicons/react/24/outline'
+import {
+  HeartIcon as HeartIconSolid,
+  StarIcon as StarIconSolid,
+} from '@heroicons/react/24/solid'
+
+// Types and Sample Data from ConversationHistory
+export interface Conversation {
+  id: string
+  title: string
+  model: 'gemini' | 'chatgpt' | 'claude'
+  lastMessage: string
+  timestamp: string
+  messageCount: number
+  isFavorite: boolean
+  tags: string[]
+  status: 'active' | 'idle' | 'completed'
+}
+
+type FilterType = 'all' | 'favorites' | 'recent' | 'today' | 'week'
+type SortType = 'newest' | 'oldest' | 'alphabetical' | 'most_messages'
+
+// Sample conversations data
+const sampleConversations: Conversation[] = [
+  {
+    id: 'conv-1',
+    title: 'AI 챗봇 플랫폼 기획',
+    model: 'gemini',
+    lastMessage:
+      'RFP 문서에서 핵심 요구사항을 추출했습니다. 멀티모델 AI 연동과 실시간 채팅 기능이 주요 포인트네요.',
+    timestamp: new Date(Date.now() - 5 * 60 * 1000).toISOString(),
+    messageCount: 12,
+    isFavorite: true,
+    tags: ['기획', 'RFP', 'AI'],
+    status: 'active',
+  },
+  {
+    id: 'conv-2',
+    title: '모바일 앱 UI/UX 설계',
+    model: 'chatgpt',
+    lastMessage:
+      '사용자 플로우 다이어그램을 생성했습니다. React Native 기반의 크로스 플랫폼 설계가 적합할 것 같습니다.',
+    timestamp: new Date(Date.now() - 60 * 60 * 1000).toISOString(),
+    messageCount: 8,
+    isFavorite: false,
+    tags: ['UI/UX', '모바일', 'React Native'],
+    status: 'idle',
+  },
+  {
+    id: 'conv-3',
+    title: '데이터 분석 대시보드 코드 리뷰',
+    model: 'claude',
+    lastMessage:
+      '코드 구조 개선 제안을 드립니다. TypeScript 타입 정의를 더 구체화하면 좋을 것 같습니다.',
+    timestamp: new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString(),
+    messageCount: 15,
+    isFavorite: true,
+    tags: ['코드리뷰', 'TypeScript', '대시보드'],
+    status: 'completed',
+  },
+]
 
 interface SidebarProps {
   onClose?: () => void
@@ -245,109 +316,250 @@ function ProjectsSidebar() {
 
 // Chat Sidebar
 function ChatSidebar() {
+  const [conversations, setConversations] =
+    useState<Conversation[]>(sampleConversations)
+  const [selectedConversation, setSelectedConversation] = useState<
+    string | undefined
+  >(undefined)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [filter, setFilter] = useState<FilterType>('all')
+  const [sortBy, setSortBy] = useState<SortType>('newest')
+  const [showDropdown, setShowDropdown] = useState<string | null>(null)
+
   return (
-    <div className="p-6 space-y-6">
-      <div>
-        <h3 className="text-sm font-medium text-gray-900 dark:text-white mb-4">
-          AI 모델 선택
-        </h3>
-        <div className="space-y-2">
+    <div className="flex flex-col h-full">
+      {/* Header */}
+      <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+            대화 목록
+          </h2>
+          <button
+            onClick={() => {
+              const newConv: Conversation = {
+                id: `conv-${Date.now()}`,
+                title: '새 대화',
+                model: 'gemini',
+                lastMessage: '',
+                timestamp: new Date().toISOString(),
+                messageCount: 0,
+                isFavorite: false,
+                tags: [],
+                status: 'active',
+              }
+              setConversations(prev => [newConv, ...prev])
+              setSelectedConversation(newConv.id)
+            }}
+            className="p-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors"
+            title="새 대화"
+          >
+            <PlusIcon className="w-4 h-4" />
+          </button>
+        </div>
+
+        {/* Search */}
+        <div className="relative mb-4">
+          <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={e => setSearchQuery(e.target.value)}
+            placeholder="대화 검색..."
+            className="w-full pl-9 pr-3 py-2 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+
+        {/* Quick Filters */}
+        <div className="flex space-x-1 mb-2">
           {[
-            {
-              name: 'Gemini Pro',
-              desc: '빠른 응답, 비용 효율적',
-              color:
-                'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300',
-            },
-            {
-              name: 'ChatGPT-4',
-              desc: '고품질 텍스트 생성',
-              color:
-                'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300',
-            },
-            {
-              name: 'Claude',
-              desc: 'MCP 도구 통합',
-              color:
-                'bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300',
-            },
-          ].map(model => (
-            <label
-              key={model.name}
-              className="flex items-center space-x-3 p-3 border border-gray-200 dark:border-gray-600 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700"
+            { id: 'all' as FilterType, name: '전체' },
+            { id: 'favorites' as FilterType, name: '즐겨찾기' },
+            { id: 'today' as FilterType, name: '오늘' },
+          ].map(filterOption => (
+            <button
+              key={filterOption.id}
+              onClick={() => setFilter(filterOption.id)}
+              className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
+                filter === filterOption.id
+                  ? 'bg-blue-500 text-white'
+                  : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
+              }`}
             >
-              <input type="radio" name="model" className="text-slate-600" />
-              <div className="flex-1">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium text-gray-900 dark:text-white">
-                    {model.name}
-                  </span>
-                  <span
-                    className={`text-xs px-2 py-1 rounded-full ${model.color}`}
-                  >
-                    추천
-                  </span>
+              {filterOption.name}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Conversations List */}
+      <div className="flex-1 overflow-y-auto p-2">
+        {conversations.length === 0 ? (
+          <div className="flex flex-col items-center justify-center h-64 text-gray-500 dark:text-gray-400">
+            <FolderIcon className="w-12 h-12 mb-2" />
+            <p className="text-sm text-center">
+              {searchQuery ? '검색 결과가 없습니다' : '아직 대화가 없습니다'}
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-1">
+            {conversations.map(conversation => {
+              const modelConfig = {
+                gemini: {
+                  name: 'Gemini',
+                  color: 'from-blue-500 to-blue-600',
+                },
+                chatgpt: {
+                  name: 'ChatGPT',
+                  color: 'from-green-500 to-green-600',
+                },
+                claude: {
+                  name: 'Claude',
+                  color: 'from-purple-500 to-purple-600',
+                },
+              }
+              const config = modelConfig[conversation.model]
+
+              return (
+                <div
+                  key={conversation.id}
+                  onClick={() => setSelectedConversation(conversation.id)}
+                  className={`relative p-3 rounded-lg cursor-pointer transition-colors group ${
+                    selectedConversation === conversation.id
+                      ? 'bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800'
+                      : 'hover:bg-gray-50 dark:hover:bg-gray-800'
+                  }`}
+                >
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-start space-x-3 flex-1 min-w-0">
+                      <div
+                        className={`w-6 h-6 rounded-md bg-gradient-to-r ${config.color} flex items-center justify-center flex-shrink-0`}
+                      >
+                        <span className="text-xs text-white font-medium">
+                          {config.name[0]}
+                        </span>
+                      </div>
+
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center space-x-1 mb-1">
+                          <h3 className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                            {conversation.title}
+                          </h3>
+                          {conversation.isFavorite && (
+                            <StarIconSolid className="w-3 h-3 text-yellow-400 flex-shrink-0" />
+                          )}
+                        </div>
+
+                        <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2 mb-2">
+                          {conversation.lastMessage || '새 대화를 시작하세요'}
+                        </p>
+
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="text-gray-400 dark:text-gray-500">
+                            {new Date(
+                              conversation.timestamp
+                            ).toLocaleDateString('ko-KR')}
+                          </span>
+                          <div
+                            className={`w-2 h-2 rounded-full ${
+                              conversation.status === 'active'
+                                ? 'bg-green-400'
+                                : conversation.status === 'completed'
+                                  ? 'bg-gray-400'
+                                  : 'bg-yellow-400'
+                            }`}
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Actions Dropdown */}
+                    <div className="relative">
+                      <button
+                        onClick={e => {
+                          e.stopPropagation()
+                          setShowDropdown(
+                            showDropdown === conversation.id
+                              ? null
+                              : conversation.id
+                          )
+                        }}
+                        className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700 transition-all"
+                      >
+                        <EllipsisVerticalIcon className="w-4 h-4 text-gray-500" />
+                      </button>
+
+                      {showDropdown === conversation.id && (
+                        <div className="absolute right-0 top-8 w-32 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-10">
+                          <button
+                            onClick={e => {
+                              e.stopPropagation()
+                              setConversations(prev =>
+                                prev.map(conv =>
+                                  conv.id === conversation.id
+                                    ? { ...conv, isFavorite: !conv.isFavorite }
+                                    : conv
+                                )
+                              )
+                              setShowDropdown(null)
+                            }}
+                            className="flex items-center space-x-2 w-full px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-t-lg"
+                          >
+                            {conversation.isFavorite ? (
+                              <HeartIconSolid className="w-4 h-4 text-red-500" />
+                            ) : (
+                              <HeartIcon className="w-4 h-4" />
+                            )}
+                            <span>
+                              {conversation.isFavorite
+                                ? '즐겨찾기 해제'
+                                : '즐겨찾기'}
+                            </span>
+                          </button>
+
+                          <button
+                            onClick={e => {
+                              e.stopPropagation()
+                              if (confirm('정말 이 대화를 삭제하시겠습니까?')) {
+                                setConversations(prev =>
+                                  prev.filter(
+                                    conv => conv.id !== conversation.id
+                                  )
+                                )
+                                if (selectedConversation === conversation.id) {
+                                  setSelectedConversation(undefined)
+                                }
+                              }
+                              setShowDropdown(null)
+                            }}
+                            className="flex items-center space-x-2 w-full px-3 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-b-lg"
+                          >
+                            <TrashIcon className="w-4 h-4" />
+                            <span>삭제</span>
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </div>
-                <p className="text-xs text-gray-500 dark:text-gray-400">
-                  {model.desc}
-                </p>
-              </div>
-            </label>
-          ))}
-        </div>
+              )
+            })}
+          </div>
+        )}
       </div>
 
-      <div>
-        <h3 className="text-sm font-medium text-gray-900 dark:text-white mb-4">
-          대화 설정
-        </h3>
-        <div className="space-y-3">
-          <div>
-            <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
-              응답 스타일
-            </label>
-            <select className="w-full text-sm border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
-              <option>일반적</option>
-              <option>전문적</option>
-              <option>창의적</option>
-              <option>간결한</option>
-            </select>
+      {/* Footer Stats */}
+      <div className="p-3 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
+        <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
+          <div className="flex items-center space-x-1">
+            <ClockIcon className="w-3 h-3" />
+            <span>총 {conversations.length}개 대화</span>
           </div>
-          <div>
-            <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
-              최대 토큰
-            </label>
-            <input
-              type="number"
-              defaultValue={2048}
-              className="w-full text-sm border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-            />
+          <div className="flex items-center space-x-1">
+            <StarIcon className="w-3 h-3" />
+            <span>
+              {conversations.filter(c => c.isFavorite).length}개 즐겨찾기
+            </span>
           </div>
-        </div>
-      </div>
-
-      <div>
-        <h3 className="text-sm font-medium text-gray-900 dark:text-white mb-4">
-          최근 대화
-        </h3>
-        <div className="space-y-2">
-          {[
-            '웹사이트 리뉴얼 기획',
-            'API 설계 문서 작성',
-            '사용자 요구사항 분석',
-          ].map((title, index) => (
-            <div
-              key={index}
-              className="p-3 border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer"
-            >
-              <p className="text-sm text-gray-900 dark:text-white truncate">
-                {title}
-              </p>
-              <p className="text-xs text-gray-500 dark:text-gray-400">
-                2시간 전
-              </p>
-            </div>
-          ))}
         </div>
       </div>
     </div>
