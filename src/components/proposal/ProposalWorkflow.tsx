@@ -8,14 +8,18 @@ import {
   MagnifyingGlassIcon,
   PencilIcon,
   CalculatorIcon,
+  UserGroupIcon,
 } from '@heroicons/react/24/outline'
 import RFPUpload from './RFPUpload'
 import RFPAnalysis from './RFPAnalysis'
 import MarketResearch from './MarketResearch'
 import ProposalBuilder from './ProposalBuilder'
 import CostCalculator from './CostCalculator'
-import type { RFPAnalysisResult } from './RFPUpload'
+import PersonaAnalysis from './PersonaAnalysis'
+import AIQuestionGenerator from './AIQuestionGenerator'
+import type { RFPAnalysisResult, ProjectContext } from './RFPUpload'
 import type { MarketResearchResult } from './MarketResearch'
+import type { PersonaAnalysisResult } from './PersonaAnalysis'
 
 interface ProposalWorkflowProps {
   projectId: string
@@ -23,7 +27,17 @@ interface ProposalWorkflowProps {
   projectCategory: string
 }
 
-type WorkflowStep = 'upload' | 'analysis' | 'research' | 'proposal' | 'cost' | 'complete'
+type WorkflowStep = 
+  | 'upload' 
+  | 'analysis' 
+  | 'analysis-questions'
+  | 'research' 
+  | 'research-questions'
+  | 'persona' 
+  | 'persona-questions'
+  | 'proposal' 
+  | 'cost' 
+  | 'complete'
 
 export default function ProposalWorkflow({
   projectId,
@@ -33,9 +47,14 @@ export default function ProposalWorkflow({
   const [currentStep, setCurrentStep] = useState<WorkflowStep>('upload')
   const [rfpFile, setRfpFile] = useState<File | null>(null)
   const [rfpAnalysis, setRfpAnalysis] = useState<RFPAnalysisResult | null>(null)
+  const [projectContext, setProjectContext] = useState<ProjectContext | null>(null)
   const [marketResearch, setMarketResearch] = useState<MarketResearchResult | null>(null)
+  const [personaAnalysis, setPersonaAnalysis] = useState<PersonaAnalysisResult | null>(null)
   const [proposal, setProposal] = useState<any>(null)
   const [costBreakdown, setCostBreakdown] = useState<any>(null)
+  const [analysisQuestions, setAnalysisQuestions] = useState<any>(null)
+  const [researchQuestions, setResearchQuestions] = useState<any>(null)
+  const [personaQuestions, setPersonaQuestions] = useState<any>(null)
 
   const steps = [
     {
@@ -58,6 +77,13 @@ export default function ProposalWorkflow({
       description: '경쟁사 분석 및 기술 트렌드',
       icon: MagnifyingGlassIcon,
       completed: marketResearch !== null,
+    },
+    {
+      id: 'persona',
+      title: '페르소나 분석',
+      description: '타겟 사용자 분석 및 페르소나 정의',
+      icon: UserGroupIcon,
+      completed: personaAnalysis !== null,
     },
     {
       id: 'proposal',
@@ -87,11 +113,31 @@ export default function ProposalWorkflow({
 
   const handleAnalysisComplete = (analysis: RFPAnalysisResult) => {
     setRfpAnalysis(analysis)
+    setCurrentStep('analysis-questions')
+  }
+
+  const handleAnalysisQuestionsComplete = (questions: any) => {
+    setAnalysisQuestions(questions)
     setCurrentStep('research')
   }
 
   const handleResearchComplete = (research: MarketResearchResult) => {
     setMarketResearch(research)
+    setCurrentStep('research-questions')
+  }
+
+  const handleResearchQuestionsComplete = (questions: any) => {
+    setResearchQuestions(questions)
+    setCurrentStep('persona')
+  }
+
+  const handlePersonaAnalysisComplete = (persona: PersonaAnalysisResult) => {
+    setPersonaAnalysis(persona)
+    setCurrentStep('persona-questions')
+  }
+
+  const handlePersonaQuestionsComplete = (questions: any) => {
+    setPersonaQuestions(questions)
     setCurrentStep('proposal')
   }
 
@@ -111,10 +157,18 @@ export default function ProposalWorkflow({
         return true
       case 'analysis':
         return rfpFile !== null
-      case 'research':
+      case 'analysis-questions':
         return rfpAnalysis !== null
-      case 'proposal':
+      case 'research':
+        return analysisQuestions !== null
+      case 'research-questions':
         return marketResearch !== null
+      case 'persona':
+        return researchQuestions !== null
+      case 'persona-questions':
+        return personaAnalysis !== null
+      case 'proposal':
+        return personaQuestions !== null
       case 'cost':
         return proposal !== null
       default:
@@ -145,6 +199,18 @@ export default function ProposalWorkflow({
           </div>
         )
       
+      case 'analysis-questions':
+        return (
+          <AIQuestionGenerator
+            stage="rfp"
+            data={{
+              projectTitle,
+              rfpAnalysis,
+            }}
+            onAllAnswered={handleAnalysisQuestionsComplete}
+          />
+        )
+      
       case 'research':
         return (
           <MarketResearch
@@ -154,12 +220,50 @@ export default function ProposalWorkflow({
           />
         )
       
+      case 'research-questions':
+        return (
+          <AIQuestionGenerator
+            stage="research"
+            data={{
+              projectTitle,
+              rfpAnalysis,
+              marketResearch,
+            }}
+            onAllAnswered={handleResearchQuestionsComplete}
+          />
+        )
+      
+      case 'persona':
+        return (
+          <PersonaAnalysis
+            projectTitle={projectTitle}
+            rfpAnalysis={rfpAnalysis}
+            marketResearch={marketResearch}
+            onAnalysisComplete={handlePersonaAnalysisComplete}
+          />
+        )
+      
+      case 'persona-questions':
+        return (
+          <AIQuestionGenerator
+            stage="persona"
+            data={{
+              projectTitle,
+              rfpAnalysis,
+              marketResearch,
+              personaAnalysis,
+            }}
+            onAllAnswered={handlePersonaQuestionsComplete}
+          />
+        )
+      
       case 'proposal':
         return (
           <ProposalBuilder
             projectTitle={projectTitle}
             rfpAnalysis={rfpAnalysis}
             marketResearch={marketResearch}
+            personaAnalysis={personaAnalysis}
             onSave={handleProposalComplete}
           />
         )

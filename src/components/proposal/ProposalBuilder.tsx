@@ -11,11 +11,13 @@ import {
   EyeIcon,
   DocumentArrowDownIcon,
 } from '@heroicons/react/24/outline'
+import type { PersonaAnalysisResult } from './PersonaAnalysis'
 
 interface ProposalBuilderProps {
   projectTitle: string
   rfpAnalysis?: any
   marketResearch?: any
+  personaAnalysis?: PersonaAnalysisResult | null
   onSave: (proposal: ProposalDocument) => void
 }
 
@@ -53,6 +55,7 @@ export default function ProposalBuilder({
   projectTitle,
   rfpAnalysis,
   marketResearch,
+  personaAnalysis,
   onSave,
 }: ProposalBuilderProps) {
   const [sections, setSections] = useState<ProposalSection[]>(
@@ -85,6 +88,7 @@ export default function ProposalBuilder({
           projectTitle,
           rfpAnalysis,
           marketResearch,
+          personaAnalysis,
         }),
       })
 
@@ -382,7 +386,7 @@ export default function ProposalBuilder({
               AI 지원 콘텐츠 생성
             </h4>
             <p className="text-sm text-blue-600 dark:text-blue-300 mt-1">
-              각 섹션의 AI 버튼을 클릭하면 RFP 분석과 시장 조사 결과를 바탕으로 콘텐츠가 자동 생성됩니다.
+              각 섹션의 AI 버튼을 클릭하면 RFP 분석, 시장 조사, 페르소나 분석 결과를 바탕으로 콘텐츠가 자동 생성됩니다.
               생성된 내용은 수정할 수 있습니다.
             </p>
           </div>
