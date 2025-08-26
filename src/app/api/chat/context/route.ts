@@ -3,6 +3,15 @@ import { supabase } from '@/lib/supabase'
 
 export async function GET(request: NextRequest) {
   try {
+    // Supabase 클라이언트 체크
+    if (!supabase) {
+      console.warn('Supabase client is not initialized')
+      return NextResponse.json(
+        { error: 'Database connection not available' },
+        { status: 503 }
+      )
+    }
+
     const { searchParams } = new URL(request.url)
     const projectId = searchParams.get('projectId')
     const userId = searchParams.get('userId')
@@ -157,6 +166,15 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    // Supabase 클라이언트 체크
+    if (!supabase) {
+      console.warn('Supabase client is not initialized')
+      return NextResponse.json(
+        { error: 'Database connection not available' },
+        { status: 503 }
+      )
+    }
+
     const body = await request.json()
     const { projectId, userId, contextType, data } = body
 

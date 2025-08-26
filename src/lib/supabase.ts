@@ -1,7 +1,18 @@
 import { createClient } from '@supabase/supabase-js'
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+// 환경 변수 유효성 검사 및 기본값 설정
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
+
+// 빌드 시점에 환경 변수 검증 스킵 (Vercel 빌드를 위해)
+const isBuilding =
+  process.env.NODE_ENV === 'production' && !supabaseUrl && !supabaseAnonKey
+
+if (!isBuilding && (!supabaseUrl || !supabaseAnonKey)) {
+  console.warn(
+    'Supabase environment variables are not set. Some features may not work.'
+  )
+}
 
 export type Database = {
   public: {
@@ -297,16 +308,46 @@ export type Database = {
   }
 }
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+// Mock Supabase client for build time
+const mockSupabaseClient = {
+  from: () => ({
+    select: () => Promise.resolve({ data: null, error: null }),
+    insert: () => Promise.resolve({ data: null, error: null }),
+    update: () => Promise.resolve({ data: null, error: null }),
+    delete: () => Promise.resolve({ data: null, error: null }),
+    single: () => Promise.resolve({ data: null, error: null }),
+    eq: () => ({
+      single: () => Promise.resolve({ data: null, error: null }),
+      select: () => Promise.resolve({ data: null, error: null }),
+    }),
+  }),
   auth: {
-    autoRefreshToken: true,
-    persistSession: true,
-    detectSessionInUrl: true,
+    signInWithPassword: () => Promise.resolve({ data: null, error: null }),
+    signOut: () => Promise.resolve({ error: null }),
+    getSession: () => Promise.resolve({ data: { session: null }, error: null }),
   },
-})
+}
+
+// Supabase 클라이언트 생성 (조건부)
+export const supabase =
+  supabaseUrl && supabaseAnonKey
+    ? createClient(supabaseUrl, supabaseAnonKey, {
+        auth: {
+          autoRefreshToken: true,
+          persistSession: true,
+          detectSessionInUrl: true,
+        },
+      })
+    : (mockSupabaseClient as ReturnType<typeof createClient>)
 
 // 클라이언트 사이드 전용 Supabase 클라이언트
 export const createClientComponentClient = () => {
+  if (!supabaseUrl || !supabaseAnonKey) {
+    console.warn(
+      'Supabase client cannot be created without environment variables'
+    )
+    return mockSupabaseClient as ReturnType<typeof createClient<Database>>
+  }
   return createClient<Database>(supabaseUrl, supabaseAnonKey, {
     auth: {
       autoRefreshToken: true,
@@ -318,7 +359,13 @@ export const createClientComponentClient = () => {
 
 // 서버 사이드 전용 Supabase 클라이언트 (서비스 키 사용)
 export const createServerComponentClient = () => {
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
+  if (!supabaseUrl || !serviceRoleKey) {
+    console.warn(
+      'Supabase server client cannot be created without environment variables'
+    )
+    return mockSupabaseClient as ReturnType<typeof createClient<Database>>
+  }
   return createClient<Database>(supabaseUrl, serviceRoleKey, {
     auth: {
       autoRefreshToken: false,

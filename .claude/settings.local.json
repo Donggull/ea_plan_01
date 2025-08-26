@@ -24,7 +24,8 @@
       "mcp__playwright-stealth__playwright_close",
       "Bash(npx tsc:*)",
       "Bash(npx eslint:*)",
-      "Bash(killall:*)"
+      "Bash(killall:*)",
+      "mcp__github-mcp__git-log"
     ],
     "deny": [],
     "ask": []
