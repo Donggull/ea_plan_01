@@ -57,6 +57,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   const fetchUserProfile = useCallback(async (userId: string) => {
     try {
+      // Supabase 클라이언트가 없으면 스킵
+      if (!supabase) {
+        console.warn('Supabase client not initialized')
+        return
+      }
+
       const { data, error } = await supabase
         .from('users')
         .select('*')
@@ -110,6 +116,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
     const getInitialSession = async () => {
       try {
+        // Supabase 클라이언트가 없으면 스킵
+        if (!supabase) {
+          console.warn('Supabase client not initialized')
+          setLoading(false)
+          return
+        }
+
         const {
           data: { session },
           error: sessionError,
@@ -143,33 +156,40 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
     getInitialSession()
 
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (!isMounted) return
+    // Supabase 클라이언트가 있을 때만 구독 설정
+    if (supabase) {
+      const {
+        data: { subscription },
+      } = supabase.auth.onAuthStateChange(async (event, session) => {
+        if (!isMounted) return
 
-      console.log('Auth state changed:', event, session?.user?.id)
+        console.log('Auth state changed:', event, session?.user?.id)
 
-      setSession(session)
-      setUser(session?.user ?? null)
-      setError(null)
+        setSession(session)
+        setUser(session?.user ?? null)
+        setError(null)
 
-      if (session?.user) {
-        await fetchUserProfile(session.user.id)
-      } else {
-        setUserProfile(null)
+        if (session?.user) {
+          await fetchUserProfile(session.user.id)
+        } else {
+          setUserProfile(null)
+        }
+
+        if (event === 'SIGNED_OUT') {
+          setUserProfile(null)
+        }
+
+        setLoading(false)
+      })
+
+      return () => {
+        isMounted = false
+        subscription.unsubscribe()
       }
-
-      if (event === 'SIGNED_OUT') {
-        setUserProfile(null)
-      }
-
-      setLoading(false)
-    })
+    }
 
     return () => {
       isMounted = false
-      subscription.unsubscribe()
     }
   }, [fetchUserProfile])
 
@@ -185,6 +205,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
     setError(null)
 
     try {
+      if (!supabase) {
+        throw new Error('Supabase client not initialized')
+      }
+
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -224,6 +248,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
     setError(null)
 
     try {
+      if (!supabase) {
+        throw new Error('Supabase client not initialized')
+      }
+
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -252,6 +280,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
     setError(null)
 
     try {
+      if (!supabase) {
+        throw new Error('Supabase client not initialized')
+      }
+
       const { error } = await supabase.auth.signOut()
 
       if (error) {
@@ -278,6 +310,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
     setError(null)
 
     try {
+      if (!supabase) {
+        throw new Error('Supabase client not initialized')
+      }
+
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: `${window.location.origin}/auth/reset-password`,
       })
@@ -308,6 +344,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
     setError(null)
 
     try {
+      if (!supabase) {
+        throw new Error('Supabase client not initialized')
+      }
+
       const { data, error } = await supabase
         .from('users')
         .update({
