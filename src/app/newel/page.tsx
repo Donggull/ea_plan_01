@@ -42,13 +42,17 @@ export default function NewelPage() {
   )
 
   useEffect(() => {
-    loadBots()
+    // Add a small delay to ensure supabase client is ready
+    const timer = setTimeout(() => {
+      loadBots()
+    }, 100)
+
+    return () => clearTimeout(timer)
   }, [])
 
   const loadBots = async () => {
     try {
       setLoading(true)
-
       // Get current user (fallback to default for testing)
       const {
         data: { user },
@@ -66,17 +70,29 @@ export default function NewelPage() {
         console.error('Failed to load my bots:', myBotsError)
         setMyBots([])
       } else {
-        // Get knowledge base count for each bot separately
+        // Get knowledge base count for each bot
         const botsWithKnowledgeCount = await Promise.all(
           (myBotsData || []).map(async bot => {
-            const { count } = await supabase
-              .from('knowledge_base')
-              .select('*', { count: 'exact', head: true })
-              .eq('custom_bot_id', bot.id)
+            try {
+              const { count } = await supabase
+                .from('knowledge_base')
+                .select('*', { count: 'exact', head: true })
+                .eq('custom_bot_id', bot.id)
 
-            return {
-              ...bot,
-              knowledge_base_count: count || 0,
+              return {
+                ...bot,
+                knowledge_base_count: count || 0,
+              }
+            } catch (error) {
+              console.error(
+                'Failed to get knowledge base count for bot:',
+                bot.id,
+                error
+              )
+              return {
+                ...bot,
+                knowledge_base_count: 0,
+              }
             }
           })
         )
@@ -98,14 +114,26 @@ export default function NewelPage() {
         // Get knowledge base count for each public bot
         const publicBotsWithKnowledgeCount = await Promise.all(
           (publicBotsData || []).map(async bot => {
-            const { count } = await supabase
-              .from('knowledge_base')
-              .select('*', { count: 'exact', head: true })
-              .eq('custom_bot_id', bot.id)
+            try {
+              const { count } = await supabase
+                .from('knowledge_base')
+                .select('*', { count: 'exact', head: true })
+                .eq('custom_bot_id', bot.id)
 
-            return {
-              ...bot,
-              knowledge_base_count: count || 0,
+              return {
+                ...bot,
+                knowledge_base_count: count || 0,
+              }
+            } catch (error) {
+              console.error(
+                'Failed to get knowledge base count for public bot:',
+                bot.id,
+                error
+              )
+              return {
+                ...bot,
+                knowledge_base_count: 0,
+              }
             }
           })
         )
