@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { motion } from 'framer-motion'
 import {
   MagnifyingGlassIcon,
@@ -42,6 +43,19 @@ export default function ProjectsPage() {
   const [showSortMenu, setShowSortMenu] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+
+  const searchParams = useSearchParams()
+
+  // Handle URL category parameter
+  useEffect(() => {
+    const category = searchParams.get('category')
+    if (
+      category &&
+      ['proposal', 'development', 'operation'].includes(category)
+    ) {
+      setSelectedCategory(category as 'proposal' | 'development' | 'operation')
+    }
+  }, [searchParams, setSelectedCategory])
 
   // Load projects from Supabase
   useEffect(() => {
