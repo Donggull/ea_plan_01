@@ -31,7 +31,8 @@
       "Bash(node:*)",
       "mcp__playwright-stealth__playwright_console_logs",
       "Bash(taskkill:*)",
-      "Bash(PORT=3006 npm run dev)"
+      "Bash(PORT=3006 npm run dev)",
+      "Bash(PORT=3007 npm run dev)"
     ],
     "deny": [],
     "ask": [],
