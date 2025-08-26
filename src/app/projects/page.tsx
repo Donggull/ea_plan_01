@@ -54,6 +54,9 @@ export default function ProjectsPage() {
       ['proposal', 'development', 'operation'].includes(category)
     ) {
       setSelectedCategory(category as 'proposal' | 'development' | 'operation')
+    } else {
+      // If no category parameter or invalid category, show all projects
+      setSelectedCategory('all')
     }
   }, [searchParams, setSelectedCategory])
 
