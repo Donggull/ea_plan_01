@@ -39,7 +39,7 @@ const mainNavigation = [
 const projectCategories = [
   { name: '제안 진행', href: '/projects?category=proposal' },
   { name: '구축 관리', href: '/projects?category=development' },
-  { name: '운영 관리', href: '/operation' },
+  { name: '운영 관리', href: '/projects?category=operation' },
 ]
 
 export default function Header({ onMenuToggle }: HeaderProps) {
