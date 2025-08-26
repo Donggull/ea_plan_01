@@ -576,6 +576,9 @@ function ProjectDetailSidebar() {
     deadline: '2024-09-05',
   }
 
+  // Check if this is a proposal project to show AI model selector
+  const isProposalProject = project?.category === 'proposal'
+
   return (
     <div className="p-4 space-y-6">
       {/* Project Info Card */}
@@ -592,6 +595,72 @@ function ProjectDetailSidebar() {
           </div>
         </div>
       </div>
+
+      {/* AI Model Selection for Proposal Projects */}
+      {isProposalProject && (
+        <div className="mb-6">
+          <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+            AI 모델 선택
+          </h4>
+          <div className="space-y-2">
+            {[
+              {
+                id: 'gemini-pro',
+                name: 'Google Gemini',
+                desc: '빠른 분석, 비용 효율적',
+                icon: '🤖',
+                color: 'bg-blue-500',
+              },
+              {
+                id: 'chatgpt-4',
+                name: 'ChatGPT-4',
+                desc: '고품질 텍스트 분석',
+                icon: '🧠',
+                color: 'bg-green-500',
+              },
+              {
+                id: 'claude-sonnet',
+                name: 'Claude Sonnet',
+                desc: '도구 연동 지원',
+                icon: '📝',
+                color: 'bg-purple-500',
+              },
+            ].map((model, index) => (
+              <label
+                key={model.id}
+                className="flex items-center space-x-3 p-2 border border-gray-200 dark:border-gray-600 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+              >
+                <input
+                  type="radio"
+                  name="ai-model"
+                  defaultChecked={index === 0}
+                  className="text-blue-600 focus:ring-blue-500"
+                />
+                <div className="flex items-center space-x-2 flex-1">
+                  <span className="text-lg">{model.icon}</span>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-medium text-gray-900 dark:text-white truncate">
+                        {model.name}
+                      </span>
+                      <div className={`w-2 h-2 rounded-full ${model.color}`} />
+                    </div>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                      {model.desc}
+                    </p>
+                  </div>
+                </div>
+              </label>
+            ))}
+          </div>
+          <div className="mt-2 p-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+            <p className="text-xs text-blue-700 dark:text-blue-300 flex items-center">
+              <span className="mr-1">ℹ️</span>
+              모든 분석 단계에서 선택된 모델이 사용됩니다
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Progress Section */}
       <div className="mb-4">

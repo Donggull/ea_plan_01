@@ -14,11 +14,15 @@ import {
 } from '@heroicons/react/24/outline'
 
 interface RFPUploadProps {
-  onUpload: (file: File, analysisResult?: RFPAnalysisResult, projectContext?: ProjectContext) => void
+  onUpload: (
+    file: File,
+    analysisResult?: RFPAnalysisResult,
+    projectContext?: ProjectContext
+  ) => void
   projectId: string
 }
 
-interface ProjectContext {
+export interface ProjectContext {
   customPrompt?: string
   guidelines?: {
     type: 'text' | 'file'
@@ -61,17 +65,16 @@ export default function RFPUpload({ onUpload, projectId }: RFPUploadProps) {
   >('idle')
   const [error, setError] = useState<string | null>(null)
   const [analysisProgress, setAnalysisProgress] = useState(0)
-  const [selectedModel, setSelectedModel] = useState<string>('gemini')
-  
+  const [_selectedModel, _setSelectedModel] = useState<string>('gemini')
+
   // 새로운 상태들 추가
-  const [activeTab, setActiveTab] = useState<'rfp' | 'context'>('rfp')
   const [customPrompt, setCustomPrompt] = useState('')
   const [guidelines, setGuidelines] = useState<ProjectContext['guidelines']>([])
   const [analysisInstructions, setAnalysisInstructions] = useState('')
   const [newGuidelineText, setNewGuidelineText] = useState('')
   const [showAdvancedOptions, setShowAdvancedOptions] = useState(false)
 
-  const aiModels: AIModel[] = [
+  const _aiModels: AIModel[] = [
     {
       id: 'gemini',
       name: 'Google Gemini',
@@ -97,7 +100,7 @@ export default function RFPUpload({ onUpload, projectId }: RFPUploadProps) {
     if (newGuidelineText.trim()) {
       setGuidelines(prev => [
         ...(prev || []),
-        { type: 'text', content: newGuidelineText.trim() }
+        { type: 'text', content: newGuidelineText.trim() },
       ])
       setNewGuidelineText('')
     }
@@ -110,24 +113,28 @@ export default function RFPUpload({ onUpload, projectId }: RFPUploadProps) {
   const onGuidelineFileDrop = useCallback((acceptedFiles: File[]) => {
     acceptedFiles.forEach(file => {
       const reader = new FileReader()
-      reader.onload = (e) => {
+      reader.onload = e => {
         const content = e.target?.result as string
         setGuidelines(prev => [
           ...(prev || []),
-          { type: 'file', content, fileName: file.name }
+          { type: 'file', content, fileName: file.name },
         ])
       }
       reader.readAsText(file)
     })
   }, [])
 
-  const { getRootProps: getGuidelineRootProps, getInputProps: getGuidelineInputProps } = useDropzone({
+  const {
+    getRootProps: getGuidelineRootProps,
+    getInputProps: getGuidelineInputProps,
+  } = useDropzone({
     onDrop: onGuidelineFileDrop,
     accept: {
       'text/*': ['.txt', '.md'],
       'application/pdf': ['.pdf'],
       'application/msword': ['.doc'],
-      'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx'],
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document':
+        ['.docx'],
     },
     multiple: true,
     maxSize: 10 * 1024 * 1024, // 10MB
@@ -242,7 +249,7 @@ export default function RFPUpload({ onUpload, projectId }: RFPUploadProps) {
             textContent,
             fileName: file.name,
             projectId,
-            aiModel: selectedModel,
+            aiModel: 'gemini', // AI model is now selected from sidebar
           }),
         })
 
@@ -266,7 +273,7 @@ export default function RFPUpload({ onUpload, projectId }: RFPUploadProps) {
           guidelines: guidelines?.length ? guidelines : undefined,
           analysisInstructions: analysisInstructions.trim() || undefined,
         }
-        
+
         setTimeout(() => {
           onUpload(file, analysisResult, projectContext)
         }, 1000)
@@ -302,7 +309,7 @@ export default function RFPUpload({ onUpload, projectId }: RFPUploadProps) {
         setError(errorMessage)
       }
     },
-    [onUpload, projectId, selectedModel, customPrompt, guidelines, analysisInstructions]
+    [onUpload, projectId, customPrompt, guidelines, analysisInstructions]
   )
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
@@ -355,84 +362,13 @@ export default function RFPUpload({ onUpload, projectId }: RFPUploadProps) {
 
   return (
     <div className="space-y-6">
-      <div className="text-center">
+      <div className="text-center mb-6">
         <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-          제안서 작성을 위한 프로젝트 설정
+          RFP 문서 업로드 및 프로젝트 설정
         </h3>
         <p className="text-sm text-gray-600 dark:text-gray-400">
-          RFP 문서와 프로젝트 지침을 설정하여 맞춤형 제안서를 생성하세요
+          RFP 문서를 업로드하고 맞춤형 분석을 위한 지침을 설정하세요
         </p>
-      </div>
-
-      {/* Tab Navigation */}
-      <div className="border-b border-gray-200 dark:border-gray-700">
-        <nav className="-mb-px flex space-x-8">
-          <button
-            onClick={() => setActiveTab('rfp')}
-            className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors ${
-              activeTab === 'rfp'
-                ? 'border-blue-500 text-blue-600 dark:text-blue-400'
-                : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 hover:border-gray-300'
-            }`}
-          >
-            <DocumentTextIcon className="w-5 h-5 inline-block mr-2" />
-            RFP 문서 업로드
-          </button>
-          <button
-            onClick={() => setActiveTab('context')}
-            className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors ${
-              activeTab === 'context'
-                ? 'border-blue-500 text-blue-600 dark:text-blue-400'
-                : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 hover:border-gray-300'
-            }`}
-          >
-            <SparklesIcon className="w-5 h-5 inline-block mr-2" />
-            프로젝트 지침 설정
-          </button>
-        </nav>
-      </div>
-
-      {/* Tab Content */}
-      {activeTab === 'rfp' ? (
-        <>
-          {/* AI Model Selection */}
-          <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
-            <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-3">
-              분석에 사용할 AI 모델을 선택하세요
-            </h4>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          {aiModels.map(model => (
-            <button
-              key={model.id}
-              onClick={() => setSelectedModel(model.id)}
-              disabled={
-                uploadStatus === 'uploading' || uploadStatus === 'analyzing'
-              }
-              className={`p-3 rounded-lg border-2 transition-all text-left ${
-                selectedModel === model.id
-                  ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
-                  : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500'
-              } ${
-                uploadStatus === 'uploading' || uploadStatus === 'analyzing'
-                  ? 'opacity-50 cursor-not-allowed'
-                  : 'cursor-pointer'
-              }`}
-            >
-              <div className="flex items-center space-x-2 mb-2">
-                <span className="text-lg">{model.icon}</span>
-                <span className="font-medium text-gray-900 dark:text-white text-sm">
-                  {model.name}
-                </span>
-                {selectedModel === model.id && (
-                  <div className="w-2 h-2 bg-blue-500 rounded-full ml-auto" />
-                )}
-              </div>
-              <p className="text-xs text-gray-600 dark:text-gray-400">
-                {model.description}
-              </p>
-            </button>
-          ))}
-        </div>
       </div>
 
       <div
@@ -502,156 +438,151 @@ export default function RFPUpload({ onUpload, projectId }: RFPUploadProps) {
         </div>
       )}
 
-          <div className="text-xs text-gray-500 dark:text-gray-400 space-y-1">
-            <p>• AI가 자동으로 요구사항, 예산, 일정 등을 추출합니다</p>
-            <p>• 분석 결과는 검토하고 수정할 수 있습니다</p>
-            <p>• 개인정보가 포함된 문서는 업로드하지 마세요</p>
+      {/* 프로젝트 설정 섹션 - 항상 표시 */}
+      <div className="space-y-6">
+        {/* 커스텀 프롬프트 입력 */}
+        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+          <div className="flex items-center space-x-2 mb-4">
+            <SparklesIcon className="w-5 h-5 text-blue-500" />
+            <h4 className="text-lg font-medium text-gray-900 dark:text-white">
+              커스텀 분석 프롬프트
+            </h4>
           </div>
-        </>
-      ) : (
-        <div className="space-y-6">
-          {/* 커스텀 프롬프트 입력 */}
-          <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
-            <div className="flex items-center space-x-2 mb-4">
-              <SparklesIcon className="w-5 h-5 text-blue-500" />
+          <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+            AI가 RFP를 분석할 때 특별히 고려해야 할 사항이나 관점을 입력하세요.
+          </p>
+          <textarea
+            value={customPrompt}
+            onChange={e => setCustomPrompt(e.target.value)}
+            placeholder="예: 우리는 스타트업이므로 비용 효율성을 중시하며, 단계적 개발을 선호합니다. 특히 MVP 개발에 집중하고 향후 확장 가능성을 고려해주세요."
+            rows={4}
+            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
+          />
+        </div>
+
+        {/* 프로젝트 지침 업로드/입력 */}
+        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center space-x-2">
+              <InformationCircleIcon className="w-5 h-5 text-green-500" />
               <h4 className="text-lg font-medium text-gray-900 dark:text-white">
-                커스텀 분석 프롬프트
+                프로젝트 지침
               </h4>
             </div>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-              AI가 RFP를 분석할 때 특별히 고려해야 할 사항이나 관점을 입력하세요.
-            </p>
+            <div className="flex space-x-2">
+              <button
+                onClick={() => setShowAdvancedOptions(!showAdvancedOptions)}
+                className="px-3 py-1 text-xs bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+              >
+                {showAdvancedOptions ? '간단히' : '고급 설정'}
+              </button>
+            </div>
+          </div>
+
+          {/* 지침 입력 영역 */}
+          <div className="space-y-4">
+            <div className="flex space-x-2">
+              <input
+                type="text"
+                value={newGuidelineText}
+                onChange={e => setNewGuidelineText(e.target.value)}
+                placeholder="프로젝트 지침을 입력하세요 (예: 반응형 디자인 필수, 접근성 준수)"
+                className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
+                onKeyPress={e => e.key === 'Enter' && addTextGuideline()}
+              />
+              <button
+                onClick={addTextGuideline}
+                disabled={!newGuidelineText.trim()}
+                className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:bg-gray-300 dark:disabled:bg-gray-600 disabled:cursor-not-allowed transition-colors"
+              >
+                <PlusIcon className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* 파일 업로드 영역 */}
+            <div
+              {...getGuidelineRootProps()}
+              className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-4 text-center cursor-pointer hover:border-gray-400 dark:hover:border-gray-500 transition-colors"
+            >
+              <input {...getGuidelineInputProps()} />
+              <DocumentTextIcon className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                지침 문서 파일을 드래그하거나 클릭하여 업로드
+              </p>
+              <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
+                TXT, MD, PDF, DOC, DOCX 지원 (최대 10MB)
+              </p>
+            </div>
+          </div>
+
+          {/* 등록된 지침 목록 */}
+          {guidelines && guidelines.length > 0 && (
+            <div className="mt-4 space-y-2">
+              <h5 className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                등록된 지침 ({guidelines.length}개)
+              </h5>
+              {guidelines.map((guideline, index) => (
+                <div
+                  key={index}
+                  className="flex items-start space-x-2 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg"
+                >
+                  <div className="flex-1">
+                    {guideline.type === 'file' ? (
+                      <div>
+                        <div className="flex items-center space-x-2">
+                          <DocumentTextIcon className="w-4 h-4 text-blue-500" />
+                          <span className="text-sm font-medium text-gray-900 dark:text-white">
+                            {guideline.fileName}
+                          </span>
+                        </div>
+                        <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                          {guideline.content.length > 100
+                            ? `${guideline.content.slice(0, 100)}...`
+                            : guideline.content}
+                        </p>
+                      </div>
+                    ) : (
+                      <p className="text-sm text-gray-700 dark:text-gray-300">
+                        {guideline.content}
+                      </p>
+                    )}
+                  </div>
+                  <button
+                    onClick={() => removeGuideline(index)}
+                    className="text-red-500 hover:text-red-700 p-1"
+                  >
+                    <XMarkIcon className="w-4 h-4" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* 고급 설정 */}
+        {showAdvancedOptions && (
+          <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+            <h4 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
+              분석 세부 지침
+            </h4>
             <textarea
-              value={customPrompt}
-              onChange={(e) => setCustomPrompt(e.target.value)}
-              placeholder="예: 우리는 스타트업이므로 비용 효율성을 중시하며, 단계적 개발을 선호합니다. 특히 MVP 개발에 집중하고 향후 확장 가능성을 고려해주세요."
-              rows={4}
+              value={analysisInstructions}
+              onChange={e => setAnalysisInstructions(e.target.value)}
+              placeholder="AI가 분석 과정에서 따라야 할 세부 지침을 입력하세요..."
+              rows={3}
               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
             />
           </div>
+        )}
 
-          {/* 프로젝트 지침 업로드/입력 */}
-          <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center space-x-2">
-                <InformationCircleIcon className="w-5 h-5 text-green-500" />
-                <h4 className="text-lg font-medium text-gray-900 dark:text-white">
-                  프로젝트 지침
-                </h4>
-              </div>
-              <div className="flex space-x-2">
-                <button
-                  onClick={() => setShowAdvancedOptions(!showAdvancedOptions)}
-                  className="px-3 py-1 text-xs bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
-                >
-                  {showAdvancedOptions ? '간단히' : '고급 설정'}
-                </button>
-              </div>
-            </div>
-
-            {/* 지침 입력 영역 */}
-            <div className="space-y-4">
-              <div className="flex space-x-2">
-                <input
-                  type="text"
-                  value={newGuidelineText}
-                  onChange={(e) => setNewGuidelineText(e.target.value)}
-                  placeholder="프로젝트 지침을 입력하세요 (예: 반응형 디자인 필수, 접근성 준수)"
-                  className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
-                  onKeyPress={(e) => e.key === 'Enter' && addTextGuideline()}
-                />
-                <button
-                  onClick={addTextGuideline}
-                  disabled={!newGuidelineText.trim()}
-                  className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:bg-gray-300 dark:disabled:bg-gray-600 disabled:cursor-not-allowed transition-colors"
-                >
-                  <PlusIcon className="w-4 h-4" />
-                </button>
-              </div>
-
-              {/* 파일 업로드 영역 */}
-              <div
-                {...getGuidelineRootProps()}
-                className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-4 text-center cursor-pointer hover:border-gray-400 dark:hover:border-gray-500 transition-colors"
-              >
-                <input {...getGuidelineInputProps()} />
-                <DocumentTextIcon className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-                <p className="text-sm text-gray-600 dark:text-gray-400">
-                  지침 문서 파일을 드래그하거나 클릭하여 업로드
-                </p>
-                <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
-                  TXT, MD, PDF, DOC, DOCX 지원 (최대 10MB)
-                </p>
-              </div>
-            </div>
-
-            {/* 등록된 지침 목록 */}
-            {guidelines && guidelines.length > 0 && (
-              <div className="mt-4 space-y-2">
-                <h5 className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                  등록된 지침 ({guidelines.length}개)
-                </h5>
-                {guidelines.map((guideline, index) => (
-                  <div
-                    key={index}
-                    className="flex items-start space-x-2 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg"
-                  >
-                    <div className="flex-1">
-                      {guideline.type === 'file' ? (
-                        <div>
-                          <div className="flex items-center space-x-2">
-                            <DocumentTextIcon className="w-4 h-4 text-blue-500" />
-                            <span className="text-sm font-medium text-gray-900 dark:text-white">
-                              {guideline.fileName}
-                            </span>
-                          </div>
-                          <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
-                            {guideline.content.length > 100
-                              ? `${guideline.content.slice(0, 100)}...`
-                              : guideline.content}
-                          </p>
-                        </div>
-                      ) : (
-                        <p className="text-sm text-gray-700 dark:text-gray-300">
-                          {guideline.content}
-                        </p>
-                      )}
-                    </div>
-                    <button
-                      onClick={() => removeGuideline(index)}
-                      className="text-red-500 hover:text-red-700 p-1"
-                    >
-                      <XMarkIcon className="w-4 h-4" />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* 고급 설정 */}
-          {showAdvancedOptions && (
-            <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
-              <h4 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
-                분석 세부 지침
-              </h4>
-              <textarea
-                value={analysisInstructions}
-                onChange={(e) => setAnalysisInstructions(e.target.value)}
-                placeholder="AI가 분석 과정에서 따라야 할 세부 지침을 입력하세요..."
-                rows={3}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
-              />
-            </div>
-          )}
-
-          <div className="text-xs text-gray-500 dark:text-gray-400 space-y-1">
-            <p>• 프로젝트별 지침은 모든 분석 단계에서 참조됩니다</p>
-            <p>• 문서로 업로드한 지침은 자동으로 텍스트로 변환됩니다</p>
-            <p>• 설정한 내용은 프로젝트 내에서 재사용됩니다</p>
-          </div>
+        {/* 안내 텍스트 */}
+        <div className="text-xs text-gray-500 dark:text-gray-400 space-y-1">
+          <p>• AI가 자동으로 요구사항, 예산, 일정 등을 추출합니다</p>
+          <p>• 프로젝트별 지침은 모든 분석 단계에서 참조됩니다</p>
+          <p>• 문서로 업로드한 지침은 자동으로 텍스트로 변환됩니다</p>
+          <p>• 개인정보가 포함된 문서는 업로드하지 마세요</p>
         </div>
-      )}
+      </div>
     </div>
   )
 }
