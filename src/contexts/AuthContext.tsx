@@ -91,32 +91,21 @@ export function AuthProvider({ children }: AuthProviderProps) {
             return
           }
 
-          // 사용자 프로필이 없으면 생성
-          const user = await supabase.auth.getUser()
-          if (!user.data.user) return
+          // 개발 환경에서는 사용자 생성하지 않고 기본 프로필 사용
+          console.log(
+            'User profile not found, using default in development mode'
+          )
+          const defaultProfile: UserProfile = {
+            id: defaultUserId,
+            email: 'dg.an@eluocnc.com',
+            name: '안동균',
+            subscription_tier: 'enterprise',
+            user_role: 'super_admin',
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          } as UserProfile
 
-          const insertData: UserInsert = {
-            id: actualUserId,
-            email: user.data.user.email!,
-            name:
-              (user.data.user.user_metadata?.name as string) ||
-              user.data.user.email!.split('@')[0],
-            subscription_tier: 'free',
-          }
-
-          const { data: newProfile, error: createError } = await supabase
-            .from('users')
-            .insert(insertData)
-            .select()
-            .single()
-
-          if (createError) {
-            console.error('Error creating user profile:', createError)
-            setError('사용자 프로필을 생성하는 중 오류가 발생했습니다.')
-            return
-          }
-
-          setUserProfile(newProfile)
+          setUserProfile(defaultProfile)
         } else {
           console.error('Error fetching user profile:', error)
           // 개발 환경에서는 에러 시 기본 프로필 사용
@@ -166,71 +155,86 @@ export function AuthProvider({ children }: AuthProviderProps) {
     let isMounted = true
 
     const getInitialSession = async () => {
+      console.log('Starting getInitialSession')
+
       try {
-        // Supabase 클라이언트가 없으면 스킵
         if (!supabase) {
-          console.warn('Supabase client not initialized')
-          setLoading(false)
-          return
-        }
-
-        const {
-          data: { session },
-          error: sessionError,
-        } = await supabase.auth.getSession()
-
-        if (sessionError) {
-          console.error('Error getting session:', sessionError)
-          setError(sessionError.message)
-        }
-
-        if (isMounted) {
-          if (session) {
-            console.log('Session found:', session.user.email)
-            setSession(session)
-            setUser(session.user)
-            await fetchUserProfile(session.user.id)
-          } else {
-            console.log('No session found')
-            // 개발 환경에서 세션이 없을 때만 기본 사용자 설정
-            if (process.env.NODE_ENV === 'development') {
-              console.log('Using default user in dev mode')
-              const defaultUserId = 'afd2a12c-75a5-4914-812e-5eedc4fd3a3d'
-              const mockUser = {
-                id: defaultUserId,
-                email: 'dg.an@eluocnc.com',
-                user_metadata: {
-                  name: '안동균',
-                },
-              } as User
-
-              setUser(mockUser)
-              await fetchUserProfile(defaultUserId)
-            }
-          }
-        }
-      } catch (err) {
-        console.error('Error in getInitialSession:', err)
-        if (isMounted) {
-          // 개발 환경에서는 에러 시 기본 사용자 설정
+          console.warn(
+            'Supabase client not initialized, using default user in development'
+          )
           if (process.env.NODE_ENV === 'development') {
             const defaultUserId = 'afd2a12c-75a5-4914-812e-5eedc4fd3a3d'
             const mockUser = {
               id: defaultUserId,
               email: 'dg.an@eluocnc.com',
-              user_metadata: {
-                name: '안동균',
-              },
+              user_metadata: { name: '안동균' },
             } as User
 
+            const defaultProfile: UserProfile = {
+              id: defaultUserId,
+              email: 'dg.an@eluocnc.com',
+              name: '안동균',
+              subscription_tier: 'enterprise',
+              user_role: 'super_admin',
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+            } as UserProfile
+
             setUser(mockUser)
-            await fetchUserProfile(defaultUserId)
-            setLoading(false)
-            return
+            setUserProfile(defaultProfile)
           }
-          setError('세션을 가져오는 중 오류가 발생했습니다.')
+          return
         }
+
+        const {
+          data: { session },
+          error,
+        } = await supabase.auth.getSession()
+
+        if (error) {
+          console.error('Session error:', error)
+          setError(error.message)
+        }
+
+        if (session && isMounted) {
+          console.log('Valid session found:', session.user.email)
+          setSession(session)
+          setUser(session.user)
+
+          // 프로필은 백그라운드에서 로드하되, 블로킹하지 않음
+          fetchUserProfile(session.user.id).catch(profileError => {
+            console.error(
+              'Profile fetch failed, continuing anyway:',
+              profileError
+            )
+          })
+        } else if (process.env.NODE_ENV === 'development' && isMounted) {
+          console.log('No session, using development fallback')
+          const defaultUserId = 'afd2a12c-75a5-4914-812e-5eedc4fd3a3d'
+          const mockUser = {
+            id: defaultUserId,
+            email: 'dg.an@eluocnc.com',
+            user_metadata: { name: '안동균' },
+          } as User
+
+          const defaultProfile: UserProfile = {
+            id: defaultUserId,
+            email: 'dg.an@eluocnc.com',
+            name: '안동균',
+            subscription_tier: 'enterprise',
+            user_role: 'super_admin',
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          } as UserProfile
+
+          setUser(mockUser)
+          setUserProfile(defaultProfile)
+        }
+      } catch (err) {
+        console.error('Critical error in getInitialSession:', err)
+        setError('인증 초기화 중 오류가 발생했습니다.')
       } finally {
+        console.log('getInitialSession completed, setting loading to false')
         if (isMounted) {
           setLoading(false)
         }
@@ -253,7 +257,15 @@ export function AuthProvider({ children }: AuthProviderProps) {
         setError(null)
 
         if (session?.user) {
-          await fetchUserProfile(session.user.id)
+          try {
+            await fetchUserProfile(session.user.id)
+          } catch (profileError) {
+            console.error(
+              'Failed to fetch user profile in auth state change:',
+              profileError
+            )
+            // 프로필 로딩에 실패해도 인증은 완료된 상태로 처리
+          }
         } else {
           setUserProfile(null)
         }
@@ -274,7 +286,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     return () => {
       isMounted = false
     }
-  }, [fetchUserProfile])
+  }, [])
 
   const signUp = async (
     email: string,

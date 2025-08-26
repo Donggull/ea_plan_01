@@ -24,6 +24,7 @@ export type Database = {
           name: string
           avatar_url?: string
           subscription_tier: 'free' | 'pro' | 'enterprise'
+          user_role?: 'user' | 'admin' | 'super_admin'
           created_at: string
           updated_at: string
         }
@@ -33,6 +34,7 @@ export type Database = {
           name: string
           avatar_url?: string
           subscription_tier?: 'free' | 'pro' | 'enterprise'
+          user_role?: 'user' | 'admin' | 'super_admin'
           created_at?: string
           updated_at?: string
         }
@@ -40,6 +42,7 @@ export type Database = {
           name?: string
           avatar_url?: string
           subscription_tier?: 'free' | 'pro' | 'enterprise'
+          user_role?: 'user' | 'admin' | 'super_admin'
           updated_at?: string
         }
       }
