@@ -22,13 +22,16 @@ interface CustomBot {
   id: string
   name: string
   description: string
+  system_prompt?: string
   is_public: boolean
   created_at: string
   updated_at: string
   user_id: string
-  avatar?: string
   tags?: string[]
-  instructions?: string
+  metadata?: {
+    avatar?: string
+    preferred_model?: 'gemini' | 'gpt' | 'claude'
+  }
   knowledge_base_count?: number
   usage_count?: number
   like_count?: number
@@ -53,7 +56,7 @@ export default function ChatBotPage() {
   const params = useParams()
   const router = useRouter()
   const messagesEndRef = useRef<HTMLDivElement>(null)
-  
+
   const [bot, setBot] = useState<CustomBot | null>(null)
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [inputMessage, setInputMessage] = useState('')
@@ -77,44 +80,47 @@ export default function ChatBotPage() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }
 
-  const loadBot = useCallback(async (botId: string) => {
-    try {
-      setLoading(true)
-      
-      const { data, error } = await supabase
-        .from('custom_bots')
-        .select('*')
-        .eq('id', botId)
-        .single()
+  const loadBot = useCallback(
+    async (botId: string) => {
+      try {
+        setLoading(true)
 
-      if (error) {
+        const { data, error } = await supabase
+          .from('custom_bots')
+          .select('*')
+          .eq('id', botId)
+          .single()
+
+        if (error) {
+          console.error('Failed to load bot:', error)
+          router.push('/newel')
+          return
+        }
+
+        setBot(data)
+
+        // Load chat history if exists
+        const welcomeMessage: ChatMessage = {
+          id: 'welcome',
+          role: 'assistant',
+          content: `안녕하세요! 저는 ${data.name}입니다. ${data.description}\n\n무엇을 도와드릴까요?`,
+          timestamp: new Date().toISOString(),
+        }
+        setMessages([welcomeMessage])
+      } catch (error) {
         console.error('Failed to load bot:', error)
         router.push('/newel')
-        return
+      } finally {
+        setLoading(false)
       }
-
-      setBot(data)
-
-      // Load chat history if exists
-      const welcomeMessage: ChatMessage = {
-        id: 'welcome',
-        role: 'assistant',
-        content: `안녕하세요! 저는 ${data.name}입니다. ${data.description}\n\n무엇을 도와드릴까요?`,
-        timestamp: new Date().toISOString(),
-      }
-      setMessages([welcomeMessage])
-
-    } catch (error) {
-      console.error('Failed to load bot:', error)
-      router.push('/newel')
-    } finally {
-      setLoading(false)
-    }
-  }, [router])
+    },
+    [router]
+  )
 
   const loadKnowledgeBase = useCallback(async (botId: string) => {
     try {
-      const knowledgeBaseData = await KnowledgeBaseProcessor.getKnowledgeBase(botId)
+      const knowledgeBaseData =
+        await KnowledgeBaseProcessor.getKnowledgeBase(botId)
       setKnowledgeBase(knowledgeBaseData)
     } catch (error) {
       console.error('Failed to load knowledge base:', error)
@@ -140,7 +146,7 @@ export default function ChatBotPage() {
       const ragResponse = await RAGService.queryCustomBot(
         bot.id,
         userMessage.content,
-        bot.instructions
+        bot.system_prompt
       )
 
       const assistantMessage: ChatMessage = {
@@ -160,10 +166,9 @@ export default function ChatBotPage() {
           updated_at: new Date().toISOString(),
         })
         .eq('id', bot.id)
-
     } catch (error) {
       console.error('Failed to send message:', error)
-      
+
       const errorMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
@@ -185,7 +190,7 @@ export default function ChatBotPage() {
 
   const clearChat = () => {
     if (!bot) return
-    
+
     const welcomeMessage: ChatMessage = {
       id: 'welcome',
       role: 'assistant',
@@ -211,8 +216,9 @@ export default function ChatBotPage() {
     if (!confirm('이 지식베이스 항목을 삭제하시겠습니까?')) return
 
     try {
-      const success = await KnowledgeBaseProcessor.deleteKnowledgeBaseItem(itemId)
-      
+      const success =
+        await KnowledgeBaseProcessor.deleteKnowledgeBaseItem(itemId)
+
       if (success) {
         setKnowledgeBase(prev => prev.filter(item => item.id !== itemId))
       } else {
@@ -229,7 +235,9 @@ export default function ChatBotPage() {
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600 dark:text-gray-400">챗봇을 불러오는 중...</p>
+          <p className="text-gray-600 dark:text-gray-400">
+            챗봇을 불러오는 중...
+          </p>
         </div>
       </div>
     )
@@ -270,19 +278,36 @@ export default function ChatBotPage() {
               >
                 <ArrowLeftIcon className="w-5 h-5 text-gray-600 dark:text-gray-400" />
               </button>
-              
+
               <div className="flex items-center space-x-3">
                 <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
-                  {bot.avatar ? (
-                    <span className="text-lg">{bot.avatar}</span>
+                  {bot.metadata?.avatar ? (
+                    <span className="text-lg">{bot.metadata.avatar}</span>
                   ) : (
                     <CpuChipIcon className="w-5 h-5 text-white" />
                   )}
                 </div>
                 <div>
-                  <h1 className="text-lg font-semibold text-gray-900 dark:text-white">
-                    {bot.name}
-                  </h1>
+                  <div className="flex items-center space-x-2">
+                    <h1 className="text-lg font-semibold text-gray-900 dark:text-white">
+                      {bot.name}
+                    </h1>
+                    <div
+                      className={`px-2 py-1 rounded text-xs font-medium text-white ${
+                        bot.metadata?.preferred_model === 'gemini'
+                          ? 'bg-blue-500'
+                          : bot.metadata?.preferred_model === 'gpt'
+                            ? 'bg-green-500'
+                            : bot.metadata?.preferred_model === 'claude'
+                              ? 'bg-purple-500'
+                              : 'bg-gray-500'
+                      }`}
+                    >
+                      {(
+                        bot.metadata?.preferred_model || 'gemini'
+                      ).toUpperCase()}
+                    </div>
+                  </div>
                   <div className="flex items-center space-x-3 text-sm text-gray-500 dark:text-gray-400">
                     <div className="flex items-center space-x-1">
                       <UserIcon className="w-3 h-3" />
@@ -347,34 +372,42 @@ export default function ChatBotPage() {
           {/* Messages */}
           <div className="flex-1 overflow-y-auto p-6">
             <div className="max-w-4xl mx-auto space-y-6">
-              {messages.map((message) => (
+              {messages.map(message => (
                 <motion.div
                   key={message.id}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
                 >
-                  <div className={`flex items-start space-x-3 max-w-3xl ${
-                    message.role === 'user' ? 'flex-row-reverse space-x-reverse' : 'flex-row'
-                  }`}>
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
+                  <div
+                    className={`flex items-start space-x-3 max-w-3xl ${
                       message.role === 'user'
-                        ? 'bg-blue-600 text-white'
-                        : 'bg-gradient-to-br from-blue-500 to-purple-600 text-white'
-                    }`}>
+                        ? 'flex-row-reverse space-x-reverse'
+                        : 'flex-row'
+                    }`}
+                  >
+                    <div
+                      className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
+                        message.role === 'user'
+                          ? 'bg-blue-600 text-white'
+                          : 'bg-gradient-to-br from-blue-500 to-purple-600 text-white'
+                      }`}
+                    >
                       {message.role === 'user' ? (
                         <UserIcon className="w-4 h-4" />
-                      ) : bot.avatar ? (
-                        <span className="text-sm">{bot.avatar}</span>
+                      ) : bot.metadata?.avatar ? (
+                        <span className="text-sm">{bot.metadata.avatar}</span>
                       ) : (
                         <CpuChipIcon className="w-4 h-4" />
                       )}
                     </div>
-                    <div className={`rounded-2xl px-4 py-3 ${
-                      message.role === 'user'
-                        ? 'bg-blue-600 text-white'
-                        : 'bg-white dark:bg-gray-800 text-gray-900 dark:text-white border border-gray-200 dark:border-gray-700'
-                    }`}>
+                    <div
+                      className={`rounded-2xl px-4 py-3 ${
+                        message.role === 'user'
+                          ? 'bg-blue-600 text-white'
+                          : 'bg-white dark:bg-gray-800 text-gray-900 dark:text-white border border-gray-200 dark:border-gray-700'
+                      }`}
+                    >
                       <div className="whitespace-pre-wrap text-sm leading-relaxed">
                         {message.content}
                       </div>
@@ -390,8 +423,8 @@ export default function ChatBotPage() {
                 >
                   <div className="flex items-start space-x-3 max-w-3xl">
                     <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 text-white flex items-center justify-center flex-shrink-0">
-                      {bot.avatar ? (
-                        <span className="text-sm">{bot.avatar}</span>
+                      {bot.metadata?.avatar ? (
+                        <span className="text-sm">{bot.metadata.avatar}</span>
                       ) : (
                         <CpuChipIcon className="w-4 h-4" />
                       )}
@@ -400,10 +433,18 @@ export default function ChatBotPage() {
                       <div className="flex items-center space-x-2">
                         <div className="flex space-x-1">
                           <div className="w-2 h-2 bg-blue-600 rounded-full animate-bounce"></div>
-                          <div className="w-2 h-2 bg-blue-600 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                          <div className="w-2 h-2 bg-blue-600 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                          <div
+                            className="w-2 h-2 bg-blue-600 rounded-full animate-bounce"
+                            style={{ animationDelay: '0.1s' }}
+                          ></div>
+                          <div
+                            className="w-2 h-2 bg-blue-600 rounded-full animate-bounce"
+                            style={{ animationDelay: '0.2s' }}
+                          ></div>
                         </div>
-                        <span className="text-sm text-gray-500">생각 중...</span>
+                        <span className="text-sm text-gray-500">
+                          생각 중...
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -420,7 +461,7 @@ export default function ChatBotPage() {
                 <div className="flex-1">
                   <textarea
                     value={inputMessage}
-                    onChange={(e) => setInputMessage(e.target.value)}
+                    onChange={e => setInputMessage(e.target.value)}
                     onKeyPress={handleKeyPress}
                     placeholder={`${bot.name}에게 무엇이든 물어보세요...`}
                     rows={1}
@@ -463,7 +504,7 @@ export default function ChatBotPage() {
             </div>
             <div className="flex-1 overflow-y-auto p-4">
               <div className="space-y-3">
-                {knowledgeBase.map((item) => (
+                {knowledgeBase.map(item => (
                   <div
                     key={item.id}
                     className="p-4 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600"

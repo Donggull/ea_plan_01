@@ -21,12 +21,16 @@ interface CustomBot {
   id: string
   name: string
   description: string
+  system_prompt?: string
   is_public: boolean
   created_at: string
   updated_at: string
   user_id: string
-  avatar?: string
   tags?: string[]
+  metadata?: {
+    avatar?: string
+    preferred_model?: 'gemini' | 'gpt' | 'claude'
+  }
   knowledge_base_count?: number
   usage_count?: number
   like_count?: number
@@ -188,16 +192,31 @@ export default function NewelPage() {
       <div className="flex items-start justify-between mb-4">
         <div className="flex items-center space-x-3">
           <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center">
-            {bot.avatar ? (
-              <span className="text-xl">{bot.avatar}</span>
+            {bot.metadata?.avatar ? (
+              <span className="text-xl">{bot.metadata.avatar}</span>
             ) : (
               <CpuChipIcon className="w-6 h-6 text-white" />
             )}
           </div>
           <div>
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-              {bot.name}
-            </h3>
+            <div className="flex items-center space-x-2">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                {bot.name}
+              </h3>
+              <div
+                className={`px-2 py-1 rounded text-xs font-medium text-white ${
+                  bot.metadata?.preferred_model === 'gemini'
+                    ? 'bg-blue-500'
+                    : bot.metadata?.preferred_model === 'gpt'
+                      ? 'bg-green-500'
+                      : bot.metadata?.preferred_model === 'claude'
+                        ? 'bg-purple-500'
+                        : 'bg-gray-500'
+                }`}
+              >
+                {(bot.metadata?.preferred_model || 'gemini').toUpperCase()}
+              </div>
+            </div>
             {isPublic && (
               <div className="flex items-center space-x-2 text-sm text-gray-500 dark:text-gray-400">
                 <UserIcon className="w-4 h-4" />

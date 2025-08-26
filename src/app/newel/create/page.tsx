@@ -38,6 +38,9 @@ export default function CreateBotPage() {
   const [botTags, setBotTags] = useState<string[]>([])
   const [currentTag, setCurrentTag] = useState('')
   const [isPublic, setIsPublic] = useState(false)
+  const [preferredModel, setPreferredModel] = useState<
+    'gemini' | 'gpt' | 'claude'
+  >('gemini')
 
   // Knowledge base
   const [knowledgeFiles, setKnowledgeFiles] = useState<KnowledgeFile[]>([])
@@ -141,9 +144,12 @@ export default function CreateBotPage() {
           description: botDescription,
           is_public: isPublic,
           user_id: userId,
-          avatar: botAvatar,
+          system_prompt: instructions,
           tags: botTags,
-          instructions: instructions,
+          metadata: {
+            avatar: botAvatar,
+            preferred_model: preferredModel,
+          },
         })
         .select()
         .single()
@@ -376,6 +382,83 @@ export default function CreateBotPage() {
                     rows={4}
                     className="w-full px-4 py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
                   />
+                </div>
+
+                {/* AI Model Selection */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                    AI 모델 선택
+                  </label>
+                  <div className="grid grid-cols-3 gap-4">
+                    {[
+                      {
+                        id: 'gemini',
+                        name: 'Gemini',
+                        description: '빠른 응답, 비용 효율적',
+                        icon: '⚡',
+                        color: 'from-blue-500 to-blue-600',
+                      },
+                      {
+                        id: 'gpt',
+                        name: 'ChatGPT',
+                        description: '창의적 텍스트 생성',
+                        icon: '🎯',
+                        color: 'from-green-500 to-green-600',
+                      },
+                      {
+                        id: 'claude',
+                        name: 'Claude',
+                        description: '도구 연동, 분석 특화',
+                        icon: '🔧',
+                        color: 'from-purple-500 to-purple-600',
+                      },
+                    ].map(model => (
+                      <div
+                        key={model.id}
+                        className={`relative p-4 rounded-lg border-2 cursor-pointer transition-all ${
+                          preferredModel === model.id
+                            ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30'
+                            : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500'
+                        }`}
+                        onClick={() =>
+                          setPreferredModel(
+                            model.id as 'gemini' | 'gpt' | 'claude'
+                          )
+                        }
+                      >
+                        <div className="text-center">
+                          <div
+                            className={`w-10 h-10 mx-auto mb-2 rounded-lg bg-gradient-to-r ${model.color} flex items-center justify-center text-white font-medium`}
+                          >
+                            {model.icon}
+                          </div>
+                          <h3 className="font-medium text-gray-900 dark:text-white text-sm">
+                            {model.name}
+                          </h3>
+                          <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                            {model.description}
+                          </p>
+                        </div>
+                        {preferredModel === model.id && (
+                          <div className="absolute top-2 right-2">
+                            <div className="w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center">
+                              <svg
+                                className="w-3 h-3 text-white"
+                                fill="currentColor"
+                                viewBox="0 0 20 20"
+                              >
+                                <path
+                                  fillRule="evenodd"
+                                  d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                  clipRule="evenodd"
+                                />
+                              </svg>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
                 </div>
 
                 {/* Tags */}
