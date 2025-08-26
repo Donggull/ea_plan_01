@@ -553,7 +553,7 @@ export default function ChatInterface({
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 20 }}
             onClick={() => scrollToBottom()}
-            className="fixed bottom-32 right-8 p-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-full shadow-lg hover:shadow-xl transition-all z-10"
+            className="fixed bottom-40 right-8 p-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-full shadow-lg hover:shadow-xl transition-all z-10"
           >
             <ArrowDownIcon className="w-4 h-4 text-gray-600 dark:text-gray-400" />
           </motion.button>
@@ -606,8 +606,8 @@ export default function ChatInterface({
       )}
 
       {/* Input Area */}
-      <div className="p-4 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700">
-        <div className="flex items-end space-x-3">
+      <div className="p-6 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 m-4 rounded-xl shadow-lg">
+        <div className="flex items-end space-x-4">
           {/* File Upload */}
           <input
             {...getInputProps()}
@@ -618,7 +618,7 @@ export default function ChatInterface({
           <div className="flex flex-col space-y-2">
             <button
               onClick={() => fileInputRef.current?.click()}
-              className="p-2 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
+              className="p-3 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700"
               title="파일 업로드"
             >
               <PaperClipIcon className="w-5 h-5" />
@@ -626,7 +626,7 @@ export default function ChatInterface({
 
             <button
               onClick={handleVoiceRecord}
-              className={`p-2 transition-colors rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 ${
+              className={`p-3 transition-colors rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 ${
                 isRecording
                   ? 'text-red-500 bg-red-50 dark:bg-red-900/20'
                   : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
@@ -638,7 +638,7 @@ export default function ChatInterface({
 
             <button
               onClick={() => setShowMCPTools(!showMCPTools)}
-              className={`p-2 transition-colors rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 ${
+              className={`p-3 transition-colors rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 ${
                 showMCPTools
                   ? 'text-blue-500 bg-blue-50 dark:bg-blue-900/20'
                   : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
@@ -657,22 +657,22 @@ export default function ChatInterface({
               onChange={e => setInputValue(e.target.value)}
               onKeyPress={handleKeyPress}
               placeholder="메시지를 입력하세요... (Shift+Enter: 줄바꿈)"
-              rows={1}
-              className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
-              style={{ minHeight: '48px', maxHeight: '120px' }}
+              rows={2}
+              className="w-full px-5 py-4 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none text-base"
+              style={{ minHeight: '60px', maxHeight: '150px' }}
             />
 
             {/* Character Counter */}
-            <div className="absolute bottom-1 right-12 text-xs text-gray-400">
+            <div className="absolute bottom-2 right-14 text-xs text-gray-400">
               {inputValue.length}/2000
             </div>
           </div>
 
           {/* Action Buttons */}
-          <div className="flex space-x-2">
+          <div className="flex space-x-3">
             <button
               onClick={() => setShowSettings(!showSettings)}
-              className="p-2 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
+              className="p-3 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700"
               title="설정"
             >
               <Cog6ToothIcon className="w-5 h-5" />
@@ -681,7 +681,7 @@ export default function ChatInterface({
             {isLoading ? (
               <button
                 onClick={stopGeneration}
-                className="p-3 bg-red-500 hover:bg-red-600 text-white rounded-xl transition-colors"
+                className="p-4 bg-red-500 hover:bg-red-600 text-white rounded-xl transition-colors shadow-md hover:shadow-lg"
                 title="생성 중단"
               >
                 <StopIcon className="w-5 h-5" />
@@ -690,7 +690,7 @@ export default function ChatInterface({
               <button
                 onClick={handleSendMessage}
                 disabled={!inputValue.trim() && selectedFiles.length === 0}
-                className="p-3 bg-blue-500 hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-xl transition-colors"
+                className="p-4 bg-blue-500 hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-xl transition-colors shadow-md hover:shadow-lg"
                 title="메시지 전송"
               >
                 <PaperAirplaneIcon className="w-5 h-5" />
@@ -700,7 +700,7 @@ export default function ChatInterface({
         </div>
 
         {/* Quick Actions */}
-        <div className="flex flex-wrap gap-2 mt-3">
+        <div className="flex flex-wrap gap-2 mt-4">
           {[
             {
               icon: '📋',
@@ -730,7 +730,7 @@ export default function ChatInterface({
             <button
               key={idx}
               onClick={() => setInputValue(`${action.text}를 도와줘`)}
-              className={`flex items-center space-x-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors hover:scale-105 ${action.color}`}
+              className={`flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-medium transition-all hover:scale-105 hover:shadow-md ${action.color}`}
             >
               <span>{action.icon}</span>
               <span>{action.text}</span>
@@ -745,7 +745,7 @@ export default function ChatInterface({
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
-              className="mt-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg"
+              className="mt-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg"
             >
               <p className="text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">
                 MCP 도구:
