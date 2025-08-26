@@ -224,7 +224,7 @@ export default function ProjectsPage() {
   }
 
   return (
-    <div className="space-y-8 p-6">
+    <div className="space-y-8 p-6 pb-12">
       {/* Page header */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}

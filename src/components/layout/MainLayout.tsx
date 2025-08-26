@@ -41,16 +41,16 @@ export default function MainLayout({ children }: MainLayoutProps) {
 
   return (
     <div
-      className={`h-screen flex flex-col overflow-hidden bg-gray-50 dark:bg-gray-900 ${isDarkMode ? 'dark' : ''}`}
+      className={`min-h-screen flex flex-col bg-gray-50 dark:bg-gray-900 ${isDarkMode ? 'dark' : ''}`}
     >
       {/* Header - Full width at top */}
       <Header onMenuToggle={() => setSidebarOpen(true)} />
 
       {/* Content area with sidebar */}
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex flex-1">
         {/* Left Sidebar - Always visible on desktop, positioned below header */}
         {shouldUseSidebarLayout && (
-          <div className="hidden lg:flex lg:w-80 lg:flex-col">
+          <div className="hidden lg:flex lg:w-80 lg:flex-col lg:min-h-0">
             <Sidebar />
           </div>
         )}
@@ -69,7 +69,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
         )}
 
         {/* Main content */}
-        <main className="flex-1 overflow-y-auto">{children}</main>
+        <main className="flex-1 min-w-0">{children}</main>
       </div>
     </div>
   )

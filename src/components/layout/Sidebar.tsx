@@ -33,7 +33,7 @@ export default function Sidebar({ onClose }: SidebarProps) {
   }
 
   return (
-    <div className="flex flex-col h-full bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700">
+    <div className="flex flex-col min-h-screen bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700">
       {/* Close button for mobile */}
       {onClose && (
         <div className="flex items-center justify-between h-16 px-6 border-b border-gray-200 dark:border-gray-700 lg:hidden">
@@ -62,7 +62,7 @@ export default function Sidebar({ onClose }: SidebarProps) {
       )}
 
       {/* Page-specific content */}
-      <div className="flex-1 overflow-y-auto">{getSidebarContent()}</div>
+      <div className="flex-1">{getSidebarContent()}</div>
     </div>
   )
 }
