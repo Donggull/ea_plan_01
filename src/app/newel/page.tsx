@@ -59,13 +59,12 @@ export default function NewelPage() {
   const loadBots = async () => {
     try {
       setLoading(true)
-      // Get current user (fallback to default for testing)
-      const {
-        data: { user },
-      } = await supabase.auth.getUser()
-      const userId = user?.id || 'afd2a12c-75a5-4914-812e-5eedc4fd3a3d'
+      console.log('Loading bots...')
 
-      // Load my bots - simplified query without complex joins
+      // Get current user (fallback to default for testing)
+      const userId = 'afd2a12c-75a5-4914-812e-5eedc4fd3a3d' // 개발환경 기본값 사용
+
+      // Load my bots - simplified query without knowledge base count (테이블이 없으므로)
       const { data: myBotsData, error: myBotsError } = await supabase
         .from('custom_bots')
         .select('*')
@@ -76,33 +75,13 @@ export default function NewelPage() {
         console.error('Failed to load my bots:', myBotsError)
         setMyBots([])
       } else {
-        // Get knowledge base count for each bot
-        const botsWithKnowledgeCount = await Promise.all(
-          (myBotsData || []).map(async bot => {
-            try {
-              const { count } = await supabase
-                .from('knowledge_base')
-                .select('*', { count: 'exact', head: true })
-                .eq('custom_bot_id', bot.id)
-
-              return {
-                ...bot,
-                knowledge_base_count: count || 0,
-              }
-            } catch (error) {
-              console.error(
-                'Failed to get knowledge base count for bot:',
-                bot.id,
-                error
-              )
-              return {
-                ...bot,
-                knowledge_base_count: 0,
-              }
-            }
-          })
-        )
-        setMyBots(botsWithKnowledgeCount)
+        // knowledge_base 카운트 없이 봇 설정 (테이블이 존재하지 않으므로)
+        const processedMyBots = (myBotsData || []).map(bot => ({
+          ...bot,
+          knowledge_base_count: 0, // 기본값 0
+        }))
+        setMyBots(processedMyBots)
+        console.log(`Loaded ${processedMyBots.length} my bots`)
       }
 
       // Load public bots - simplified query
@@ -117,33 +96,13 @@ export default function NewelPage() {
         console.error('Failed to load public bots:', publicBotsError)
         setPublicBots([])
       } else {
-        // Get knowledge base count for each public bot
-        const publicBotsWithKnowledgeCount = await Promise.all(
-          (publicBotsData || []).map(async bot => {
-            try {
-              const { count } = await supabase
-                .from('knowledge_base')
-                .select('*', { count: 'exact', head: true })
-                .eq('custom_bot_id', bot.id)
-
-              return {
-                ...bot,
-                knowledge_base_count: count || 0,
-              }
-            } catch (error) {
-              console.error(
-                'Failed to get knowledge base count for public bot:',
-                bot.id,
-                error
-              )
-              return {
-                ...bot,
-                knowledge_base_count: 0,
-              }
-            }
-          })
-        )
-        setPublicBots(publicBotsWithKnowledgeCount)
+        // knowledge_base 카운트 없이 봇 설정 (테이블이 존재하지 않으므로)
+        const processedPublicBots = (publicBotsData || []).map(bot => ({
+          ...bot,
+          knowledge_base_count: 0, // 기본값 0
+        }))
+        setPublicBots(processedPublicBots)
+        console.log(`Loaded ${processedPublicBots.length} public bots`)
       }
     } catch (error) {
       console.error('Failed to load bots:', error)
@@ -151,6 +110,7 @@ export default function NewelPage() {
       setPublicBots([])
     } finally {
       setLoading(false)
+      console.log('Bot loading completed')
     }
   }
 

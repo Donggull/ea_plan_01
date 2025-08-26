@@ -158,28 +158,12 @@ export default function CreateBotPage() {
         throw new Error(botError.message)
       }
 
-      // Process and store knowledge base files
+      // Knowledge base processing is skipped for now (feature not implemented)
       if (knowledgeFiles.length > 0) {
-        const items = knowledgeFiles.map(file => ({
-          title: file.name,
-          content:
-            file.content ||
-            `File: ${file.name}\\nType: ${file.type}\\nSize: ${file.size} bytes\\n\\n[File content would be processed here]`,
-          metadata: {
-            file_name: file.name,
-            file_type: file.type,
-            file_size: file.size,
-          },
-        }))
-
-        const result = await KnowledgeBaseProcessor.processKnowledgeBase(
-          botData.id,
-          items
+        console.log(
+          `Skipping knowledge base processing for ${knowledgeFiles.length} files - feature not implemented`
         )
-
-        if (!result.success) {
-          console.error('Failed to create knowledge base:', result.errors)
-        }
+        // Files are uploaded but not processed into knowledge base yet
       }
 
       router.push(`/newel/${botData.id}`)

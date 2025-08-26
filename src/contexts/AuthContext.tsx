@@ -153,101 +153,104 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   useEffect(() => {
     let isMounted = true
+    let initialLoadComplete = false
 
     const getInitialSession = async () => {
       console.log('Starting getInitialSession')
 
+      // 개발 환경에서는 항상 기본 사용자로 설정
+      if (process.env.NODE_ENV === 'development') {
+        if (isMounted) {
+          const defaultUserId = 'afd2a12c-75a5-4914-812e-5eedc4fd3a3d'
+          const mockUser = {
+            id: defaultUserId,
+            email: 'dg.an@eluocnc.com',
+            user_metadata: { name: '안동균' },
+          } as User
+
+          const defaultProfile: UserProfile = {
+            id: defaultUserId,
+            email: 'dg.an@eluocnc.com',
+            name: '안동균',
+            subscription_tier: 'enterprise',
+            user_role: 'super_admin',
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          } as UserProfile
+
+          setUser(mockUser)
+          setUserProfile(defaultProfile)
+          setSession(null) // 개발환경에서는 실제 세션 없이 진행
+          console.log('Development mode: using default user profile')
+        }
+
+        if (isMounted) {
+          setLoading(false)
+          initialLoadComplete = true
+        }
+        return
+      }
+
       try {
         if (!supabase) {
-          console.warn(
-            'Supabase client not initialized, using default user in development'
-          )
-          if (process.env.NODE_ENV === 'development') {
-            const defaultUserId = 'afd2a12c-75a5-4914-812e-5eedc4fd3a3d'
-            const mockUser = {
-              id: defaultUserId,
-              email: 'dg.an@eluocnc.com',
-              user_metadata: { name: '안동균' },
-            } as User
-
-            const defaultProfile: UserProfile = {
-              id: defaultUserId,
-              email: 'dg.an@eluocnc.com',
-              name: '안동균',
-              subscription_tier: 'enterprise',
-              user_role: 'super_admin',
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString(),
-            } as UserProfile
-
-            setUser(mockUser)
-            setUserProfile(defaultProfile)
+          console.error('Supabase client not available in production')
+          if (isMounted) {
+            setLoading(false)
+            initialLoadComplete = true
           }
+          return
+        }
+
+        const {
+          data: { session },
+          error,
+        } = await supabase.auth.getSession()
+
+        if (error) {
+          console.error('Session error:', error)
+          setError(error.message)
+        }
+
+        if (session && isMounted) {
+          console.log('Valid session found:', session.user.email)
+          setSession(session)
+          setUser(session.user)
+
+          // 프로필은 백그라운드에서 로드하되, 블로킹하지 않음
+          fetchUserProfile(session.user.id).catch(profileError => {
+            console.error(
+              'Profile fetch failed, continuing anyway:',
+              profileError
+            )
+          })
         } else {
-          const {
-            data: { session },
-            error,
-          } = await supabase.auth.getSession()
-
-          if (error) {
-            console.error('Session error:', error)
-            setError(error.message)
-          }
-
-          if (session && isMounted) {
-            console.log('Valid session found:', session.user.email)
-            setSession(session)
-            setUser(session.user)
-
-            // 프로필은 백그라운드에서 로드하되, 블로킹하지 않음
-            fetchUserProfile(session.user.id).catch(profileError => {
-              console.error(
-                'Profile fetch failed, continuing anyway:',
-                profileError
-              )
-            })
-          } else if (process.env.NODE_ENV === 'development' && isMounted) {
-            console.log('No session, using development fallback')
-            const defaultUserId = 'afd2a12c-75a5-4914-812e-5eedc4fd3a3d'
-            const mockUser = {
-              id: defaultUserId,
-              email: 'dg.an@eluocnc.com',
-              user_metadata: { name: '안동균' },
-            } as User
-
-            const defaultProfile: UserProfile = {
-              id: defaultUserId,
-              email: 'dg.an@eluocnc.com',
-              name: '안동균',
-              subscription_tier: 'enterprise',
-              user_role: 'super_admin',
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString(),
-            } as UserProfile
-
-            setUser(mockUser)
-            setUserProfile(defaultProfile)
+          console.log('No session found')
+          if (isMounted) {
+            setUser(null)
+            setUserProfile(null)
+            setSession(null)
           }
         }
       } catch (err) {
         console.error('Critical error in getInitialSession:', err)
         setError('인증 초기화 중 오류가 발생했습니다.')
       } finally {
-        console.log('getInitialSession completed, setting loading to false')
         if (isMounted) {
           setLoading(false)
+          initialLoadComplete = true
         }
+        console.log('getInitialSession completed, loading set to false')
       }
     }
 
     getInitialSession()
 
-    // Supabase 클라이언트가 있을 때만 구독 설정
-    if (supabase) {
+    // Supabase 클라이언트가 있을 때만 구독 설정 (프로덕션 환경에서만)
+    if (supabase && process.env.NODE_ENV !== 'development') {
       const {
         data: { subscription },
       } = supabase.auth.onAuthStateChange(async (event, session) => {
-        if (!isMounted) return
+        if (!isMounted || !initialLoadComplete) return
 
         console.log('Auth state changed:', event, session?.user?.id)
 
@@ -263,7 +266,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
               'Failed to fetch user profile in auth state change:',
               profileError
             )
-            // 프로필 로딩에 실패해도 인증은 완료된 상태로 처리
           }
         } else {
           setUserProfile(null)
@@ -272,8 +274,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
         if (event === 'SIGNED_OUT') {
           setUserProfile(null)
         }
-
-        setLoading(false)
       })
 
       return () => {

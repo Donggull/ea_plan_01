@@ -119,11 +119,12 @@ export default function ChatBotPage() {
 
   const loadKnowledgeBase = useCallback(async (botId: string) => {
     try {
-      const knowledgeBaseData =
-        await KnowledgeBaseProcessor.getKnowledgeBase(botId)
-      setKnowledgeBase(knowledgeBaseData)
+      // knowledge_base 테이블이 존재하지 않으므로 빈 배열로 설정
+      console.log('Knowledge base loading skipped - table not exists')
+      setKnowledgeBase([])
     } catch (error) {
       console.error('Failed to load knowledge base:', error)
+      setKnowledgeBase([])
     }
   }, [])
 
@@ -142,17 +143,28 @@ export default function ChatBotPage() {
     setSending(true)
 
     try {
-      // Use RAG service for custom bot
-      const ragResponse = await RAGService.queryCustomBot(
-        bot.id,
-        userMessage.content,
-        bot.system_prompt
+      // Mock AI response since RAG service is not implemented yet
+      const model = bot.metadata?.preferred_model || 'gemini'
+      const systemPrompt =
+        bot.system_prompt || `You are ${bot.name}. ${bot.description}`
+
+      // Simulate AI processing delay
+      await new Promise(resolve =>
+        setTimeout(resolve, 1000 + Math.random() * 2000)
       )
+
+      // Mock response based on selected model
+      const mockResponses = [
+        `[${model.toUpperCase()}] 안녕하세요! ${bot.name}입니다. "${userMessage.content}"에 대해 말씀드리겠습니다.\n\n${bot.description}를 바탕으로 도움을 드릴게요.`,
+        `[${model.toUpperCase()}] 좋은 질문이네요! 제가 ${bot.name}으로서 이렇게 답변드리겠습니다:\n\n${userMessage.content}에 대해 자세히 설명해드리겠습니다.`,
+        `[${model.toUpperCase()}] 네, 제가 도와드리겠습니다. ${bot.name}의 전문성을 활용해 답변해드릴게요.\n\n궁금하신 내용에 대해 설명드리겠습니다.`,
+      ]
 
       const assistantMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: ragResponse.answer,
+        content:
+          mockResponses[Math.floor(Math.random() * mockResponses.length)],
         timestamp: new Date().toISOString(),
       }
 
@@ -216,14 +228,9 @@ export default function ChatBotPage() {
     if (!confirm('이 지식베이스 항목을 삭제하시겠습니까?')) return
 
     try {
-      const success =
-        await KnowledgeBaseProcessor.deleteKnowledgeBaseItem(itemId)
-
-      if (success) {
-        setKnowledgeBase(prev => prev.filter(item => item.id !== itemId))
-      } else {
-        alert('삭제에 실패했습니다.')
-      }
+      // Mock deletion since knowledge base is not implemented
+      console.log('Knowledge base deletion skipped - feature not implemented')
+      setKnowledgeBase(prev => prev.filter(item => item.id !== itemId))
     } catch (error) {
       console.error('Failed to delete knowledge item:', error)
       alert('삭제에 실패했습니다.')
