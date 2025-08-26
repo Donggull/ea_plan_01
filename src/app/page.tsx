@@ -1,6 +1,7 @@
 'use client'
 
 import { motion } from 'framer-motion'
+import { ProtectedRoute } from '@/components/auth/ProtectedRoute'
 import Link from 'next/link'
 import {
   ChartBarIcon,
@@ -126,125 +127,127 @@ export default function HomePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white overflow-hidden">
-      {/* Background */}
-      <div className="absolute inset-0 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900"></div>
+    <ProtectedRoute requireAuth={false}>
+      <div className="min-h-screen bg-gray-900 text-white overflow-hidden">
+        {/* Background */}
+        <div className="absolute inset-0 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900"></div>
 
-      {/* Header */}
-      <header className="relative z-10 flex items-center justify-between p-6">
-        <div className="flex items-center space-x-8">
-          <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center">
-            <div className="w-6 h-6 bg-gray-900 rounded"></div>
+        {/* Header */}
+        <header className="relative z-10 flex items-center justify-between p-6">
+          <div className="flex items-center space-x-8">
+            <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center">
+              <div className="w-6 h-6 bg-gray-900 rounded"></div>
+            </div>
+            <nav className="hidden md:flex items-center space-x-6">
+              <button className="flex items-center space-x-2 text-gray-300 hover:text-white">
+                <ChartBarIcon className="w-5 h-5" />
+                <span>제안진행</span>
+              </button>
+              <button className="flex items-center space-x-2 text-gray-300 hover:text-white">
+                <Square3Stack3DIcon className="w-5 h-5" />
+                <span>구축관리</span>
+              </button>
+              <button className="flex items-center space-x-2 text-gray-300 hover:text-white">
+                <UserGroupIcon className="w-5 h-5" />
+                <span>운영관리</span>
+              </button>
+            </nav>
           </div>
-          <nav className="hidden md:flex items-center space-x-6">
-            <button className="flex items-center space-x-2 text-gray-300 hover:text-white">
-              <ChartBarIcon className="w-5 h-5" />
-              <span>제안진행</span>
+          <div className="flex items-center space-x-4">
+            <Link href="/dashboard">
+              <button className="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                대시보드
+              </button>
+            </Link>
+            <Link href="/projects">
+              <button className="bg-purple-600 hover:bg-purple-700 px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                프로젝트
+              </button>
+            </Link>
+            <button className="w-8 h-8 bg-gray-700 rounded-full flex items-center justify-center">
+              <span className="text-xl">⚙️</span>
             </button>
-            <button className="flex items-center space-x-2 text-gray-300 hover:text-white">
-              <Square3Stack3DIcon className="w-5 h-5" />
-              <span>구축관리</span>
-            </button>
-            <button className="flex items-center space-x-2 text-gray-300 hover:text-white">
-              <UserGroupIcon className="w-5 h-5" />
-              <span>운영관리</span>
-            </button>
-          </nav>
-        </div>
-        <div className="flex items-center space-x-4">
-          <Link href="/dashboard">
-            <button className="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg text-sm font-medium transition-colors">
-              대시보드
-            </button>
-          </Link>
-          <Link href="/projects">
-            <button className="bg-purple-600 hover:bg-purple-700 px-4 py-2 rounded-lg text-sm font-medium transition-colors">
-              프로젝트
-            </button>
-          </Link>
-          <button className="w-8 h-8 bg-gray-700 rounded-full flex items-center justify-center">
-            <span className="text-xl">⚙️</span>
-          </button>
-        </div>
-      </header>
+          </div>
+        </header>
 
-      {/* Main Content */}
-      <main className="relative z-10 px-6 pt-12 pb-20">
-        <div className="max-w-7xl mx-auto">
-          {/* Hero Section */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
-            className="text-center mb-16"
-          >
-            <p className="text-gray-400 text-lg mb-4">
-              기획자를 위한 AI 통합 플랫폼
-            </p>
-            <h1 className="text-5xl lg:text-6xl font-bold mb-8 leading-tight">
-              <span className="text-white">웹·앱 서비스 기획의</span>
-              <br />
-              <span className="bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
-                새로운 경험
-              </span>
-            </h1>
-          </motion.div>
+        {/* Main Content */}
+        <main className="relative z-10 px-6 pt-12 pb-20">
+          <div className="max-w-7xl mx-auto">
+            {/* Hero Section */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8 }}
+              className="text-center mb-16"
+            >
+              <p className="text-gray-400 text-lg mb-4">
+                기획자를 위한 AI 통합 플랫폼
+              </p>
+              <h1 className="text-5xl lg:text-6xl font-bold mb-8 leading-tight">
+                <span className="text-white">웹·앱 서비스 기획의</span>
+                <br />
+                <span className="bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
+                  새로운 경험
+                </span>
+              </h1>
+            </motion.div>
 
-          {/* Feature Cards Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
-            {features.map((feature, index) => (
-              <motion.div
-                key={feature.title}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: index * 0.1 }}
-                whileHover={{ y: -5 }}
-                className="group"
-              >
-                <div
-                  className={`relative h-[500px] bg-gradient-to-br ${feature.color} rounded-3xl p-8 overflow-hidden shadow-2xl hover:shadow-3xl transition-all duration-300`}
+            {/* Feature Cards Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
+              {features.map((feature, index) => (
+                <motion.div
+                  key={feature.title}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6, delay: index * 0.1 }}
+                  whileHover={{ y: -5 }}
+                  className="group"
                 >
-                  {/* Background Pattern */}
-                  {getPattern(feature.bgPattern)}
+                  <div
+                    className={`relative h-[500px] bg-gradient-to-br ${feature.color} rounded-3xl p-8 overflow-hidden shadow-2xl hover:shadow-3xl transition-all duration-300`}
+                  >
+                    {/* Background Pattern */}
+                    {getPattern(feature.bgPattern)}
 
-                  {/* Content */}
-                  <div className="relative z-10 h-full flex flex-col">
-                    {/* Icon */}
-                    <div className="mb-6">
-                      <div className="w-12 h-12 bg-black/20 rounded-xl flex items-center justify-center backdrop-blur-sm">
-                        <feature.icon className="w-6 h-6 text-white" />
+                    {/* Content */}
+                    <div className="relative z-10 h-full flex flex-col">
+                      {/* Icon */}
+                      <div className="mb-6">
+                        <div className="w-12 h-12 bg-black/20 rounded-xl flex items-center justify-center backdrop-blur-sm">
+                          <feature.icon className="w-6 h-6 text-white" />
+                        </div>
                       </div>
+
+                      {/* Title */}
+                      <h3 className="text-2xl font-bold text-white mb-4">
+                        {feature.title}
+                      </h3>
+
+                      {/* Spacer */}
+                      <div className="flex-1"></div>
+
+                      {/* Description */}
+                      <p className="text-white/90 text-lg font-medium mb-8 leading-relaxed">
+                        {feature.description}
+                      </p>
+
+                      {/* Button */}
+                      <Link href={feature.href}>
+                        <button
+                          className={`w-full ${feature.buttonColor} text-white py-4 rounded-2xl font-semibold text-lg transition-all duration-300 hover:transform hover:scale-105 shadow-lg flex items-center justify-center space-x-2`}
+                        >
+                          <span>{feature.buttonText}</span>
+                          <ArrowRightIcon className="w-5 h-5" />
+                        </button>
+                      </Link>
                     </div>
-
-                    {/* Title */}
-                    <h3 className="text-2xl font-bold text-white mb-4">
-                      {feature.title}
-                    </h3>
-
-                    {/* Spacer */}
-                    <div className="flex-1"></div>
-
-                    {/* Description */}
-                    <p className="text-white/90 text-lg font-medium mb-8 leading-relaxed">
-                      {feature.description}
-                    </p>
-
-                    {/* Button */}
-                    <Link href={feature.href}>
-                      <button
-                        className={`w-full ${feature.buttonColor} text-white py-4 rounded-2xl font-semibold text-lg transition-all duration-300 hover:transform hover:scale-105 shadow-lg flex items-center justify-center space-x-2`}
-                      >
-                        <span>{feature.buttonText}</span>
-                        <ArrowRightIcon className="w-5 h-5" />
-                      </button>
-                    </Link>
                   </div>
-                </div>
-              </motion.div>
-            ))}
+                </motion.div>
+              ))}
+            </div>
           </div>
-        </div>
-      </main>
-    </div>
+        </main>
+      </div>
+    </ProtectedRoute>
   )
 }

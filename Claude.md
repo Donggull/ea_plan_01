@@ -1,4 +1,7 @@
 **너는 MCP를 사용할 수 있어. 적용되어 있는 MCP를 우선적으로 사용하면서 작업을 진행해줘.**
+**실제 테스트는 https://ea-plan-01.vercel.app/ 에서 진행하고, Playwright MCP를 적극적으로 활용해서 진행해줘.**
+위 테스트 사이트에서 로그인이 필요한 경우 아이디: test1@example.com 비밀번호: 7501로 직접 로그인하고 진행해줘.
+**요청한 요건이 완료되면 마지막에는 반드시 github MCP를 활용해서 커밋 하고 푸시해줘**
 
 # Recent Development Updates (2025-08-25)
 

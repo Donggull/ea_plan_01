@@ -28,12 +28,13 @@
       "mcp__github-mcp__git-log",
       "Bash(grep:*)",
       "Bash(sed:*)",
-      "Bash(node:*)"
+      "Bash(node:*)",
+      "mcp__playwright-stealth__playwright_console_logs",
+      "Bash(taskkill:*)",
+      "Bash(PORT=3006 npm run dev)"
     ],
     "deny": [],
     "ask": [],
-    "additionalDirectories": [
-      "D:\\"
-    ]
+    "additionalDirectories": ["D:\\"]
   }
 }

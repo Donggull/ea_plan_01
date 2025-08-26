@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import Image from 'next/image'
 import { motion, AnimatePresence } from 'framer-motion'
+import { ProtectedRoute } from '@/components/auth/ProtectedRoute'
 import {
   PhotoIcon,
   MagnifyingGlassIcon,
@@ -377,384 +378,386 @@ export default function ImagesPage() {
   })
 
   return (
-    <div className="space-y-8 p-6 bg-gradient-to-br from-gray-50 to-white dark:from-gray-900 dark:to-gray-800 min-h-full">
-      {/* Page header */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="flex flex-col md:flex-row md:items-center md:justify-between"
-      >
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-gradient-to-r from-slate-600 to-slate-700 rounded-xl flex items-center justify-center">
-              <PhotoIcon className="w-6 h-6 text-white" />
-            </div>
-            <div>
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-300 bg-clip-text text-transparent">
-                AI 이미지 스튜디오
-              </h1>
-              <p className="text-gray-600 dark:text-gray-400">
-                상상을 현실로 만드는 AI 이미지 생성 ✨
-              </p>
-            </div>
-          </div>
-        </div>
+    <ProtectedRoute>
+      <div className="space-y-8 p-6 bg-gradient-to-br from-gray-50 to-white dark:from-gray-900 dark:to-gray-800 min-h-full">
+        {/* Page header */}
         <motion.div
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          className="mt-4 md:mt-0 flex flex-col md:flex-row items-center gap-4"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="flex flex-col md:flex-row md:items-center md:justify-between"
         >
-          <button className="bg-gradient-to-r from-slate-600 to-slate-700 text-white px-6 py-3 rounded-xl font-medium hover:shadow-lg transition-all duration-300 flex items-center space-x-2">
-            <SparklesIcon className="w-5 h-5" />
-            <span>새 이미지 생성</span>
-          </button>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setShowPromptHelper(!showPromptHelper)}
-              className={`px-3 py-1.5 text-sm rounded-lg transition-colors flex items-center gap-1 ${
-                showPromptHelper
-                  ? 'bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-200'
-                  : 'bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600'
-              }`}
-            >
-              <LightBulbIcon className="w-4 h-4" />
-              프롬프트 도우미
-            </button>
-            <button
-              onClick={() => setShowAdvancedSettings(!showAdvancedSettings)}
-              className={`px-3 py-1.5 text-sm rounded-lg transition-colors flex items-center gap-1 ${
-                showAdvancedSettings
-                  ? 'bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-200'
-                  : 'bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600'
-              }`}
-            >
-              <Cog6ToothIcon className="w-4 h-4" />
-              고급 설정
-            </button>
-          </div>
-        </motion.div>
-      </motion.div>
-
-      {/* 프롬프트 헬퍼 */}
-      <AnimatePresence>
-        {showPromptHelper && (
-          <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            transition={{ delay: 0.1 }}
-          >
-            <PromptHelper
-              currentPrompt={currentPrompt}
-              onPromptChange={setCurrentPrompt}
-              model={selectedModel}
-              style=""
-              className="mb-6"
-            />
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* 메인 컨텐츠 영역 */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.2 }}
-        className="grid grid-cols-1 xl:grid-cols-4 gap-8"
-      >
-        {/* 메인 생성 패널 - 왼쪽 영역 */}
-        <div className="xl:col-span-3">
-          <ImageGenerationPanel
-            onGenerate={handleGenerate}
-            isGenerating={isGenerating}
-            disabled={false}
-          />
-        </div>
-
-        {/* 오른쪽 사이드 영역 */}
-        <div className="xl:col-span-1">
-          <div className="space-y-6 sticky top-6">
-            {/* 참조 이미지 업로드 */}
-            <ReferenceImageUpload
-              onImageUpload={handleReferenceImageUpload}
-              onImageRemove={handleReferenceImageRemove}
-              currentImage={referenceImage}
-              disabled={isGenerating}
-            />
-
-            {/* 생성 진행 상태 */}
-            <GenerationProgressStatus
-              generations={generations}
-              onCancel={handleCancelGeneration}
-              onRetry={handleRetryGeneration}
-              onViewResult={handleViewResult}
-              onDownload={handleDownloadResult}
-            />
-          </div>
-        </div>
-      </motion.div>
-
-      {/* 고급 설정 패널 */}
-      <AnimatePresence>
-        {showAdvancedSettings && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            transition={{ delay: 0.1 }}
-          >
-            <AdvancedSettingsPanel
-              settings={advancedSettings}
-              onSettingsChange={setAdvancedSettings}
-              modelType={selectedModel}
-              disabled={isGenerating}
-              className="mb-6"
-            />
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Filters and search */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.2 }}
-        className="flex flex-col lg:flex-row gap-4"
-      >
-        <div className="flex-1">
-          <div className="relative">
-            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-              <MagnifyingGlassIcon className="h-5 w-5 text-gray-400" />
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center space-x-3">
+              <div className="w-10 h-10 bg-gradient-to-r from-slate-600 to-slate-700 rounded-xl flex items-center justify-center">
+                <PhotoIcon className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-300 bg-clip-text text-transparent">
+                  AI 이미지 스튜디오
+                </h1>
+                <p className="text-gray-600 dark:text-gray-400">
+                  상상을 현실로 만드는 AI 이미지 생성 ✨
+                </p>
+              </div>
             </div>
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={e => setSearchQuery(e.target.value)}
-              className="block w-full pl-11 pr-4 py-3 bg-white/80 dark:bg-gray-800/80 backdrop-blur border border-white/20 dark:border-gray-600/50 rounded-xl leading-5 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-slate-500 focus:border-transparent text-sm"
-              placeholder="이미지 제목이나 프롬프트로 검색..."
-            />
           </div>
-        </div>
-
-        <div className="flex flex-wrap gap-2">
-          {filterOptions.map(option => {
-            const Icon = option.icon
-            return (
-              <motion.button
-                key={option.id}
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={() => setSelectedFilter(option.id)}
-                className={`flex items-center space-x-2 px-4 py-2 rounded-xl font-medium transition-all duration-200 ${
-                  selectedFilter === option.id
-                    ? 'bg-gradient-to-r from-slate-600 to-slate-700 text-white shadow-lg'
-                    : 'bg-white/80 dark:bg-gray-800/80 backdrop-blur border border-white/20 dark:border-gray-700/50 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+          <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            className="mt-4 md:mt-0 flex flex-col md:flex-row items-center gap-4"
+          >
+            <button className="bg-gradient-to-r from-slate-600 to-slate-700 text-white px-6 py-3 rounded-xl font-medium hover:shadow-lg transition-all duration-300 flex items-center space-x-2">
+              <SparklesIcon className="w-5 h-5" />
+              <span>새 이미지 생성</span>
+            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setShowPromptHelper(!showPromptHelper)}
+                className={`px-3 py-1.5 text-sm rounded-lg transition-colors flex items-center gap-1 ${
+                  showPromptHelper
+                    ? 'bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-200'
+                    : 'bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600'
                 }`}
               >
-                <Icon className="w-4 h-4" />
-                <span className="text-sm">{option.label}</span>
-                {option.id !== 'all' && (
-                  <span className="text-xs bg-black/10 dark:bg-white/10 px-1.5 py-0.5 rounded-full">
-                    {images.filter(img => img.style === option.id).length}
-                  </span>
-                )}
-              </motion.button>
-            )
-          })}
-        </div>
-      </motion.div>
-
-      {/* Gallery/Generation Toggle */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.15 }}
-        className="flex items-center justify-between mb-4"
-      >
-        <div className="flex items-center space-x-2">
-          <motion.button
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            onClick={() => setViewMode('generation')}
-            className={`px-4 py-2 rounded-xl font-medium transition-all duration-200 ${
-              viewMode === 'generation'
-                ? 'bg-gradient-to-r from-slate-600 to-slate-700 text-white shadow-lg'
-                : 'bg-white/80 dark:bg-gray-800/80 backdrop-blur border border-white/20 dark:border-gray-700/50 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
-            }`}
-          >
-            이미지 생성
-          </motion.button>
-          <motion.button
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            onClick={() => setViewMode('gallery')}
-            className={`px-4 py-2 rounded-xl font-medium transition-all duration-200 ${
-              viewMode === 'gallery'
-                ? 'bg-gradient-to-r from-slate-600 to-slate-700 text-white shadow-lg'
-                : 'bg-white/80 dark:bg-gray-800/80 backdrop-blur border border-white/20 dark:border-gray-700/50 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
-            }`}
-          >
-            갤러리 보기
-          </motion.button>
-        </div>
-      </motion.div>
-
-      {viewMode === 'gallery' ? (
-        <ImageGallery
-          images={filteredImages}
-          loading={false}
-          hasMore={false}
-          onLoadMore={handleLoadMoreImages}
-          onImageAction={handleImageAction}
-          viewMode="grid"
-          selectable={false}
-        />
-      ) : (
-        /* Images grid */
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          <AnimatePresence>
-            {filteredImages.map((image, index) => (
-              <motion.div
-                key={image.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                transition={{ duration: 0.5, delay: index * 0.05 }}
-                whileHover={{ y: -4, scale: 1.02 }}
-                className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl border border-white/20 dark:border-gray-700/50 rounded-2xl overflow-hidden hover:shadow-xl transition-all duration-300 cursor-pointer group"
+                <LightBulbIcon className="w-4 h-4" />
+                프롬프트 도우미
+              </button>
+              <button
+                onClick={() => setShowAdvancedSettings(!showAdvancedSettings)}
+                className={`px-3 py-1.5 text-sm rounded-lg transition-colors flex items-center gap-1 ${
+                  showAdvancedSettings
+                    ? 'bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-200'
+                    : 'bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600'
+                }`}
               >
-                <div className="relative">
-                  <div className="aspect-w-4 aspect-h-3 bg-gray-200 dark:bg-gray-700">
-                    <Image
-                      src={image.url}
-                      alt={image.title}
-                      width={400}
-                      height={300}
-                      className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
-                    />
-                  </div>
-
-                  {/* Overlay actions */}
-                  <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 space-x-2">
-                    <motion.button
-                      whileHover={{ scale: 1.1 }}
-                      whileTap={{ scale: 0.9 }}
-                      className="w-8 h-8 bg-white/90 backdrop-blur rounded-full flex items-center justify-center text-gray-700 hover:text-red-500 transition-colors"
-                    >
-                      <HeartIcon className="w-4 h-4" />
-                    </motion.button>
-                    <motion.button
-                      whileHover={{ scale: 1.1 }}
-                      whileTap={{ scale: 0.9 }}
-                      className="w-8 h-8 bg-white/90 backdrop-blur rounded-full flex items-center justify-center text-gray-700 hover:text-slate-500 transition-colors"
-                    >
-                      <ArrowDownTrayIcon className="w-4 h-4" />
-                    </motion.button>
-                  </div>
-
-                  {/* Avatar and model badge */}
-                  <div className="absolute top-2 left-2 flex items-center space-x-2">
-                    <div className="w-6 h-6 bg-white/90 backdrop-blur rounded-full flex items-center justify-center text-sm">
-                      {image.avatar}
-                    </div>
-                    <span
-                      className={`text-xs px-2 py-1 ${
-                        image.model === 'Flux Schnell'
-                          ? 'bg-gradient-to-r from-amber-500 to-amber-600'
-                          : 'bg-gradient-to-r from-indigo-500 to-indigo-600'
-                      } text-white rounded-full font-medium`}
-                    >
-                      {image.model === 'Flux Schnell' ? 'Flux' : 'Imagen'}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="p-5">
-                  <h3 className="font-bold text-gray-900 dark:text-white mb-2 group-hover:text-slate-600 dark:group-hover:text-slate-400 transition-colors">
-                    {image.title}
-                  </h3>
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-3 line-clamp-2 leading-relaxed">
-                    {image.prompt}
-                  </p>
-
-                  <div className="flex justify-between items-center mb-2">
-                    <div className="flex items-center space-x-3 text-xs text-gray-500 dark:text-gray-400">
-                      <div className="flex items-center space-x-1">
-                        <HeartIcon className="w-3 h-3" />
-                        <span>{image.likes}</span>
-                      </div>
-                      <div className="flex items-center space-x-1">
-                        <ArrowDownTrayIcon className="w-3 h-3" />
-                        <span>{image.downloads}</span>
-                      </div>
-                    </div>
-                    <span className="text-xs text-gray-400 dark:text-gray-500">
-                      {image.created}
-                    </span>
-                  </div>
-
-                  <div className="flex justify-between items-center">
-                    <span className="text-xs bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 px-2 py-1 rounded-full">
-                      {image.size}
-                    </span>
-                    <div className="flex items-center space-x-1">
-                      <motion.button
-                        whileHover={{ scale: 1.1 }}
-                        whileTap={{ scale: 0.9 }}
-                        className="p-1.5 text-gray-400 hover:text-slate-500 transition-colors"
-                      >
-                        <ShareIcon className="w-4 h-4" />
-                      </motion.button>
-                      <motion.button
-                        whileHover={{ scale: 1.1 }}
-                        whileTap={{ scale: 0.9 }}
-                        className="p-1.5 text-gray-400 hover:text-emerald-500 transition-colors"
-                      >
-                        <EyeIcon className="w-4 h-4" />
-                      </motion.button>
-                    </div>
-                  </div>
-                </div>
-              </motion.div>
-            ))}
-          </AnimatePresence>
-        </div>
-      )}
-
-      {filteredImages.length === 0 && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="text-center py-12"
-        >
-          <div className="w-16 h-16 bg-gradient-to-r from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-600 rounded-full flex items-center justify-center mx-auto mb-4">
-            <PhotoIcon className="w-8 h-8 text-gray-500 dark:text-gray-400" />
-          </div>
-          <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-            이미지가 없습니다
-          </h3>
-          <p className="text-gray-500 dark:text-gray-400">
-            검색 조건에 맞는 이미지를 찾을 수 없습니다.
-          </p>
+                <Cog6ToothIcon className="w-4 h-4" />
+                고급 설정
+              </button>
+            </div>
+          </motion.div>
         </motion.div>
-      )}
 
-      {/* Edit Modal */}
-      {editingImage && (
-        <ImageEditModal
-          image={editingImage}
-          onClose={() => setEditingImage(null)}
-          onSave={handleEditImageSave}
-        />
-      )}
+        {/* 프롬프트 헬퍼 */}
+        <AnimatePresence>
+          {showPromptHelper && (
+            <motion.div
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ delay: 0.1 }}
+            >
+              <PromptHelper
+                currentPrompt={currentPrompt}
+                onPromptChange={setCurrentPrompt}
+                model={selectedModel}
+                style=""
+                className="mb-6"
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
 
-      {/* Share Modal */}
-      {sharingImage && (
-        <ShareModal
-          image={sharingImage}
-          onClose={() => setSharingImage(null)}
-        />
-      )}
-    </div>
+        {/* 메인 컨텐츠 영역 */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className="grid grid-cols-1 xl:grid-cols-4 gap-8"
+        >
+          {/* 메인 생성 패널 - 왼쪽 영역 */}
+          <div className="xl:col-span-3">
+            <ImageGenerationPanel
+              onGenerate={handleGenerate}
+              isGenerating={isGenerating}
+              disabled={false}
+            />
+          </div>
+
+          {/* 오른쪽 사이드 영역 */}
+          <div className="xl:col-span-1">
+            <div className="space-y-6 sticky top-6">
+              {/* 참조 이미지 업로드 */}
+              <ReferenceImageUpload
+                onImageUpload={handleReferenceImageUpload}
+                onImageRemove={handleReferenceImageRemove}
+                currentImage={referenceImage}
+                disabled={isGenerating}
+              />
+
+              {/* 생성 진행 상태 */}
+              <GenerationProgressStatus
+                generations={generations}
+                onCancel={handleCancelGeneration}
+                onRetry={handleRetryGeneration}
+                onViewResult={handleViewResult}
+                onDownload={handleDownloadResult}
+              />
+            </div>
+          </div>
+        </motion.div>
+
+        {/* 고급 설정 패널 */}
+        <AnimatePresence>
+          {showAdvancedSettings && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ delay: 0.1 }}
+            >
+              <AdvancedSettingsPanel
+                settings={advancedSettings}
+                onSettingsChange={setAdvancedSettings}
+                modelType={selectedModel}
+                disabled={isGenerating}
+                className="mb-6"
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Filters and search */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className="flex flex-col lg:flex-row gap-4"
+        >
+          <div className="flex-1">
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                <MagnifyingGlassIcon className="h-5 w-5 text-gray-400" />
+              </div>
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                className="block w-full pl-11 pr-4 py-3 bg-white/80 dark:bg-gray-800/80 backdrop-blur border border-white/20 dark:border-gray-600/50 rounded-xl leading-5 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-slate-500 focus:border-transparent text-sm"
+                placeholder="이미지 제목이나 프롬프트로 검색..."
+              />
+            </div>
+          </div>
+
+          <div className="flex flex-wrap gap-2">
+            {filterOptions.map(option => {
+              const Icon = option.icon
+              return (
+                <motion.button
+                  key={option.id}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => setSelectedFilter(option.id)}
+                  className={`flex items-center space-x-2 px-4 py-2 rounded-xl font-medium transition-all duration-200 ${
+                    selectedFilter === option.id
+                      ? 'bg-gradient-to-r from-slate-600 to-slate-700 text-white shadow-lg'
+                      : 'bg-white/80 dark:bg-gray-800/80 backdrop-blur border border-white/20 dark:border-gray-700/50 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+                  }`}
+                >
+                  <Icon className="w-4 h-4" />
+                  <span className="text-sm">{option.label}</span>
+                  {option.id !== 'all' && (
+                    <span className="text-xs bg-black/10 dark:bg-white/10 px-1.5 py-0.5 rounded-full">
+                      {images.filter(img => img.style === option.id).length}
+                    </span>
+                  )}
+                </motion.button>
+              )
+            })}
+          </div>
+        </motion.div>
+
+        {/* Gallery/Generation Toggle */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.15 }}
+          className="flex items-center justify-between mb-4"
+        >
+          <div className="flex items-center space-x-2">
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => setViewMode('generation')}
+              className={`px-4 py-2 rounded-xl font-medium transition-all duration-200 ${
+                viewMode === 'generation'
+                  ? 'bg-gradient-to-r from-slate-600 to-slate-700 text-white shadow-lg'
+                  : 'bg-white/80 dark:bg-gray-800/80 backdrop-blur border border-white/20 dark:border-gray-700/50 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+              }`}
+            >
+              이미지 생성
+            </motion.button>
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => setViewMode('gallery')}
+              className={`px-4 py-2 rounded-xl font-medium transition-all duration-200 ${
+                viewMode === 'gallery'
+                  ? 'bg-gradient-to-r from-slate-600 to-slate-700 text-white shadow-lg'
+                  : 'bg-white/80 dark:bg-gray-800/80 backdrop-blur border border-white/20 dark:border-gray-700/50 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+              }`}
+            >
+              갤러리 보기
+            </motion.button>
+          </div>
+        </motion.div>
+
+        {viewMode === 'gallery' ? (
+          <ImageGallery
+            images={filteredImages}
+            loading={false}
+            hasMore={false}
+            onLoadMore={handleLoadMoreImages}
+            onImageAction={handleImageAction}
+            viewMode="grid"
+            selectable={false}
+          />
+        ) : (
+          /* Images grid */
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            <AnimatePresence>
+              {filteredImages.map((image, index) => (
+                <motion.div
+                  key={image.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  transition={{ duration: 0.5, delay: index * 0.05 }}
+                  whileHover={{ y: -4, scale: 1.02 }}
+                  className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl border border-white/20 dark:border-gray-700/50 rounded-2xl overflow-hidden hover:shadow-xl transition-all duration-300 cursor-pointer group"
+                >
+                  <div className="relative">
+                    <div className="aspect-w-4 aspect-h-3 bg-gray-200 dark:bg-gray-700">
+                      <Image
+                        src={image.url}
+                        alt={image.title}
+                        width={400}
+                        height={300}
+                        className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
+                      />
+                    </div>
+
+                    {/* Overlay actions */}
+                    <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 space-x-2">
+                      <motion.button
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.9 }}
+                        className="w-8 h-8 bg-white/90 backdrop-blur rounded-full flex items-center justify-center text-gray-700 hover:text-red-500 transition-colors"
+                      >
+                        <HeartIcon className="w-4 h-4" />
+                      </motion.button>
+                      <motion.button
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.9 }}
+                        className="w-8 h-8 bg-white/90 backdrop-blur rounded-full flex items-center justify-center text-gray-700 hover:text-slate-500 transition-colors"
+                      >
+                        <ArrowDownTrayIcon className="w-4 h-4" />
+                      </motion.button>
+                    </div>
+
+                    {/* Avatar and model badge */}
+                    <div className="absolute top-2 left-2 flex items-center space-x-2">
+                      <div className="w-6 h-6 bg-white/90 backdrop-blur rounded-full flex items-center justify-center text-sm">
+                        {image.avatar}
+                      </div>
+                      <span
+                        className={`text-xs px-2 py-1 ${
+                          image.model === 'Flux Schnell'
+                            ? 'bg-gradient-to-r from-amber-500 to-amber-600'
+                            : 'bg-gradient-to-r from-indigo-500 to-indigo-600'
+                        } text-white rounded-full font-medium`}
+                      >
+                        {image.model === 'Flux Schnell' ? 'Flux' : 'Imagen'}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="p-5">
+                    <h3 className="font-bold text-gray-900 dark:text-white mb-2 group-hover:text-slate-600 dark:group-hover:text-slate-400 transition-colors">
+                      {image.title}
+                    </h3>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-3 line-clamp-2 leading-relaxed">
+                      {image.prompt}
+                    </p>
+
+                    <div className="flex justify-between items-center mb-2">
+                      <div className="flex items-center space-x-3 text-xs text-gray-500 dark:text-gray-400">
+                        <div className="flex items-center space-x-1">
+                          <HeartIcon className="w-3 h-3" />
+                          <span>{image.likes}</span>
+                        </div>
+                        <div className="flex items-center space-x-1">
+                          <ArrowDownTrayIcon className="w-3 h-3" />
+                          <span>{image.downloads}</span>
+                        </div>
+                      </div>
+                      <span className="text-xs text-gray-400 dark:text-gray-500">
+                        {image.created}
+                      </span>
+                    </div>
+
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 px-2 py-1 rounded-full">
+                        {image.size}
+                      </span>
+                      <div className="flex items-center space-x-1">
+                        <motion.button
+                          whileHover={{ scale: 1.1 }}
+                          whileTap={{ scale: 0.9 }}
+                          className="p-1.5 text-gray-400 hover:text-slate-500 transition-colors"
+                        >
+                          <ShareIcon className="w-4 h-4" />
+                        </motion.button>
+                        <motion.button
+                          whileHover={{ scale: 1.1 }}
+                          whileTap={{ scale: 0.9 }}
+                          className="p-1.5 text-gray-400 hover:text-emerald-500 transition-colors"
+                        >
+                          <EyeIcon className="w-4 h-4" />
+                        </motion.button>
+                      </div>
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
+            </AnimatePresence>
+          </div>
+        )}
+
+        {filteredImages.length === 0 && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="text-center py-12"
+          >
+            <div className="w-16 h-16 bg-gradient-to-r from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-600 rounded-full flex items-center justify-center mx-auto mb-4">
+              <PhotoIcon className="w-8 h-8 text-gray-500 dark:text-gray-400" />
+            </div>
+            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+              이미지가 없습니다
+            </h3>
+            <p className="text-gray-500 dark:text-gray-400">
+              검색 조건에 맞는 이미지를 찾을 수 없습니다.
+            </p>
+          </motion.div>
+        )}
+
+        {/* Edit Modal */}
+        {editingImage && (
+          <ImageEditModal
+            image={editingImage}
+            onClose={() => setEditingImage(null)}
+            onSave={handleEditImageSave}
+          />
+        )}
+
+        {/* Share Modal */}
+        {sharingImage && (
+          <ShareModal
+            image={sharingImage}
+            onClose={() => setSharingImage(null)}
+          />
+        )}
+      </div>
+    </ProtectedRoute>
   )
 }
