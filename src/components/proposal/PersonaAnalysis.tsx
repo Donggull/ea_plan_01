@@ -265,7 +265,7 @@ export default function PersonaAnalysis({
               return (
                 <button
                   key={tab.id}
-                  onClick={() => setActiveTab(tab.id as any)}
+                  onClick={() => setActiveTab(tab.id as 'overview' | 'personas' | 'journey' | 'insights')}
                   className={`flex items-center space-x-2 px-4 py-2 rounded-md font-medium transition-colors ${
                     activeTab === tab.id
                       ? 'bg-white dark:bg-gray-700 text-purple-600 dark:text-purple-400 shadow-sm'

@@ -47,14 +47,14 @@ export default function ProposalWorkflow({
   const [currentStep, setCurrentStep] = useState<WorkflowStep>('upload')
   const [rfpFile, setRfpFile] = useState<File | null>(null)
   const [rfpAnalysis, setRfpAnalysis] = useState<RFPAnalysisResult | null>(null)
-  const [projectContext, setProjectContext] = useState<ProjectContext | null>(null)
+  const [_projectContext, _setProjectContext] = useState<ProjectContext | null>(null)
   const [marketResearch, setMarketResearch] = useState<MarketResearchResult | null>(null)
   const [personaAnalysis, setPersonaAnalysis] = useState<PersonaAnalysisResult | null>(null)
-  const [proposal, setProposal] = useState<any>(null)
-  const [costBreakdown, setCostBreakdown] = useState<any>(null)
-  const [analysisQuestions, setAnalysisQuestions] = useState<any>(null)
-  const [researchQuestions, setResearchQuestions] = useState<any>(null)
-  const [personaQuestions, setPersonaQuestions] = useState<any>(null)
+  const [proposal, setProposal] = useState<unknown>(null)
+  const [costBreakdown, setCostBreakdown] = useState<unknown>(null)
+  const [analysisQuestions, setAnalysisQuestions] = useState<unknown>(null)
+  const [researchQuestions, setResearchQuestions] = useState<unknown>(null)
+  const [personaQuestions, setPersonaQuestions] = useState<unknown>(null)
 
   const steps = [
     {
@@ -116,7 +116,7 @@ export default function ProposalWorkflow({
     setCurrentStep('analysis-questions')
   }
 
-  const handleAnalysisQuestionsComplete = (questions: any) => {
+  const handleAnalysisQuestionsComplete = (questions: unknown) => {
     setAnalysisQuestions(questions)
     setCurrentStep('research')
   }
@@ -126,7 +126,7 @@ export default function ProposalWorkflow({
     setCurrentStep('research-questions')
   }
 
-  const handleResearchQuestionsComplete = (questions: any) => {
+  const handleResearchQuestionsComplete = (questions: unknown) => {
     setResearchQuestions(questions)
     setCurrentStep('persona')
   }
@@ -136,17 +136,17 @@ export default function ProposalWorkflow({
     setCurrentStep('persona-questions')
   }
 
-  const handlePersonaQuestionsComplete = (questions: any) => {
+  const handlePersonaQuestionsComplete = (questions: unknown) => {
     setPersonaQuestions(questions)
     setCurrentStep('proposal')
   }
 
-  const handleProposalComplete = (proposalDoc: any) => {
+  const handleProposalComplete = (proposalDoc: unknown) => {
     setProposal(proposalDoc)
     setCurrentStep('cost')
   }
 
-  const handleCostCalculationComplete = (breakdown: any) => {
+  const handleCostCalculationComplete = (breakdown: unknown) => {
     setCostBreakdown(breakdown)
     // Auto-save to database or local storage here
   }

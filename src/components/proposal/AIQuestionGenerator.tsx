@@ -70,7 +70,7 @@ export default function AIQuestionGenerator({
     onComplete: (response) => {
       try {
         const generatedQuestions = JSON.parse(response.content)
-        const questionsWithIds: AIQuestion[] = generatedQuestions.map((q: any, index: number) => ({
+        const questionsWithIds: AIQuestion[] = generatedQuestions.map((q: unknown, index: number) => ({
           ...q,
           id: `question-${index}-${Date.now()}`,
           answered: false,
@@ -376,7 +376,7 @@ RFP 분석: ${JSON.stringify(data.rfpAnalysis, null, 2)}
                       </button>
                     </div>
                   </div>
-                )}
+                ) : null}
               </div>
             ))}
           </div>

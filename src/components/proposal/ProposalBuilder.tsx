@@ -15,8 +15,8 @@ import type { PersonaAnalysisResult } from './PersonaAnalysis'
 
 interface ProposalBuilderProps {
   projectTitle: string
-  rfpAnalysis?: any
-  marketResearch?: any
+  rfpAnalysis?: unknown
+  marketResearch?: unknown
   personaAnalysis?: PersonaAnalysisResult | null
   onSave: (proposal: ProposalDocument) => void
 }
@@ -67,7 +67,7 @@ export default function ProposalBuilder({
       order: index,
     }))
   )
-  const [activeSection, setActiveSection] = useState<string | null>(null)
+  const [_activeSection, _setActiveSection] = useState<string | null>(null)
   const [isGenerating, setIsGenerating] = useState<string | null>(null)
   const [previewMode, setPreviewMode] = useState(false)
   
@@ -113,7 +113,7 @@ export default function ProposalBuilder({
     }
   }
 
-  const updateSection = (id: string, field: keyof ProposalSection, value: any) => {
+  const updateSection = (id: string, field: keyof ProposalSection, value: string | number) => {
     setSections(prev =>
       prev.map(section =>
         section.id === id ? { ...section, [field]: value } : section

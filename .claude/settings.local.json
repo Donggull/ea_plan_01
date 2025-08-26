@@ -25,7 +25,8 @@
       "Bash(npx tsc:*)",
       "Bash(npx eslint:*)",
       "Bash(killall:*)",
-      "mcp__github-mcp__git-log"
+      "mcp__github-mcp__git-log",
+      "Bash(grep:*)"
     ],
     "deny": [],
     "ask": []
