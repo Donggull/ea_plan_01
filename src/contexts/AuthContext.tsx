@@ -183,52 +183,51 @@ export function AuthProvider({ children }: AuthProviderProps) {
             setUser(mockUser)
             setUserProfile(defaultProfile)
           }
-          return
-        }
+        } else {
+          const {
+            data: { session },
+            error,
+          } = await supabase.auth.getSession()
 
-        const {
-          data: { session },
-          error,
-        } = await supabase.auth.getSession()
+          if (error) {
+            console.error('Session error:', error)
+            setError(error.message)
+          }
 
-        if (error) {
-          console.error('Session error:', error)
-          setError(error.message)
-        }
+          if (session && isMounted) {
+            console.log('Valid session found:', session.user.email)
+            setSession(session)
+            setUser(session.user)
 
-        if (session && isMounted) {
-          console.log('Valid session found:', session.user.email)
-          setSession(session)
-          setUser(session.user)
+            // 프로필은 백그라운드에서 로드하되, 블로킹하지 않음
+            fetchUserProfile(session.user.id).catch(profileError => {
+              console.error(
+                'Profile fetch failed, continuing anyway:',
+                profileError
+              )
+            })
+          } else if (process.env.NODE_ENV === 'development' && isMounted) {
+            console.log('No session, using development fallback')
+            const defaultUserId = 'afd2a12c-75a5-4914-812e-5eedc4fd3a3d'
+            const mockUser = {
+              id: defaultUserId,
+              email: 'dg.an@eluocnc.com',
+              user_metadata: { name: '안동균' },
+            } as User
 
-          // 프로필은 백그라운드에서 로드하되, 블로킹하지 않음
-          fetchUserProfile(session.user.id).catch(profileError => {
-            console.error(
-              'Profile fetch failed, continuing anyway:',
-              profileError
-            )
-          })
-        } else if (process.env.NODE_ENV === 'development' && isMounted) {
-          console.log('No session, using development fallback')
-          const defaultUserId = 'afd2a12c-75a5-4914-812e-5eedc4fd3a3d'
-          const mockUser = {
-            id: defaultUserId,
-            email: 'dg.an@eluocnc.com',
-            user_metadata: { name: '안동균' },
-          } as User
+            const defaultProfile: UserProfile = {
+              id: defaultUserId,
+              email: 'dg.an@eluocnc.com',
+              name: '안동균',
+              subscription_tier: 'enterprise',
+              user_role: 'super_admin',
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+            } as UserProfile
 
-          const defaultProfile: UserProfile = {
-            id: defaultUserId,
-            email: 'dg.an@eluocnc.com',
-            name: '안동균',
-            subscription_tier: 'enterprise',
-            user_role: 'super_admin',
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          } as UserProfile
-
-          setUser(mockUser)
-          setUserProfile(defaultProfile)
+            setUser(mockUser)
+            setUserProfile(defaultProfile)
+          }
         }
       } catch (err) {
         console.error('Critical error in getInitialSession:', err)
