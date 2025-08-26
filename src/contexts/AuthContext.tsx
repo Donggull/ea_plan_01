@@ -63,20 +63,40 @@ export function AuthProvider({ children }: AuthProviderProps) {
         return
       }
 
+      // 개발 환경에서 기본 사용자 설정
+      const defaultUserId = 'afd2a12c-75a5-4914-812e-5eedc4fd3a3d'
+      const actualUserId = userId || defaultUserId
+
       const { data, error } = await supabase
         .from('users')
         .select('*')
-        .eq('id', userId)
+        .eq('id', actualUserId)
         .single()
 
       if (error) {
         if (error.code === 'PGRST116') {
+          // 개발 환경에서 기본 프로필 사용
+          if (process.env.NODE_ENV === 'development') {
+            const defaultProfile: UserProfile = {
+              id: defaultUserId,
+              email: 'dg.an@eluocnc.com',
+              name: '안동균',
+              subscription_tier: 'enterprise',
+              user_role: 'super_admin',
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+            } as UserProfile
+
+            setUserProfile(defaultProfile)
+            return
+          }
+
           // 사용자 프로필이 없으면 생성
           const user = await supabase.auth.getUser()
           if (!user.data.user) return
 
           const insertData: UserInsert = {
-            id: userId,
+            id: actualUserId,
             email: user.data.user.email!,
             name:
               (user.data.user.user_metadata?.name as string) ||
@@ -99,6 +119,21 @@ export function AuthProvider({ children }: AuthProviderProps) {
           setUserProfile(newProfile)
         } else {
           console.error('Error fetching user profile:', error)
+          // 개발 환경에서는 에러 시 기본 프로필 사용
+          if (process.env.NODE_ENV === 'development') {
+            const defaultProfile: UserProfile = {
+              id: defaultUserId,
+              email: 'dg.an@eluocnc.com',
+              name: '안동균',
+              subscription_tier: 'enterprise',
+              user_role: 'super_admin',
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+            } as UserProfile
+
+            setUserProfile(defaultProfile)
+            return
+          }
           setError('사용자 프로필을 가져오는 중 오류가 발생했습니다.')
         }
         return
@@ -107,6 +142,22 @@ export function AuthProvider({ children }: AuthProviderProps) {
       setUserProfile(data)
     } catch (err) {
       console.error('Error in fetchUserProfile:', err)
+      // 개발 환경에서는 에러 시 기본 프로필 사용
+      if (process.env.NODE_ENV === 'development') {
+        const defaultUserId = 'afd2a12c-75a5-4914-812e-5eedc4fd3a3d'
+        const defaultProfile: UserProfile = {
+          id: defaultUserId,
+          email: 'dg.an@eluocnc.com',
+          name: '안동균',
+          subscription_tier: 'enterprise',
+          user_role: 'super_admin',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        } as UserProfile
+
+        setUserProfile(defaultProfile)
+        return
+      }
       setError('사용자 프로필을 가져오는 중 오류가 발생했습니다.')
     }
   }, [])
@@ -130,21 +181,65 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
         if (sessionError) {
           console.error('Error getting session:', sessionError)
+          // 개발 환경에서는 기본 사용자 설정
+          if (process.env.NODE_ENV === 'development') {
+            const defaultUserId = 'afd2a12c-75a5-4914-812e-5eedc4fd3a3d'
+            const mockUser = {
+              id: defaultUserId,
+              email: 'dg.an@eluocnc.com',
+              user_metadata: {
+                name: '안동균',
+              },
+            } as User
+
+            setUser(mockUser)
+            await fetchUserProfile(defaultUserId)
+            setLoading(false)
+            return
+          }
           setError(sessionError.message)
           return
         }
 
         if (isMounted) {
-          setSession(session)
-          setUser(session?.user ?? null)
-
-          if (session?.user) {
+          if (session) {
+            setSession(session)
+            setUser(session.user)
             await fetchUserProfile(session.user.id)
+          } else if (process.env.NODE_ENV === 'development') {
+            // 개발 환경에서 세션이 없을 때 기본 사용자 설정
+            const defaultUserId = 'afd2a12c-75a5-4914-812e-5eedc4fd3a3d'
+            const mockUser = {
+              id: defaultUserId,
+              email: 'dg.an@eluocnc.com',
+              user_metadata: {
+                name: '안동균',
+              },
+            } as User
+
+            setUser(mockUser)
+            await fetchUserProfile(defaultUserId)
           }
         }
       } catch (err) {
         console.error('Error in getInitialSession:', err)
         if (isMounted) {
+          // 개발 환경에서는 에러 시 기본 사용자 설정
+          if (process.env.NODE_ENV === 'development') {
+            const defaultUserId = 'afd2a12c-75a5-4914-812e-5eedc4fd3a3d'
+            const mockUser = {
+              id: defaultUserId,
+              email: 'dg.an@eluocnc.com',
+              user_metadata: {
+                name: '안동균',
+              },
+            } as User
+
+            setUser(mockUser)
+            await fetchUserProfile(defaultUserId)
+            setLoading(false)
+            return
+          }
           setError('세션을 가져오는 중 오류가 발생했습니다.')
         }
       } finally {

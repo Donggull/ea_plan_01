@@ -98,9 +98,9 @@ export default function DashboardPage() {
     },
   ]
 
-  return (
-    <ProtectedRoute>
-      <div className="p-6 space-y-6">
+  // 개발환경에서는 ProtectedRoute 없이 작동
+  const content = (
+    <div className="p-6 space-y-6">
       {/* Welcome Header */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -335,7 +335,14 @@ export default function DashboardPage() {
           </div>
         </motion.div>
       </div>
-      </div>
-    </ProtectedRoute>
+    </div>
   )
+
+  // 개발 환경에서는 인증 체크 없이 바로 렌더링
+  if (process.env.NODE_ENV === 'development') {
+    return content
+  }
+
+  // 프로덕션에서는 ProtectedRoute 사용
+  return <ProtectedRoute>{content}</ProtectedRoute>
 }
