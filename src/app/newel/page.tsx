@@ -55,44 +55,66 @@ export default function NewelPage() {
       } = await supabase.auth.getUser()
       const userId = user?.id || 'afd2a12c-75a5-4914-812e-5eedc4fd3a3d'
 
-      // Load my bots
+      // Load my bots - simplified query without complex joins
       const { data: myBotsData, error: myBotsError } = await supabase
         .from('custom_bots')
-        .select(
-          `
-          *,
-          knowledge_base(count)
-        `
-        )
+        .select('*')
         .eq('user_id', userId)
         .order('updated_at', { ascending: false })
 
       if (myBotsError) {
         console.error('Failed to load my bots:', myBotsError)
+        setMyBots([])
       } else {
-        setMyBots(myBotsData || [])
+        // Get knowledge base count for each bot separately
+        const botsWithKnowledgeCount = await Promise.all(
+          (myBotsData || []).map(async bot => {
+            const { count } = await supabase
+              .from('knowledge_base')
+              .select('*', { count: 'exact', head: true })
+              .eq('custom_bot_id', bot.id)
+
+            return {
+              ...bot,
+              knowledge_base_count: count || 0,
+            }
+          })
+        )
+        setMyBots(botsWithKnowledgeCount)
       }
 
-      // Load public bots
+      // Load public bots - simplified query
       const { data: publicBotsData, error: publicBotsError } = await supabase
         .from('custom_bots')
-        .select(
-          `
-          *,
-          knowledge_base!inner(count)
-        `
-        )
+        .select('*')
         .eq('is_public', true)
         .order('like_count', { ascending: false })
         .limit(20)
 
       if (publicBotsError) {
         console.error('Failed to load public bots:', publicBotsError)
+        setPublicBots([])
       } else {
-        setPublicBots(publicBotsData || [])
+        // Get knowledge base count for each public bot
+        const publicBotsWithKnowledgeCount = await Promise.all(
+          (publicBotsData || []).map(async bot => {
+            const { count } = await supabase
+              .from('knowledge_base')
+              .select('*', { count: 'exact', head: true })
+              .eq('custom_bot_id', bot.id)
+
+            return {
+              ...bot,
+              knowledge_base_count: count || 0,
+            }
+          })
+        )
+        setPublicBots(publicBotsWithKnowledgeCount)
       }
     } catch (error) {
       console.error('Failed to load bots:', error)
+      setMyBots([])
+      setPublicBots([])
     } finally {
       setLoading(false)
     }
