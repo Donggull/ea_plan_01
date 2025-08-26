@@ -1,5 +1,10 @@
 import { useState, useCallback, useRef } from 'react'
-import type { ChatMessage, ChatRequest, ChatResponse, StreamingChatResponse } from '@/lib/services/aiService'
+import type {
+  ChatMessage,
+  ChatRequest,
+  ChatResponse,
+  StreamingChatResponse,
+} from '@/lib/services/aiService'
 import type { AIModel } from '@/lib/config/aiConfig'
 
 interface UseAIOptions {
@@ -14,7 +19,10 @@ interface UseAIReturn {
   messages: ChatMessage[]
   isLoading: boolean
   error: string | null
-  sendMessage: (content: string, options?: Partial<ChatRequest>) => Promise<void>
+  sendMessage: (
+    content: string,
+    options?: Partial<ChatRequest>
+  ) => Promise<void>
   clearMessages: () => void
   clearError: () => void
   stopGeneration: () => void
@@ -43,152 +51,159 @@ export function useAI(options: UseAIOptions = {}): UseAIReturn {
     }
   }, [])
 
-  const sendMessage = useCallback(async (content: string, requestOptions: Partial<ChatRequest> = {}) => {
-    if (isLoading) {
-      console.warn('AI request already in progress')
-      return
-    }
-
-    const userMessage: ChatMessage = {
-      role: 'user',
-      content,
-      timestamp: new Date().toISOString(),
-    }
-
-    setMessages(prev => [...prev, userMessage])
-    setIsLoading(true)
-    setError(null)
-
-    // Create abort controller for this request
-    abortControllerRef.current = new AbortController()
-
-    try {
-      const requestBody: ChatRequest = {
-        messages: [...messages, userMessage],
-        model: options.model,
-        stream: options.stream ?? true,
-        ...requestOptions,
+  const sendMessage = useCallback(
+    async (content: string, requestOptions: Partial<ChatRequest> = {}) => {
+      if (isLoading) {
+        console.warn('AI request already in progress')
+        return
       }
 
-      const response = await fetch('/api/chat', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${process.env.NEXT_PUBLIC_API_TOKEN || 'demo-token'}`,
-        },
-        body: JSON.stringify(requestBody),
-        signal: abortControllerRef.current.signal,
-      })
-
-      if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || `HTTP ${response.status}`)
+      const userMessage: ChatMessage = {
+        role: 'user',
+        content,
+        timestamp: new Date().toISOString(),
       }
 
-      // Handle streaming response
-      if (response.headers.get('content-type')?.includes('text/event-stream')) {
-        const reader = response.body?.getReader()
-        if (!reader) {
-          throw new Error('No response body reader')
+      setMessages(prev => [...prev, userMessage])
+      setIsLoading(true)
+      setError(null)
+
+      // Create abort controller for this request
+      abortControllerRef.current = new AbortController()
+
+      try {
+        const requestBody: ChatRequest = {
+          messages: [...messages, userMessage],
+          model: options.model,
+          stream: options.stream ?? true,
+          ...requestOptions,
         }
 
-        const decoder = new TextDecoder()
-        const assistantMessage: ChatMessage = {
-          role: 'assistant',
-          content: '',
-          timestamp: new Date().toISOString(),
+        const response = await fetch('/api/chat', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: 'Bearer demo-token',
+          },
+          body: JSON.stringify(requestBody),
+          signal: abortControllerRef.current.signal,
+        })
+
+        if (!response.ok) {
+          const errorData = await response.json()
+          throw new Error(errorData.error || `HTTP ${response.status}`)
         }
 
-        // Add empty assistant message that will be updated
-        setMessages(prev => [...prev, assistantMessage])
+        // Handle streaming response
+        if (
+          response.headers.get('content-type')?.includes('text/event-stream')
+        ) {
+          const reader = response.body?.getReader()
+          if (!reader) {
+            throw new Error('No response body reader')
+          }
 
-        try {
-          while (true) {
-            const { done, value } = await reader.read()
-            if (done) break
+          const decoder = new TextDecoder()
+          const assistantMessage: ChatMessage = {
+            role: 'assistant',
+            content: '',
+            timestamp: new Date().toISOString(),
+          }
 
-            const chunk = decoder.decode(value)
-            const lines = chunk.split('\n')
+          // Add empty assistant message that will be updated
+          setMessages(prev => [...prev, assistantMessage])
 
-            for (const line of lines) {
-              if (line.startsWith('data: ')) {
-                const data = line.slice(6)
-                if (data === '[DONE]') {
-                  setIsLoading(false)
-                  return
-                }
+          try {
+            while (true) {
+              const { done, value } = await reader.read()
+              if (done) break
 
-                try {
-                  const parsed: StreamingChatResponse = JSON.parse(data)
-                  
-                  if (parsed.error) {
-                    throw new Error(parsed.error)
-                  }
+              const chunk = decoder.decode(value)
+              const lines = chunk.split('\n')
 
-                  if (parsed.chunk) {
-                    assistantMessage.content += parsed.chunk
-                    assistantMessage.model = parsed.model
-                    
-                    // Update the assistant message
-                    setMessages(prev => {
-                      const newMessages = [...prev]
-                      newMessages[newMessages.length - 1] = { ...assistantMessage }
-                      return newMessages
-                    })
-
-                    options.onChunk?.(parsed.chunk)
-                  }
-
-                  if (parsed.done) {
-                    if (parsed.usage) {
-                      assistantMessage.model = parsed.model
-                    }
-                    options.onComplete?.(parsed)
+              for (const line of lines) {
+                if (line.startsWith('data: ')) {
+                  const data = line.slice(6)
+                  if (data === '[DONE]') {
                     setIsLoading(false)
-                    break
+                    return
                   }
-                } catch (parseError) {
-                  console.error('Failed to parse streaming data:', parseError)
+
+                  try {
+                    const parsed: StreamingChatResponse = JSON.parse(data)
+
+                    if (parsed.error) {
+                      throw new Error(parsed.error)
+                    }
+
+                    if (parsed.chunk) {
+                      assistantMessage.content += parsed.chunk
+                      assistantMessage.model = parsed.model
+
+                      // Update the assistant message
+                      setMessages(prev => {
+                        const newMessages = [...prev]
+                        newMessages[newMessages.length - 1] = {
+                          ...assistantMessage,
+                        }
+                        return newMessages
+                      })
+
+                      options.onChunk?.(parsed.chunk)
+                    }
+
+                    if (parsed.done) {
+                      if (parsed.usage) {
+                        assistantMessage.model = parsed.model
+                      }
+                      options.onComplete?.(parsed)
+                      setIsLoading(false)
+                      break
+                    }
+                  } catch (parseError) {
+                    console.error('Failed to parse streaming data:', parseError)
+                  }
                 }
               }
             }
+          } finally {
+            reader.releaseLock()
           }
-        } finally {
-          reader.releaseLock()
-        }
-      } else {
-        // Handle regular response
-        const responseData: ChatResponse = await response.json()
-        
-        const assistantMessage: ChatMessage = {
-          role: 'assistant',
-          content: responseData.content,
-          timestamp: new Date().toISOString(),
-          model: responseData.model,
-        }
+        } else {
+          // Handle regular response
+          const responseData: ChatResponse = await response.json()
 
-        setMessages(prev => [...prev, assistantMessage])
-        options.onComplete?.(responseData)
-      }
-    } catch (err) {
-      if (err instanceof Error) {
-        if (err.name === 'AbortError') {
-          console.log('Request aborted')
-          return
+          const assistantMessage: ChatMessage = {
+            role: 'assistant',
+            content: responseData.content,
+            timestamp: new Date().toISOString(),
+            model: responseData.model,
+          }
+
+          setMessages(prev => [...prev, assistantMessage])
+          options.onComplete?.(responseData)
         }
-        
-        setError(err.message)
-        options.onError?.(err)
-      } else {
-        const errorMessage = 'An unknown error occurred'
-        setError(errorMessage)
-        options.onError?.(new Error(errorMessage))
+      } catch (err) {
+        if (err instanceof Error) {
+          if (err.name === 'AbortError') {
+            console.log('Request aborted')
+            return
+          }
+
+          setError(err.message)
+          options.onError?.(err)
+        } else {
+          const errorMessage = 'An unknown error occurred'
+          setError(errorMessage)
+          options.onError?.(new Error(errorMessage))
+        }
+      } finally {
+        setIsLoading(false)
+        abortControllerRef.current = null
       }
-    } finally {
-      setIsLoading(false)
-      abortControllerRef.current = null
-    }
-  }, [messages, isLoading, options])
+    },
+    [messages, isLoading, options]
+  )
 
   return {
     messages,
@@ -239,7 +254,8 @@ export function useAIModels() {
         throw new Error(data.error)
       }
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch models'
+      const errorMessage =
+        err instanceof Error ? err.message : 'Failed to fetch models'
       setError(errorMessage)
     } finally {
       setIsLoading(false)

@@ -1,18 +1,25 @@
 // 환경 변수 유틸리티 및 검증
 export const env = {
-  // AI API Keys
-  GOOGLE_AI_API_KEY: process.env.GOOGLE_AI_API_KEY,
-  OPENAI_API_KEY: process.env.OPENAI_API_KEY,
-  ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY,
+  // AI API Keys (서버 사이드 전용)
+  GOOGLE_AI_API_KEY:
+    typeof window === 'undefined' ? process.env.GOOGLE_AI_API_KEY : undefined,
+  OPENAI_API_KEY:
+    typeof window === 'undefined' ? process.env.OPENAI_API_KEY : undefined,
+  ANTHROPIC_API_KEY:
+    typeof window === 'undefined' ? process.env.ANTHROPIC_API_KEY : undefined,
 
   // Database
   NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
   NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-  SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
+  SUPABASE_SERVICE_ROLE_KEY:
+    typeof window === 'undefined'
+      ? process.env.SUPABASE_SERVICE_ROLE_KEY
+      : undefined,
 
   // Next.js
   NODE_ENV: process.env.NODE_ENV as 'development' | 'production' | 'test',
-  VERCEL_URL: process.env.VERCEL_URL,
+  VERCEL_URL:
+    typeof window === 'undefined' ? process.env.VERCEL_URL : undefined,
 
   // Development
   NEXT_PUBLIC_API_TOKEN: process.env.NEXT_PUBLIC_API_TOKEN || 'demo-token',
