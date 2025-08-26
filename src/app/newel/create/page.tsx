@@ -133,6 +133,10 @@ export default function CreateBotPage() {
     try {
       setLoading(true)
 
+      // Get current user (fallback to default for testing)
+      const { data: { user } } = await supabase.auth.getUser()
+      const userId = user?.id || 'afd2a12c-75a5-4914-812e-5eedc4fd3a3d'
+
       // Create custom bot
       const { data: botData, error: botError } = await supabase
         .from('custom_bots')
@@ -140,7 +144,7 @@ export default function CreateBotPage() {
           name: botName,
           description: botDescription,
           is_public: isPublic,
-          user_id: 'afd2a12c-75a5-4914-812e-5eedc4fd3a3d',
+          user_id: userId,
           avatar: botAvatar,
           tags: botTags,
           instructions: instructions,
@@ -201,11 +205,9 @@ export default function CreateBotPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      {/* Header */}
-      <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="py-6">
+    <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
+        <div className="px-6 py-6">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-4">
                 <button
@@ -259,14 +261,14 @@ export default function CreateBotPage() {
         </div>
       </div>
 
-      {/* Content */}
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <motion.div
-          key={step}
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          exit={{ opacity: 0, x: -20 }}
-          className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-8"
+      <div className="flex-1 overflow-y-auto p-6">
+        <div className="max-w-4xl mx-auto">
+          <motion.div
+            key={step}
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+            className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-8"
         >
           {step === 1 && (
             <div className="space-y-8">
@@ -584,7 +586,8 @@ export default function CreateBotPage() {
               </div>
             </div>
           )}
-        </motion.div>
+          </motion.div>
+        </div>
       </div>
     </div>
   )

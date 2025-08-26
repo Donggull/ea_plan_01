@@ -48,7 +48,7 @@ export async function PUT(
       is_public
     } = body
 
-    const updateData: any = {
+    const updateData: Record<string, unknown> = {
       updated_at: new Date().toISOString()
     }
 

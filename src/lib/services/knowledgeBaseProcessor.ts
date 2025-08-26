@@ -1,6 +1,5 @@
 import OpenAI from 'openai'
 import { supabase } from '@/lib/supabase'
-import DocumentProcessor from './documentProcessor'
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY || 'dummy-key-for-build',
@@ -132,7 +131,7 @@ export class KnowledgeBaseProcessor {
         throw new Error('OpenAI API key is not configured')
       }
 
-      const updateData: any = {
+      const updateData: Record<string, unknown> = {
         ...updates,
         updated_at: new Date().toISOString(),
       }
@@ -363,7 +362,7 @@ export class KnowledgeBaseProcessor {
     }
   }
 
-  private static chunkContent(content: string, fileName: string): string[] {
+  private static chunkContent(content: string, _fileName: string): string[] {
     if (content.length <= this.CHUNK_SIZE) {
       return [content]
     }

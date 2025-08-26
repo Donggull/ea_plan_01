@@ -26,9 +26,14 @@
       "Bash(npx eslint:*)",
       "Bash(killall:*)",
       "mcp__github-mcp__git-log",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(sed:*)",
+      "Bash(node:*)"
     ],
     "deny": [],
-    "ask": []
+    "ask": [],
+    "additionalDirectories": [
+      "D:\\"
+    ]
   }
 }

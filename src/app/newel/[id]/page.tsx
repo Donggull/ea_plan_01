@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { motion } from 'framer-motion'
 import { useParams, useRouter } from 'next/navigation'
 import {
@@ -11,7 +11,6 @@ import {
   ShareIcon,
   HeartIcon,
   DocumentTextIcon,
-  SparklesIcon,
   UserIcon,
   TrashIcon,
 } from '@heroicons/react/24/outline'
@@ -68,7 +67,7 @@ export default function ChatBotPage() {
       loadBot(params.id as string)
       loadKnowledgeBase(params.id as string)
     }
-  }, [params?.id])
+  }, [params?.id, loadBot, loadKnowledgeBase])
 
   useEffect(() => {
     scrollToBottom()
@@ -78,7 +77,7 @@ export default function ChatBotPage() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }
 
-  const loadBot = async (botId: string) => {
+  const loadBot = useCallback(async (botId: string) => {
     try {
       setLoading(true)
       
@@ -111,16 +110,16 @@ export default function ChatBotPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [router])
 
-  const loadKnowledgeBase = async (botId: string) => {
+  const loadKnowledgeBase = useCallback(async (botId: string) => {
     try {
       const knowledgeBaseData = await KnowledgeBaseProcessor.getKnowledgeBase(botId)
       setKnowledgeBase(knowledgeBaseData)
     } catch (error) {
       console.error('Failed to load knowledge base:', error)
     }
-  }
+  }, [])
 
   const handleSendMessage = async () => {
     if (!inputMessage.trim() || sending || !bot) return

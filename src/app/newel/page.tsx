@@ -47,14 +47,18 @@ export default function NewelPage() {
     try {
       setLoading(true)
       
+      // Get current user (fallback to default for testing)
+      const { data: { user } } = await supabase.auth.getUser()
+      const userId = user?.id || 'afd2a12c-75a5-4914-812e-5eedc4fd3a3d'
+      
       // Load my bots
       const { data: myBotsData, error: myBotsError } = await supabase
         .from('custom_bots')
         .select(`
           *,
-          knowledge_base!inner(count)
+          knowledge_base(count)
         `)
-        .eq('user_id', 'afd2a12c-75a5-4914-812e-5eedc4fd3a3d')
+        .eq('user_id', userId)
         .order('updated_at', { ascending: false })
 
       if (myBotsError) {
@@ -62,6 +66,7 @@ export default function NewelPage() {
       } else {
         setMyBots(myBotsData || [])
       }
+
 
       // Load public bots
       const { data: publicBotsData, error: publicBotsError } = await supabase
@@ -187,80 +192,79 @@ export default function NewelPage() {
   )
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="flex-1 flex flex-col overflow-hidden">
       {/* Header */}
-      <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="py-8">
-            <div className="flex items-center justify-between">
-              <div>
-                <h1 className="text-3xl font-bold text-gray-900 dark:text-white flex items-center space-x-3">
-                  <CpuChipIcon className="w-8 h-8 text-blue-600" />
-                  <span>뉴엘 - 커스텀 챗봇</span>
-                </h1>
-                <p className="mt-2 text-gray-600 dark:text-gray-400">
-                  나만의 지식베이스로 특화된 AI 어시스턴트를 만들어보세요
-                </p>
-              </div>
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={handleCreateBot}
-                className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl font-medium transition-colors"
+      <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
+        <div className="px-6 py-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-white flex items-center space-x-3">
+                <CpuChipIcon className="w-8 h-8 text-blue-600" />
+                <span>뉴엘 - 커스텀 챗봇</span>
+              </h1>
+              <p className="mt-2 text-gray-600 dark:text-gray-400">
+                나만의 지식베이스로 특화된 AI 어시스턴트를 만들어보세요
+              </p>
+            </div>
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={handleCreateBot}
+              className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl font-medium transition-colors"
+            >
+              <PlusIcon className="w-5 h-5" />
+              <span>새 챗봇 만들기</span>
+            </motion.button>
+          </div>
+
+          {/* Search and Tabs */}
+          <div className="mt-8 flex items-center justify-between">
+            <div className="flex space-x-1 bg-gray-100 dark:bg-gray-700 rounded-xl p-1">
+              <button
+                onClick={() => setActiveTab('my-bots')}
+                className={`px-6 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  activeTab === 'my-bots'
+                    ? 'bg-white dark:bg-gray-600 text-gray-900 dark:text-white shadow-sm'
+                    : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'
+                }`}
               >
-                <PlusIcon className="w-5 h-5" />
-                <span>새 챗봇 만들기</span>
-              </motion.button>
+                내 챗봇 ({myBots.length})
+              </button>
+              <button
+                onClick={() => setActiveTab('public-bots')}
+                className={`px-6 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  activeTab === 'public-bots'
+                    ? 'bg-white dark:bg-gray-600 text-gray-900 dark:text-white shadow-sm'
+                    : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'
+                }`}
+              >
+                공개 챗봇 ({publicBots.length})
+              </button>
             </div>
 
-            {/* Search and Tabs */}
-            <div className="mt-8 flex items-center justify-between">
-              <div className="flex space-x-1 bg-gray-100 dark:bg-gray-700 rounded-xl p-1">
-                <button
-                  onClick={() => setActiveTab('my-bots')}
-                  className={`px-6 py-2 rounded-lg text-sm font-medium transition-colors ${
-                    activeTab === 'my-bots'
-                      ? 'bg-white dark:bg-gray-600 text-gray-900 dark:text-white shadow-sm'
-                      : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'
-                  }`}
-                >
-                  내 챗봇 ({myBots.length})
-                </button>
-                <button
-                  onClick={() => setActiveTab('public-bots')}
-                  className={`px-6 py-2 rounded-lg text-sm font-medium transition-colors ${
-                    activeTab === 'public-bots'
-                      ? 'bg-white dark:bg-gray-600 text-gray-900 dark:text-white shadow-sm'
-                      : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'
-                  }`}
-                >
-                  공개 챗봇 ({publicBots.length})
-                </button>
-              </div>
-
-              <div className="relative">
-                <MagnifyingGlassIcon className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="챗봇 검색..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10 pr-4 py-3 w-80 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-              </div>
+            <div className="relative">
+              <MagnifyingGlassIcon className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+              <input
+                type="text"
+                placeholder="챗봇 검색..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10 pr-4 py-3 w-80 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
             </div>
           </div>
         </div>
       </div>
 
       {/* Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="flex-1 overflow-y-auto p-6">
         {loading ? (
           <div className="flex items-center justify-center py-12">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="max-w-7xl mx-auto">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {activeTab === 'my-bots' ? (
               filteredBots(myBots).length > 0 ? (
                 filteredBots(myBots).map(bot => (
@@ -303,6 +307,7 @@ export default function NewelPage() {
                 </div>
               )
             )}
+            </div>
           </div>
         )}
       </div>

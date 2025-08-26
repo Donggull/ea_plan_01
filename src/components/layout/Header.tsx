@@ -80,7 +80,7 @@ export default function Header({ onMenuToggle }: HeaderProps) {
 
           {/* Center - Main Navigation */}
           <nav className="hidden lg:flex items-center space-x-8">
-            {mainNavigation.map((item, index) => {
+            {mainNavigation.map((item, _index) => {
               const Icon = item.icon
               const isActive = pathname === item.href
               const isProjectMenu = item.name === '프로젝트'

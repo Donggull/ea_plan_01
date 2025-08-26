@@ -5,7 +5,9 @@ export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams
     const isPublic = searchParams.get('public') === 'true'
-    const userId = searchParams.get('userId') || 'afd2a12c-75a5-4914-812e-5eedc4fd3a3d'
+    // Get authenticated user (fallback to default for testing)
+    const { data: { user } } = await supabase.auth.getUser()
+    const userId = user?.id || 'afd2a12c-75a5-4914-812e-5eedc4fd3a3d'
     const search = searchParams.get('search')
     const limit = parseInt(searchParams.get('limit') || '20')
 
@@ -52,6 +54,10 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    // Get authenticated user (fallback to default for testing)
+    const { data: { user } } = await supabase.auth.getUser()
+    const userId = user?.id || 'afd2a12c-75a5-4914-812e-5eedc4fd3a3d'
+
     const body = await request.json()
     const {
       name,
@@ -59,8 +65,7 @@ export async function POST(request: NextRequest) {
       avatar,
       tags,
       instructions,
-      is_public = false,
-      user_id = 'afd2a12c-75a5-4914-812e-5eedc4fd3a3d'
+      is_public = false
     } = body
 
     if (!name || !description) {
@@ -79,7 +84,7 @@ export async function POST(request: NextRequest) {
         tags,
         instructions,
         is_public,
-        user_id,
+        user_id: userId,
         usage_count: 0,
         like_count: 0,
         is_active: true,
