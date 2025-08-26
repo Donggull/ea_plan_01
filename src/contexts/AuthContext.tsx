@@ -181,44 +181,32 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
         if (sessionError) {
           console.error('Error getting session:', sessionError)
-          // 개발 환경에서는 기본 사용자 설정
-          if (process.env.NODE_ENV === 'development') {
-            const defaultUserId = 'afd2a12c-75a5-4914-812e-5eedc4fd3a3d'
-            const mockUser = {
-              id: defaultUserId,
-              email: 'dg.an@eluocnc.com',
-              user_metadata: {
-                name: '안동균',
-              },
-            } as User
-
-            setUser(mockUser)
-            await fetchUserProfile(defaultUserId)
-            setLoading(false)
-            return
-          }
           setError(sessionError.message)
-          return
         }
 
         if (isMounted) {
           if (session) {
+            console.log('Session found:', session.user.email)
             setSession(session)
             setUser(session.user)
             await fetchUserProfile(session.user.id)
-          } else if (process.env.NODE_ENV === 'development') {
-            // 개발 환경에서 세션이 없을 때 기본 사용자 설정
-            const defaultUserId = 'afd2a12c-75a5-4914-812e-5eedc4fd3a3d'
-            const mockUser = {
-              id: defaultUserId,
-              email: 'dg.an@eluocnc.com',
-              user_metadata: {
-                name: '안동균',
-              },
-            } as User
+          } else {
+            console.log('No session found')
+            // 개발 환경에서 세션이 없을 때만 기본 사용자 설정
+            if (process.env.NODE_ENV === 'development') {
+              console.log('Using default user in dev mode')
+              const defaultUserId = 'afd2a12c-75a5-4914-812e-5eedc4fd3a3d'
+              const mockUser = {
+                id: defaultUserId,
+                email: 'dg.an@eluocnc.com',
+                user_metadata: {
+                  name: '안동균',
+                },
+              } as User
 
-            setUser(mockUser)
-            await fetchUserProfile(defaultUserId)
+              setUser(mockUser)
+              await fetchUserProfile(defaultUserId)
+            }
           }
         }
       } catch (err) {

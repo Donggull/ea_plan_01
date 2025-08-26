@@ -338,11 +338,6 @@ export default function DashboardPage() {
     </div>
   )
 
-  // 개발 환경에서는 인증 체크 없이 바로 렌더링
-  if (process.env.NODE_ENV === 'development') {
-    return content
-  }
-
-  // 프로덕션에서는 ProtectedRoute 사용
+  // 항상 ProtectedRoute를 사용하되, ProtectedRoute가 더 스마트하게 처리하도록
   return <ProtectedRoute>{content}</ProtectedRoute>
 }

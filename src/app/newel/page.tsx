@@ -14,7 +14,7 @@ import {
   UserIcon,
 } from '@heroicons/react/24/outline'
 import { useRouter } from 'next/navigation'
-import { supabase } from '@/lib/supabase'
+import { createClientComponentClient } from '@/lib/supabase'
 
 interface CustomBot {
   id: string
@@ -40,6 +40,7 @@ export default function NewelPage() {
   const [activeTab, setActiveTab] = useState<'my-bots' | 'public-bots'>(
     'my-bots'
   )
+  const supabase = createClientComponentClient()
 
   useEffect(() => {
     // Add a small delay to ensure supabase client is ready
