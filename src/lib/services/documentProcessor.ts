@@ -2,7 +2,7 @@ import { supabase } from '@/lib/supabase'
 import OpenAI from 'openai'
 
 const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
+  apiKey: process.env.OPENAI_API_KEY || 'dummy-key-for-build',
 })
 
 export interface DocumentChunk {
@@ -367,6 +367,13 @@ export class DocumentProcessor {
     texts: string[]
   ): Promise<number[][]> {
     try {
+      // Check if OpenAI API key is available
+      if (
+        !process.env.OPENAI_API_KEY ||
+        process.env.OPENAI_API_KEY === 'dummy-key-for-build'
+      ) {
+        throw new Error('OpenAI API key is not configured')
+      }
       const response = await openai.embeddings.create({
         model: this.EMBEDDING_MODEL,
         input: texts,

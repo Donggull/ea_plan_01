@@ -3,7 +3,7 @@ import VectorSearch, { SearchResult, SearchOptions } from './vectorSearch'
 // import DocumentProcessor from './documentProcessor' // Currently unused
 
 const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
+  apiKey: process.env.OPENAI_API_KEY || 'dummy-key-for-build',
 })
 
 export interface RAGQuery {
@@ -50,6 +50,14 @@ export class RAGService {
    */
   static async query(ragQuery: RAGQuery): Promise<RAGResponse> {
     try {
+      // Check if OpenAI API key is available
+      if (
+        !process.env.OPENAI_API_KEY ||
+        process.env.OPENAI_API_KEY === 'dummy-key-for-build'
+      ) {
+        throw new Error('OpenAI API key is not configured')
+      }
+
       const {
         query,
         context = '',
@@ -211,6 +219,19 @@ export class RAGService {
 
   private static async expandQuery(query: string): Promise<QueryExpansion> {
     try {
+      // Check if OpenAI API key is available
+      if (
+        !process.env.OPENAI_API_KEY ||
+        process.env.OPENAI_API_KEY === 'dummy-key-for-build'
+      ) {
+        // Return fallback expansion without API call
+        return {
+          originalQuery: query,
+          expandedQueries: [query],
+          keywords: query.split(/\s+/).filter(word => word.length > 2),
+          intent: 'general_inquiry',
+        }
+      }
       const systemPrompt = `You are a query expansion expert. Analyze the user's query and provide:
 1. Alternative ways to phrase the same question
 2. Key keywords that would help find relevant information
@@ -330,6 +351,13 @@ Return your response in this JSON format:
     choices: Array<{ message?: { content?: string } }>
     usage?: { total_tokens?: number }
   }> {
+    // Check if OpenAI API key is available
+    if (
+      !process.env.OPENAI_API_KEY ||
+      process.env.OPENAI_API_KEY === 'dummy-key-for-build'
+    ) {
+      throw new Error('OpenAI API key is not configured')
+    }
     const systemPrompt = `You are a knowledgeable AI assistant. Use the provided context to answer the user's question accurately and comprehensively.
 
 Guidelines:
@@ -394,6 +422,13 @@ ${additionalContext ? `Additional Context:\n${additionalContext}\n` : ''}`
     _query: string,
     model: string
   ): Promise<RAGResponse> {
+    // Check if OpenAI API key is available
+    if (
+      !process.env.OPENAI_API_KEY ||
+      process.env.OPENAI_API_KEY === 'dummy-key-for-build'
+    ) {
+      throw new Error('OpenAI API key is not configured')
+    }
     const completion = await openai.chat.completions.create({
       model,
       messages: [
