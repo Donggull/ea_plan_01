@@ -15,6 +15,7 @@ import {
   UserIcon,
 } from '@heroicons/react/24/outline'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { createClientComponentClient } from '@/lib/supabase'
 
 interface CustomBot {
@@ -251,14 +252,27 @@ export default function NewelPage() {
     router.push('/newel/create')
   }
 
-  const handleBotClick = (botId: string) => {
-    console.log('Clicking bot with ID:', botId)
+  const handleBotClick = (
+    e: React.MouseEvent,
+    botId: string,
+    botName: string
+  ) => {
+    e.preventDefault()
+    console.log('BotCard clicked:', {
+      id: botId,
+      name: botName,
+      timestamp: new Date().toISOString(),
+    })
+
+    // 직접 네비게이션
+    const targetUrl = `/newel/${botId}`
+    console.log('Navigating to:', targetUrl)
+
     try {
-      router.push(`/newel/${botId}`)
+      router.push(targetUrl)
     } catch (error) {
-      console.error('Navigation error:', error)
-      // Fallback to direct navigation
-      window.location.href = `/newel/${botId}`
+      console.error('Router navigation failed, using fallback:', error)
+      window.location.href = targetUrl
     }
   }
 
@@ -269,117 +283,103 @@ export default function NewelPage() {
     bot: CustomBot
     isPublic?: boolean
   }) => (
-    <motion.div
-      key={bot.id}
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      whileHover={{ y: -2, boxShadow: '0 10px 25px rgba(0, 0, 0, 0.1)' }}
-      className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 cursor-pointer transition-all duration-200 hover:border-blue-300 dark:hover:border-blue-600"
-      onClick={e => {
-        e.preventDefault()
-        e.stopPropagation()
-        console.log('BotCard clicked for bot:', bot.id, bot.name)
-        handleBotClick(bot.id)
-      }}
-      role="button"
-      tabIndex={0}
-      onKeyDown={e => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault()
-          handleBotClick(bot.id)
-        }
-      }}
-    >
-      <div className="flex items-start justify-between mb-4">
-        <div className="flex items-center space-x-3">
-          <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center">
-            {bot.metadata?.avatar ? (
-              <span className="text-xl">{bot.metadata.avatar}</span>
-            ) : (
-              <CpuChipIcon className="w-6 h-6 text-white" />
-            )}
-          </div>
-          <div>
-            <div className="flex items-center space-x-2">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                {bot.name}
-              </h3>
-              <div
-                className={`px-2 py-1 rounded text-xs font-medium text-white ${
-                  bot.metadata?.preferred_model === 'gemini'
-                    ? 'bg-blue-500'
-                    : bot.metadata?.preferred_model === 'gpt'
-                      ? 'bg-green-500'
-                      : bot.metadata?.preferred_model === 'claude'
-                        ? 'bg-purple-500'
-                        : 'bg-gray-500'
-                }`}
-              >
-                {(bot.metadata?.preferred_model || 'gemini').toUpperCase()}
-              </div>
+    <div className="group bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 transition-all duration-200 hover:border-blue-300 dark:hover:border-blue-600 hover:-translate-y-1 hover:shadow-lg">
+      <Link
+        href={`/newel/${bot.id}`}
+        className="block w-full h-full"
+        onClick={e => handleBotClick(e, bot.id, bot.name)}
+      >
+        <div className="flex items-start justify-between mb-4">
+          <div className="flex items-center space-x-3">
+            <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center">
+              {bot.metadata?.avatar ? (
+                <span className="text-xl">{bot.metadata.avatar}</span>
+              ) : (
+                <CpuChipIcon className="w-6 h-6 text-white" />
+              )}
             </div>
+            <div>
+              <div className="flex items-center space-x-2">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                  {bot.name}
+                </h3>
+                <div
+                  className={`px-2 py-1 rounded text-xs font-medium text-white ${
+                    bot.metadata?.preferred_model === 'gemini'
+                      ? 'bg-blue-500'
+                      : bot.metadata?.preferred_model === 'gpt'
+                        ? 'bg-green-500'
+                        : bot.metadata?.preferred_model === 'claude'
+                          ? 'bg-purple-500'
+                          : 'bg-gray-500'
+                  }`}
+                >
+                  {(bot.metadata?.preferred_model || 'gemini').toUpperCase()}
+                </div>
+              </div>
+              {isPublic && (
+                <div className="flex items-center space-x-2 text-sm text-gray-500 dark:text-gray-400">
+                  <UserIcon className="w-4 h-4" />
+                  <span>Creator</span>
+                </div>
+              )}
+            </div>
+          </div>
+          <div className="flex items-center space-x-2">
+            {bot.is_public && (
+              <GlobeAltIcon
+                className="w-5 h-5 text-green-500"
+                title="공개 챗봇"
+              />
+            )}
             {isPublic && (
-              <div className="flex items-center space-x-2 text-sm text-gray-500 dark:text-gray-400">
-                <UserIcon className="w-4 h-4" />
-                <span>Creator</span>
+              <div className="flex items-center space-x-1 text-red-500">
+                <HeartIcon className="w-4 h-4" />
+                <span className="text-sm">{bot.like_count || 0}</span>
               </div>
             )}
           </div>
         </div>
-        <div className="flex items-center space-x-2">
-          {bot.is_public && (
-            <GlobeAltIcon
-              className="w-5 h-5 text-green-500"
-              title="공개 챗봇"
-            />
-          )}
-          {isPublic && (
-            <div className="flex items-center space-x-1 text-red-500">
-              <HeartIcon className="w-4 h-4" />
-              <span className="text-sm">{bot.like_count || 0}</span>
+
+        <p className="text-gray-600 dark:text-gray-300 text-sm mb-4 line-clamp-3">
+          {bot.description}
+        </p>
+
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-4 text-sm text-gray-500 dark:text-gray-400">
+            <div className="flex items-center space-x-1">
+              <DocumentTextIcon className="w-4 h-4" />
+              <span>{bot.knowledge_base_count || 0}개 문서</span>
             </div>
-          )}
-        </div>
-      </div>
-
-      <p className="text-gray-600 dark:text-gray-300 text-sm mb-4 line-clamp-3">
-        {bot.description}
-      </p>
-
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-4 text-sm text-gray-500 dark:text-gray-400">
-          <div className="flex items-center space-x-1">
-            <DocumentTextIcon className="w-4 h-4" />
-            <span>{bot.knowledge_base_count || 0}개 문서</span>
+            <div className="flex items-center space-x-1">
+              <SparklesIcon className="w-4 h-4" />
+              <span>{bot.usage_count || 0}회 사용</span>
+            </div>
           </div>
           <div className="flex items-center space-x-1">
-            <SparklesIcon className="w-4 h-4" />
-            <span>{bot.usage_count || 0}회 사용</span>
+            <ShareIcon className="w-4 h-4 text-gray-400" />
           </div>
         </div>
-        <div className="flex items-center space-x-1">
-          <ShareIcon className="w-4 h-4 text-gray-400" />
-        </div>
-      </div>
 
-      {bot.tags && bot.tags.length > 0 && (
-        <div className="mt-3 flex flex-wrap gap-2">
-          {bot.tags.slice(0, 3).map((tag, index) => (
-            <span
-              key={index}
-              className="px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 text-xs rounded-full"
-            >
-              {tag}
-            </span>
-          ))}
-          {bot.tags.length > 3 && (
-            <span className="text-xs text-gray-500 dark:text-gray-400">
-              +{bot.tags.length - 3} more
-            </span>
-          )}
-        </div>
-      )}
-    </motion.div>
+        {bot.tags && bot.tags.length > 0 && (
+          <div className="mt-3 flex flex-wrap gap-2">
+            {bot.tags.slice(0, 3).map((tag, index) => (
+              <span
+                key={index}
+                className="px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 text-xs rounded-full"
+              >
+                {tag}
+              </span>
+            ))}
+            {bot.tags.length > 3 && (
+              <span className="text-xs text-gray-500 dark:text-gray-400">
+                +{bot.tags.length - 3} more
+              </span>
+            )}
+          </div>
+        )}
+      </Link>
+    </div>
   )
 
   return (
@@ -499,14 +499,9 @@ export default function NewelPage() {
               {activeTab === 'my-bots' ? (
                 filteredBots(myBots).length > 0 ? (
                   filteredBots(myBots).map((bot, index) => (
-                    <motion.div
-                      key={bot.id}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: index * 0.1 }}
-                    >
+                    <div key={bot.id}>
                       <BotCard bot={bot} />
-                    </motion.div>
+                    </div>
                   ))
                 ) : (
                   <motion.div
@@ -537,14 +532,9 @@ export default function NewelPage() {
                 )
               ) : filteredBots(publicBots).length > 0 ? (
                 filteredBots(publicBots).map((bot, index) => (
-                  <motion.div
-                    key={bot.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.1 }}
-                  >
+                  <div key={bot.id}>
                     <BotCard bot={bot} isPublic />
-                  </motion.div>
+                  </div>
                 ))
               ) : (
                 <motion.div
