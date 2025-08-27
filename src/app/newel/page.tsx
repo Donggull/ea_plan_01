@@ -257,23 +257,15 @@ export default function NewelPage() {
     botId: string,
     botName: string
   ) => {
-    e.preventDefault()
+    // e.preventDefault() 제거 - Link 컴포넌트의 기본 네비게이션 허용
     console.log('BotCard clicked:', {
       id: botId,
       name: botName,
       timestamp: new Date().toISOString(),
+      targetUrl: `/newel/${botId}`,
     })
 
-    // 직접 네비게이션
-    const targetUrl = `/newel/${botId}`
-    console.log('Navigating to:', targetUrl)
-
-    try {
-      router.push(targetUrl)
-    } catch (error) {
-      console.error('Router navigation failed, using fallback:', error)
-      window.location.href = targetUrl
-    }
+    // Link 컴포넌트가 자연스럽게 네비게이션하도록 둠
   }
 
   const BotCard = ({
