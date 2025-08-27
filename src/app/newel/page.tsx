@@ -252,7 +252,14 @@ export default function NewelPage() {
   }
 
   const handleBotClick = (botId: string) => {
-    router.push(`/newel/${botId}`)
+    console.log('Clicking bot with ID:', botId)
+    try {
+      router.push(`/newel/${botId}`)
+    } catch (error) {
+      console.error('Navigation error:', error)
+      // Fallback to direct navigation
+      window.location.href = `/newel/${botId}`
+    }
   }
 
   const BotCard = ({
@@ -268,7 +275,20 @@ export default function NewelPage() {
       animate={{ opacity: 1, y: 0 }}
       whileHover={{ y: -2, boxShadow: '0 10px 25px rgba(0, 0, 0, 0.1)' }}
       className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 cursor-pointer transition-all duration-200 hover:border-blue-300 dark:hover:border-blue-600"
-      onClick={() => handleBotClick(bot.id)}
+      onClick={e => {
+        e.preventDefault()
+        e.stopPropagation()
+        console.log('BotCard clicked for bot:', bot.id, bot.name)
+        handleBotClick(bot.id)
+      }}
+      role="button"
+      tabIndex={0}
+      onKeyDown={e => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault()
+          handleBotClick(bot.id)
+        }
+      }}
     >
       <div className="flex items-start justify-between mb-4">
         <div className="flex items-center space-x-3">
