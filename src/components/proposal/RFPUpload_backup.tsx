@@ -12,8 +12,6 @@ import {
   SparklesIcon,
   InformationCircleIcon,
   EyeIcon,
-  PlayIcon,
-  TrashIcon,
 } from '@heroicons/react/24/outline'
 import FilePreview from './FilePreview'
 
@@ -71,7 +69,7 @@ export default function RFPUpload({ onUpload, projectId }: RFPUploadProps) {
   const [analysisProgress, setAnalysisProgress] = useState(0)
   const [selectedModel, setSelectedModel] = useState<string>('gemini')
 
-  // 프로젝트 설정
+  // 새로운 상태들 추가
   const [customPrompt, setCustomPrompt] = useState('')
   const [guidelines, setGuidelines] = useState<ProjectContext['guidelines']>([])
   const [analysisInstructions, setAnalysisInstructions] = useState('')
@@ -96,7 +94,7 @@ export default function RFPUpload({ onUpload, projectId }: RFPUploadProps) {
     textContent: string
   } | null>(null)
 
-  const aiModels: AIModel[] = [
+  const _aiModels: AIModel[] = [
     {
       id: 'gemini',
       name: 'Google Gemini',
@@ -187,17 +185,33 @@ export default function RFPUpload({ onUpload, projectId }: RFPUploadProps) {
           formData.append('file', file)
           formData.append('projectId', projectId)
 
+          console.log('=== RFP Upload Request ===')
+          console.log('File info:', {
+            name: file.name,
+            size: file.size,
+            type: file.type,
+            lastModified: file.lastModified,
+          })
+
+          console.log('Sending request to /api/proposal/upload-rfp')
           const uploadResponse = await fetch('/api/proposal/upload-rfp', {
             method: 'POST',
             body: formData,
           })
 
+          console.log('=== Upload Response ===')
+          console.log('Status:', uploadResponse.status)
+          console.log('Status Text:', uploadResponse.statusText)
+
           if (!uploadResponse.ok) {
             const errorText = await uploadResponse.text()
+            console.error('Upload error response:', errorText)
+
             let errorData
             try {
               errorData = JSON.parse(errorText)
             } catch (parseError) {
+              console.error('Failed to parse error response:', parseError)
               errorData = {
                 error: `HTTP ${uploadResponse.status}: ${uploadResponse.statusText}`,
                 details: errorText || 'No additional error details available',
@@ -213,6 +227,7 @@ export default function RFPUpload({ onUpload, projectId }: RFPUploadProps) {
           }
 
           const uploadResult = await uploadResponse.json()
+          console.log('Upload result:', uploadResult)
           const { textContent } = uploadResult
 
           // 업로드된 파일 정보 저장
@@ -232,8 +247,24 @@ export default function RFPUpload({ onUpload, projectId }: RFPUploadProps) {
         setUploadStatus('ready')
         setError(null)
       } catch (err) {
-        console.error('Upload error:', err)
+        console.error('=== Upload/Analysis Error ===')
+        console.error('Error object:', err)
+        console.error('Error type:', typeof err)
+        console.error(
+          'Error name:',
+          err instanceof Error ? err.name : 'Unknown'
+        )
+        console.error(
+          'Error message:',
+          err instanceof Error ? err.message : String(err)
+        )
+        console.error(
+          'Error stack:',
+          err instanceof Error ? err.stack : 'No stack trace'
+        )
+
         setUploadStatus('error')
+
         let errorMessage = '알 수 없는 오류가 발생했습니다.'
         if (err instanceof Error) {
           if (err.name === 'TypeError' && err.message.includes('fetch')) {
@@ -243,6 +274,7 @@ export default function RFPUpload({ onUpload, projectId }: RFPUploadProps) {
             errorMessage = err.message
           }
         }
+
         setError(errorMessage)
       }
     },
@@ -365,70 +397,51 @@ export default function RFPUpload({ onUpload, projectId }: RFPUploadProps) {
     setShowPreview(true)
   }
 
-  const getFileIcon = (fileType: string) => {
-    if (fileType.includes('pdf')) return '📄'
-    if (fileType.includes('word') || fileType.includes('document')) return '📝'
-    if (fileType.includes('text')) return '📃'
-    if (fileType.includes('hwp')) return '📋'
-    return '📄'
-  }
-
-  const formatFileSize = (bytes: number) => {
-    if (bytes < 1024) return `${bytes} B`
-    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
-    return `${(bytes / 1024 / 1024).toFixed(1)} MB`
+  const getStatusIcon = () => {
+    switch (uploadStatus) {
+      case 'uploading':
+        return (
+          <CloudArrowUpIcon className="w-8 h-8 text-blue-500 animate-pulse" />
+        )
+      case 'analyzing':
+        return (
+          <DocumentTextIcon className="w-8 h-8 text-indigo-500 animate-spin" />
+        )
+      case 'success':
+        return <CheckCircleIcon className="w-8 h-8 text-green-500" />
+      case 'error':
+        return <ExclamationTriangleIcon className="w-8 h-8 text-red-500" />
+      default:
+        return <DocumentTextIcon className="w-8 h-8 text-gray-400" />
+    }
   }
 
   const getStatusText = () => {
     switch (uploadStatus) {
       case 'uploading':
         return '파일 업로드 중...'
-      case 'ready':
-        return `${uploadedFiles.length}개 파일 업로드 완료 - 분석 준비됨`
       case 'analyzing':
-        return 'RFP 분석 진행 중...'
+        return `RFP 분석 중... (${Math.round(analysisProgress)}%)`
       case 'success':
-        return '분석 완료'
+        return 'RFP 분석 완료!'
       case 'error':
-        return '오류 발생'
+        return '오류가 발생했습니다'
       default:
-        return '파일을 업로드하세요'
-    }
-  }
-
-  const getStatusIcon = () => {
-    switch (uploadStatus) {
-      case 'uploading':
-        return (
-          <CloudArrowUpIcon className="w-12 h-12 text-blue-500 animate-pulse" />
-        )
-      case 'ready':
-        return <CheckCircleIcon className="w-12 h-12 text-green-500" />
-      case 'analyzing':
-        return <SparklesIcon className="w-12 h-12 text-blue-500 animate-spin" />
-      case 'success':
-        return <CheckCircleIcon className="w-12 h-12 text-green-500" />
-      case 'error':
-        return <ExclamationTriangleIcon className="w-12 h-12 text-red-500" />
-      default:
-        return <DocumentTextIcon className="w-12 h-12 text-gray-400" />
+        return 'RFP 문서를 업로드하세요'
     }
   }
 
   return (
     <div className="space-y-6">
-      {/* 헤더 */}
-      <div>
+      <div className="text-center mb-6">
         <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
           RFP 문서 업로드 및 프로젝트 설정
         </h3>
         <p className="text-sm text-gray-600 dark:text-gray-400">
-          RFP 문서를 업로드하고 맞춤형 분석을 위한 지침을 설정하세요 (여러 파일
-          업로드 지원)
+          RFP 문서를 업로드하고 맞춤형 분석을 위한 지침을 설정하세요
         </p>
       </div>
 
-      {/* 파일 업로드 영역 */}
       <div
         {...getRootProps()}
         className={`relative border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-all duration-200 ${
@@ -438,9 +451,7 @@ export default function RFPUpload({ onUpload, projectId }: RFPUploadProps) {
               ? 'border-red-300 bg-red-50 dark:bg-red-900/20'
               : uploadStatus === 'success'
                 ? 'border-green-300 bg-green-50 dark:bg-green-900/20'
-                : uploadStatus === 'ready'
-                  ? 'border-green-300 bg-green-50 dark:bg-green-900/20'
-                  : 'border-gray-300 dark:border-gray-700 hover:border-gray-400 dark:hover:border-gray-600'
+                : 'border-gray-300 dark:border-gray-700 hover:border-gray-400 dark:hover:border-gray-600'
         } ${uploadStatus === 'uploading' || uploadStatus === 'analyzing' ? 'pointer-events-none' : ''}`}
       >
         <input {...getInputProps()} />
@@ -457,13 +468,7 @@ export default function RFPUpload({ onUpload, projectId }: RFPUploadProps) {
               <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
                 {isDragActive
                   ? '파일을 여기에 드롭하세요'
-                  : '파일을 드래그하거나 클릭하여 선택하세요 (여러 파일 업로드 가능)'}
-              </p>
-            )}
-
-            {uploadStatus === 'ready' && (
-              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                추가 파일을 업로드하거나 아래에서 분석을 시작하세요
+                  : '파일을 드래그하거나 클릭하여 선택하세요'}
               </p>
             )}
           </div>
@@ -476,111 +481,60 @@ export default function RFPUpload({ onUpload, projectId }: RFPUploadProps) {
                   style={{ width: `${analysisProgress}%` }}
                 />
               </div>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                {analysisProgress.toFixed(0)}% 완료
-              </p>
             </div>
           )}
 
           {error && (
-            <div className="p-3 bg-red-100 dark:bg-red-900/20 border border-red-300 dark:border-red-800 rounded-lg max-w-md">
+            <div className="p-3 bg-red-100 dark:bg-red-900/20 border border-red-300 dark:border-red-800 rounded-lg">
               <p className="text-sm text-red-700 dark:text-red-300">{error}</p>
             </div>
           )}
         </div>
       </div>
 
-      {/* 업로드된 파일 목록 */}
-      {uploadedFiles.length > 0 && (
-        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
-          <div className="flex items-center justify-between mb-4">
-            <h4 className="text-lg font-medium text-gray-900 dark:text-white">
-              업로드된 문서 ({uploadedFiles.length}개)
-            </h4>
-            <div className="text-sm text-gray-500 dark:text-gray-400">
-              총 크기:{' '}
-              {formatFileSize(
-                uploadedFiles.reduce((acc, file) => acc + file.size, 0)
-              )}
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            {uploadedFiles.map(file => (
-              <div
-                key={file.id}
-                className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg"
-              >
-                <div className="flex items-center space-x-3">
-                  <span className="text-2xl">{getFileIcon(file.type)}</span>
-                  <div>
-                    <div className="text-sm font-medium text-gray-900 dark:text-white">
-                      {file.name}
-                    </div>
-                    <div className="text-xs text-gray-500 dark:text-gray-400">
-                      {formatFileSize(file.size)} •{' '}
-                      {file.uploadedAt.toLocaleString()}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex items-center space-x-2">
-                  <button
-                    onClick={() => previewFileContent(file)}
-                    className="p-2 text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400 transition-colors"
-                    title="미리보기"
-                  >
-                    <EyeIcon className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={() => removeFile(file.id)}
-                    className="p-2 text-gray-500 hover:text-red-600 dark:text-gray-400 dark:hover:text-red-400 transition-colors"
-                    title="삭제"
-                  >
-                    <TrashIcon className="w-4 h-4" />
-                  </button>
-                </div>
+      {uploadStatus === 'success' && uploadedFile && (
+        <div className="p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl">
+          <div className="flex items-start justify-between">
+            <div className="flex items-start space-x-3">
+              <CheckCircleIcon className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
+              <div>
+                <h4 className="font-medium text-green-800 dark:text-green-200">
+                  분석 완료
+                </h4>
+                <p className="text-sm text-green-600 dark:text-green-300 mt-1">
+                  RFP 문서가 성공적으로 분석되었습니다. 결과를 확인하고 필요시
+                  수정하세요.
+                </p>
               </div>
-            ))}
+            </div>
+            <button
+              onClick={() => setShowPreview(true)}
+              className="flex items-center space-x-2 px-3 py-2 text-sm bg-white dark:bg-gray-800 border border-green-200 dark:border-green-800 text-green-700 dark:text-green-300 rounded-lg hover:bg-green-50 dark:hover:bg-green-900/30 transition-colors"
+            >
+              <EyeIcon className="w-4 h-4" />
+              <span>파일 미리보기</span>
+            </button>
           </div>
         </div>
       )}
 
-      {/* AI 모델 선택 */}
-      {(uploadedFiles.length > 0 || showAdvancedOptions) && (
-        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
-          <div className="flex items-center space-x-2 mb-4">
-            <SparklesIcon className="w-5 h-5 text-purple-500" />
-            <h4 className="text-lg font-medium text-gray-900 dark:text-white">
-              AI 모델 선택
-            </h4>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {aiModels.map(model => (
-              <button
-                key={model.id}
-                onClick={() => setSelectedModel(model.id)}
-                className={`p-4 rounded-lg border-2 transition-all ${
-                  selectedModel === model.id
-                    ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
-                    : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
-                }`}
-              >
-                <div className="text-2xl mb-2">{model.icon}</div>
-                <div className="text-sm font-medium text-gray-900 dark:text-white">
-                  {model.name}
-                </div>
-                <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                  {model.description}
-                </div>
-              </button>
-            ))}
+      {/* 파일 미리보기 모달 */}
+      {showPreview && uploadedFile && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
+          <div className="w-full max-w-4xl max-h-[90vh] bg-white dark:bg-gray-800 rounded-xl shadow-xl">
+            <FilePreview
+              fileName={uploadedFile.name}
+              fileType={uploadedFile.type}
+              textContent={uploadedFile.textContent}
+              onClose={() => setShowPreview(false)}
+            />
           </div>
         </div>
       )}
 
-      {/* 커스텀 프롬프트 입력 */}
-      {(uploadedFiles.length > 0 || showAdvancedOptions) && (
+      {/* 프로젝트 설정 섹션 - 항상 표시 */}
+      <div className="space-y-6">
+        {/* 커스텀 프롬프트 입력 */}
         <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
           <div className="flex items-center space-x-2 mb-4">
             <SparklesIcon className="w-5 h-5 text-blue-500" />
@@ -599,64 +553,130 @@ export default function RFPUpload({ onUpload, projectId }: RFPUploadProps) {
             className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
           />
         </div>
-      )}
 
-      {/* 분석 시작 버튼 */}
-      {uploadStatus === 'ready' && (
-        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-xl p-6 border border-blue-200 dark:border-blue-800">
-          <div className="flex items-center justify-between">
-            <div>
-              <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                분석 준비 완료
+        {/* 프로젝트 지침 업로드/입력 */}
+        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center space-x-2">
+              <InformationCircleIcon className="w-5 h-5 text-green-500" />
+              <h4 className="text-lg font-medium text-gray-900 dark:text-white">
+                프로젝트 지침
               </h4>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
-                {uploadedFiles.length}개의 문서가 업로드되었습니다. 분석을
-                시작하시겠습니까?
-              </p>
             </div>
-            <button
-              onClick={handleStartAnalysis}
-              disabled={uploadedFiles.length === 0}
-              className="flex items-center space-x-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white rounded-lg font-medium transition-colors disabled:cursor-not-allowed"
+            <div className="flex space-x-2">
+              <button
+                onClick={() => setShowAdvancedOptions(!showAdvancedOptions)}
+                className="px-3 py-1 text-xs bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+              >
+                {showAdvancedOptions ? '간단히' : '고급 설정'}
+              </button>
+            </div>
+          </div>
+
+          {/* 지침 입력 영역 */}
+          <div className="space-y-4">
+            <div className="flex space-x-2">
+              <input
+                type="text"
+                value={newGuidelineText}
+                onChange={e => setNewGuidelineText(e.target.value)}
+                placeholder="프로젝트 지침을 입력하세요 (예: 반응형 디자인 필수, 접근성 준수)"
+                className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
+                onKeyPress={e => e.key === 'Enter' && addTextGuideline()}
+              />
+              <button
+                onClick={addTextGuideline}
+                disabled={!newGuidelineText.trim()}
+                className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:bg-gray-300 dark:disabled:bg-gray-600 disabled:cursor-not-allowed transition-colors"
+              >
+                <PlusIcon className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* 파일 업로드 영역 */}
+            <div
+              {...getGuidelineRootProps()}
+              className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-4 text-center cursor-pointer hover:border-gray-400 dark:hover:border-gray-500 transition-colors"
             >
-              <PlayIcon className="w-5 h-5" />
-              <span>분석 시작</span>
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* 분석 성공 상태 */}
-      {uploadStatus === 'success' && (
-        <div className="p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl">
-          <div className="flex items-start space-x-3">
-            <CheckCircleIcon className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
-            <div>
-              <h4 className="font-medium text-green-800 dark:text-green-200">
-                분석 완료
-              </h4>
-              <p className="text-sm text-green-600 dark:text-green-300 mt-1">
-                RFP 문서가 성공적으로 분석되었습니다. 결과를 확인하고 필요시
-                수정하세요.
+              <input {...getGuidelineInputProps()} />
+              <DocumentTextIcon className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                지침 문서 파일을 드래그하거나 클릭하여 업로드
+              </p>
+              <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
+                TXT, MD, PDF, DOC, DOCX 지원 (최대 10MB)
               </p>
             </div>
           </div>
-        </div>
-      )}
 
-      {/* 파일 미리보기 모달 */}
-      {showPreview && previewFile && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
-          <div className="w-full max-w-4xl max-h-[90vh] bg-white dark:bg-gray-800 rounded-xl shadow-xl">
-            <FilePreview
-              fileName={previewFile.name}
-              fileType={previewFile.type}
-              textContent={previewFile.textContent}
-              onClose={() => setShowPreview(false)}
+          {/* 등록된 지침 목록 */}
+          {guidelines && guidelines.length > 0 && (
+            <div className="mt-4 space-y-2">
+              <h5 className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                등록된 지침 ({guidelines.length}개)
+              </h5>
+              {guidelines.map((guideline, index) => (
+                <div
+                  key={index}
+                  className="flex items-start space-x-2 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg"
+                >
+                  <div className="flex-1">
+                    {guideline.type === 'file' ? (
+                      <div>
+                        <div className="flex items-center space-x-2">
+                          <DocumentTextIcon className="w-4 h-4 text-blue-500" />
+                          <span className="text-sm font-medium text-gray-900 dark:text-white">
+                            {guideline.fileName}
+                          </span>
+                        </div>
+                        <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                          {guideline.content.length > 100
+                            ? `${guideline.content.slice(0, 100)}...`
+                            : guideline.content}
+                        </p>
+                      </div>
+                    ) : (
+                      <p className="text-sm text-gray-700 dark:text-gray-300">
+                        {guideline.content}
+                      </p>
+                    )}
+                  </div>
+                  <button
+                    onClick={() => removeGuideline(index)}
+                    className="text-red-500 hover:text-red-700 p-1"
+                  >
+                    <XMarkIcon className="w-4 h-4" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* 고급 설정 */}
+        {showAdvancedOptions && (
+          <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+            <h4 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
+              분석 세부 지침
+            </h4>
+            <textarea
+              value={analysisInstructions}
+              onChange={e => setAnalysisInstructions(e.target.value)}
+              placeholder="AI가 분석 과정에서 따라야 할 세부 지침을 입력하세요..."
+              rows={3}
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
             />
           </div>
+        )}
+
+        {/* 안내 텍스트 */}
+        <div className="text-xs text-gray-500 dark:text-gray-400 space-y-1">
+          <p>• AI가 자동으로 요구사항, 예산, 일정 등을 추출합니다</p>
+          <p>• 프로젝트별 지침은 모든 분석 단계에서 참조됩니다</p>
+          <p>• 문서로 업로드한 지침은 자동으로 텍스트로 변환됩니다</p>
+          <p>• 개인정보가 포함된 문서는 업로드하지 마세요</p>
         </div>
-      )}
+      </div>
     </div>
   )
 }

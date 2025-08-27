@@ -63,7 +63,7 @@ export interface RFPAnalysisResult {
   keyPoints: string[]
 }
 
-export default function RFPUpload({ onUpload, projectId }: RFPUploadProps) {
+export default function RFPUploadNew({ onUpload, projectId }: RFPUploadProps) {
   const [uploadStatus, setUploadStatus] = useState<
     'idle' | 'uploading' | 'ready' | 'analyzing' | 'success' | 'error'
   >('idle')
