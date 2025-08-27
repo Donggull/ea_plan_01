@@ -1,9 +1,8 @@
 'use client'
 
-import React, { useState, useEffect, useCallback, useRef } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { motion } from 'framer-motion'
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute'
-import { usePathname } from 'next/navigation'
 import {
   PlusIcon,
   CpuChipIcon,
@@ -39,7 +38,6 @@ interface CustomBot {
 
 export default function NewelPage() {
   const router = useRouter()
-  const pathname = usePathname()
   const [myBots, setMyBots] = useState<CustomBot[]>([])
   const [publicBots, setPublicBots] = useState<CustomBot[]>([])
   const [loading, setLoading] = useState(true)
@@ -50,26 +48,16 @@ export default function NewelPage() {
   const [hasLoaded, setHasLoaded] = useState(false)
   const [isInitialized, setIsInitialized] = useState(false)
   const loadingRef = useRef(false)
-  const lastLoadTimeRef = useRef<number>(0)
   const supabase = createClientComponentClient()
 
-  const loadBots = useCallback(async () => {
-    const now = Date.now()
-
+  const loadBots = async () => {
     if (loadingRef.current) {
       console.log('Already loading bots, skipping...')
       return
     }
 
-    // Prevent too frequent reloads (minimum 5 seconds between loads)
-    if (now - lastLoadTimeRef.current < 5000) {
-      console.log('Too frequent reload attempt, skipping...')
-      return
-    }
-
     try {
       loadingRef.current = true
-      lastLoadTimeRef.current = now
       setLoading(true)
       console.log('Loading bots...')
 
@@ -127,79 +115,19 @@ export default function NewelPage() {
       setIsInitialized(true)
       console.log('Bot loading completed')
     }
-  }, [])
+  }
 
   useEffect(() => {
-    // Load bots when component mounts or pathname changes to /newel
-    if (pathname === '/newel' && !isInitialized) {
-      console.log('Loading bots on initial mount or pathname change...')
+    // Load bots when component mounts - simple approach like other pages
+    if (!isInitialized) {
+      console.log('Loading bots on initial mount...')
       loadBots()
     }
-  }, [pathname, loadBots, isInitialized])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
-  // Handle page visibility change with enhanced debouncing to prevent infinite loading
-  useEffect(() => {
-    let debounceTimeout: NodeJS.Timeout | null = null
-
-    const handleVisibilityOrFocus = (eventType: string) => {
-      // Clear any existing timeout
-      if (debounceTimeout) {
-        clearTimeout(debounceTimeout)
-      }
-
-      // Only proceed if basic conditions are met
-      if (pathname !== '/newel' || !isInitialized) {
-        return
-      }
-
-      // Add longer delay with double-check to prevent race conditions
-      debounceTimeout = setTimeout(() => {
-        const now = Date.now()
-
-        // Double-check all conditions inside timeout
-        // Don't reload if data is already loaded (myBots and publicBots have data)
-        const hasData = myBots.length > 0 || publicBots.length > 0
-
-        if (
-          pathname === '/newel' &&
-          isInitialized &&
-          !loadingRef.current &&
-          !hasData && // Only reload if no data exists
-          now - lastLoadTimeRef.current >= 5000 // Minimum 5 seconds between reloads
-        ) {
-          console.log(
-            `${eventType} triggered, reloading bots (no data found)...`
-          )
-          loadBots()
-        } else {
-          console.log(
-            `${eventType} triggered but conditions not met, skipping reload (hasData: ${hasData})`
-          )
-        }
-      }, 1000) // Increased debounce time to 1 second
-    }
-
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible') {
-        handleVisibilityOrFocus('Visibility change')
-      }
-    }
-
-    const handleFocus = () => {
-      handleVisibilityOrFocus('Window focus')
-    }
-
-    document.addEventListener('visibilitychange', handleVisibilityChange)
-    window.addEventListener('focus', handleFocus)
-
-    return () => {
-      if (debounceTimeout) {
-        clearTimeout(debounceTimeout)
-      }
-      document.removeEventListener('visibilitychange', handleVisibilityChange)
-      window.removeEventListener('focus', handleFocus)
-    }
-  }, [pathname, isInitialized, loadBots])
+  // Removed complex visibility/focus handlers that were causing infinite loops
+  // Data will only load once on component mount, similar to other pages
 
   const filteredBots = (bots: CustomBot[]) => {
     if (!searchQuery) return bots
