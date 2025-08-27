@@ -174,7 +174,7 @@ const ChatBotPage = memo(() => {
           // Use mock data for development
           const mockBots: CustomBot[] = [
             {
-              id: '1',
+              id: 'b1d5c3a7-2f8e-4b9c-a1d6-3e7f9c2a5b8d',
               name: '코딩 어시스턴트',
               description:
                 '프로그래밍 관련 질문에 특화된 AI 챗봇입니다. JavaScript, Python, React 등 다양한 기술 스택을 지원합니다.',
@@ -194,7 +194,7 @@ const ChatBotPage = memo(() => {
               like_count: 0,
             },
             {
-              id: '2',
+              id: 'c2e6d4b8-3g9f-5c0d-b2e7-4f8g0d3b6c9e',
               name: '기획 컨설턴트',
               description:
                 '웹/앱 서비스 기획에 특화된 AI 어시스턴트입니다. 요구사항 분석부터 화면 설계까지 도와드립니다.',
@@ -214,7 +214,7 @@ const ChatBotPage = memo(() => {
               like_count: 3,
             },
             {
-              id: '3',
+              id: 'd3f7e5c9-4h0g-6d1e-c3f8-5g9h1e4c7d0f',
               name: '마케팅 전략가',
               description:
                 '디지털 마케팅 전략 수립과 콘텐츠 기획에 특화된 AI 어시스턴트입니다.',
