@@ -50,16 +50,26 @@ export default function NewelPage() {
   const [hasLoaded, setHasLoaded] = useState(false)
   const [isInitialized, setIsInitialized] = useState(false)
   const loadingRef = useRef(false)
+  const lastLoadTimeRef = useRef<number>(0)
   const supabase = createClientComponentClient()
 
   const loadBots = useCallback(async () => {
+    const now = Date.now()
+
     if (loadingRef.current) {
       console.log('Already loading bots, skipping...')
       return
     }
 
+    // Prevent too frequent reloads (minimum 5 seconds between loads)
+    if (now - lastLoadTimeRef.current < 5000) {
+      console.log('Too frequent reload attempt, skipping...')
+      return
+    }
+
     try {
       loadingRef.current = true
+      lastLoadTimeRef.current = now
       setLoading(true)
       console.log('Loading bots...')
 
@@ -127,57 +137,58 @@ export default function NewelPage() {
     }
   }, [pathname, loadBots, isInitialized])
 
-  // Handle page visibility change with throttling to prevent infinite loading
+  // Handle page visibility change with enhanced debouncing to prevent infinite loading
   useEffect(() => {
-    let visibilityTimeout: NodeJS.Timeout | null = null
-    let focusTimeout: NodeJS.Timeout | null = null
+    let debounceTimeout: NodeJS.Timeout | null = null
 
-    const handleVisibilityChange = () => {
+    const handleVisibilityOrFocus = (eventType: string) => {
       // Clear any existing timeout
-      if (visibilityTimeout) {
-        clearTimeout(visibilityTimeout)
+      if (debounceTimeout) {
+        clearTimeout(debounceTimeout)
       }
 
-      // Only reload if conditions are met and not currently loading
-      if (
-        document.visibilityState === 'visible' &&
-        pathname === '/newel' &&
-        isInitialized &&
-        !loadingRef.current
-      ) {
-        // Add delay to prevent rapid successive calls
-        visibilityTimeout = setTimeout(() => {
-          console.log('Page became visible, reloading bots...')
+      // Only proceed if basic conditions are met
+      if (pathname !== '/newel' || !isInitialized) {
+        return
+      }
+
+      // Add longer delay with double-check to prevent race conditions
+      debounceTimeout = setTimeout(() => {
+        const now = Date.now()
+
+        // Double-check all conditions inside timeout
+        if (
+          pathname === '/newel' &&
+          isInitialized &&
+          !loadingRef.current &&
+          now - lastLoadTimeRef.current >= 5000 // Minimum 5 seconds between reloads
+        ) {
+          console.log(`${eventType} triggered, reloading bots...`)
           loadBots()
-        }, 500)
+        } else {
+          console.log(
+            `${eventType} triggered but conditions not met, skipping reload`
+          )
+        }
+      }, 1000) // Increased debounce time to 1 second
+    }
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        handleVisibilityOrFocus('Visibility change')
       }
     }
 
     const handleFocus = () => {
-      // Clear any existing timeout
-      if (focusTimeout) {
-        clearTimeout(focusTimeout)
-      }
-
-      // Only reload if conditions are met and not currently loading
-      if (pathname === '/newel' && isInitialized && !loadingRef.current) {
-        // Add delay to prevent rapid successive calls
-        focusTimeout = setTimeout(() => {
-          console.log('Window focused, reloading bots...')
-          loadBots()
-        }, 500)
-      }
+      handleVisibilityOrFocus('Window focus')
     }
 
     document.addEventListener('visibilitychange', handleVisibilityChange)
     window.addEventListener('focus', handleFocus)
 
     return () => {
-      if (visibilityTimeout) {
-        clearTimeout(visibilityTimeout)
-      }
-      if (focusTimeout) {
-        clearTimeout(focusTimeout)
+      if (debounceTimeout) {
+        clearTimeout(debounceTimeout)
       }
       document.removeEventListener('visibilitychange', handleVisibilityChange)
       window.removeEventListener('focus', handleFocus)
