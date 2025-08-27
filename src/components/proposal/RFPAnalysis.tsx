@@ -26,7 +26,8 @@ export default function RFPAnalysis({
   onReanalyze,
   isEditable = true,
 }: RFPAnalysisProps) {
-  const [editingAnalysis, setEditingAnalysis] = useState<RFPAnalysisResult>(analysis)
+  const [editingAnalysis, setEditingAnalysis] =
+    useState<RFPAnalysisResult>(analysis)
   const [editingSection, setEditingSection] = useState<string | null>(null)
   const [tempValue, setTempValue] = useState<string>('')
 
@@ -39,18 +40,27 @@ export default function RFPAnalysis({
     if (!editingSection) return
 
     const updatedAnalysis = { ...editingAnalysis }
-    
+
     if (editingSection.includes('.')) {
       const [parent, child] = editingSection.split('.')
       if (parent === 'budget') {
-        ;(updatedAnalysis.budget as any)[child] = child === 'currency' ? tempValue : Number(tempValue) || 0
+        ;(updatedAnalysis.budget as Record<string, unknown>)[child] =
+          child === 'currency' ? tempValue : Number(tempValue) || 0
       } else {
-        ;(updatedAnalysis as any)[parent][child] = tempValue.split('\n').filter(Boolean)
+        ;(updatedAnalysis as Record<string, Record<string, unknown>>)[parent][
+          child
+        ] = tempValue.split('\n').filter(Boolean)
       }
-    } else if (editingSection === 'deliverables' || editingSection === 'riskFactors' || editingSection === 'keyPoints') {
-      ;(updatedAnalysis as any)[editingSection] = tempValue.split('\n').filter(Boolean)
+    } else if (
+      editingSection === 'deliverables' ||
+      editingSection === 'riskFactors' ||
+      editingSection === 'keyPoints'
+    ) {
+      ;(updatedAnalysis as Record<string, unknown>)[editingSection] = tempValue
+        .split('\n')
+        .filter(Boolean)
     } else {
-      ;(updatedAnalysis as any)[editingSection] = tempValue
+      ;(updatedAnalysis as Record<string, unknown>)[editingSection] = tempValue
     }
 
     setEditingAnalysis(updatedAnalysis)
@@ -78,7 +88,7 @@ export default function RFPAnalysis({
     value: string | string[]
     sectionKey: string
     multiline?: boolean
-    icon?: React.ComponentType<any>
+    icon?: React.ComponentType<{ className?: string }>
   }) => {
     const isEditing = editingSection === sectionKey
     const displayValue = Array.isArray(value) ? value.join(', ') : value
@@ -108,16 +118,18 @@ export default function RFPAnalysis({
             {multiline ? (
               <textarea
                 value={tempValue}
-                onChange={(e) => setTempValue(e.target.value)}
+                onChange={e => setTempValue(e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 rows={Array.isArray(value) ? Math.max(3, value.length) : 3}
-                placeholder={Array.isArray(value) ? '각 줄에 하나씩 입력하세요' : ''}
+                placeholder={
+                  Array.isArray(value) ? '각 줄에 하나씩 입력하세요' : ''
+                }
               />
             ) : (
               <input
                 type="text"
                 value={tempValue}
-                onChange={(e) => setTempValue(e.target.value)}
+                onChange={e => setTempValue(e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             )}
@@ -141,7 +153,10 @@ export default function RFPAnalysis({
             {Array.isArray(value) ? (
               <ul className="space-y-1">
                 {value.map((item, index) => (
-                  <li key={index} className="text-sm text-gray-700 dark:text-gray-300 flex items-start">
+                  <li
+                    key={index}
+                    className="text-sm text-gray-700 dark:text-gray-300 flex items-start"
+                  >
                     <span className="w-2 h-2 bg-gray-400 rounded-full mr-2 mt-1.5 flex-shrink-0" />
                     {item}
                   </li>
@@ -191,19 +206,19 @@ export default function RFPAnalysis({
           <h4 className="text-lg font-medium text-gray-900 dark:text-white border-b border-gray-200 dark:border-gray-700 pb-2">
             기본 정보
           </h4>
-          
+
           <EditableField
             label="프로젝트 제목"
             value={editingAnalysis.projectTitle}
             sectionKey="projectTitle"
           />
-          
+
           <EditableField
             label="클라이언트"
             value={editingAnalysis.client}
             sectionKey="client"
           />
-          
+
           <EditableField
             label="마감일"
             value={editingAnalysis.deadline}
@@ -241,14 +256,14 @@ export default function RFPAnalysis({
           <h4 className="text-lg font-medium text-gray-900 dark:text-white border-b border-gray-200 dark:border-gray-700 pb-2">
             프로젝트 범위
           </h4>
-          
+
           <EditableField
             label="프로젝트 범위"
             value={editingAnalysis.scope}
             sectionKey="scope"
             multiline
           />
-          
+
           <EditableField
             label="주요 산출물"
             value={editingAnalysis.deliverables}
@@ -264,7 +279,7 @@ export default function RFPAnalysis({
         <h4 className="text-lg font-medium text-gray-900 dark:text-white border-b border-gray-200 dark:border-gray-700 pb-2">
           요구사항 분석
         </h4>
-        
+
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <EditableField
             label="기능적 요구사항"
@@ -272,14 +287,14 @@ export default function RFPAnalysis({
             sectionKey="requirements.functional"
             multiline
           />
-          
+
           <EditableField
             label="기술적 요구사항"
             value={editingAnalysis.requirements.technical}
             sectionKey="requirements.technical"
             multiline
           />
-          
+
           <EditableField
             label="디자인 요구사항"
             value={editingAnalysis.requirements.design}
@@ -298,7 +313,7 @@ export default function RFPAnalysis({
           multiline
           icon={ExclamationTriangleIcon}
         />
-        
+
         <EditableField
           label="핵심 포인트"
           value={editingAnalysis.keyPoints}
@@ -315,7 +330,8 @@ export default function RFPAnalysis({
               분석 결과 검토
             </h4>
             <p className="text-sm text-blue-600 dark:text-blue-300 mt-1">
-              AI가 분석한 결과를 검토하고 수정하세요. 정확한 정보를 바탕으로 더 나은 제안서를 작성할 수 있습니다.
+              AI가 분석한 결과를 검토하고 수정하세요. 정확한 정보를 바탕으로 더
+              나은 제안서를 작성할 수 있습니다.
             </p>
           </div>
         </div>

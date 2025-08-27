@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import {
   CurrencyDollarIcon,
   CalculatorIcon,
@@ -75,14 +75,22 @@ export default function CostCalculator({
   onCalculationComplete,
   initialData,
 }: CostCalculatorProps) {
-  const [workItems, setWorkItems] = useState<WorkItem[]>(initialData?.workItems || [])
-  const [rateCard, setRateCard] = useState(initialData?.rateCard || defaultRateCard)
+  const [workItems, setWorkItems] = useState<WorkItem[]>(
+    initialData?.workItems || []
+  )
+  const [rateCard, setRateCard] = useState(
+    initialData?.rateCard || defaultRateCard
+  )
   const [contingencyRate, setContingencyRate] = useState(10)
-  const [assumptions, setAssumptions] = useState<string[]>(initialData?.assumptions || [])
-  const [exclusions, setExclusions] = useState<string[]>(initialData?.exclusions || [])
+  const [assumptions, setAssumptions] = useState<string[]>(
+    initialData?.assumptions || []
+  )
+  const [exclusions, setExclusions] = useState<string[]>(
+    initialData?.exclusions || []
+  )
   const [newAssumption, setNewAssumption] = useState('')
   const [newExclusion, setNewExclusion] = useState('')
-  
+
   const complexityMultipliers = {
     low: 1.0,
     medium: 1.3,
@@ -102,11 +110,13 @@ export default function CostCalculator({
     setWorkItems(prev => [...prev, newItem])
   }
 
-  const updateWorkItem = (id: string, field: keyof WorkItem, value: any) => {
+  const updateWorkItem = (
+    id: string,
+    field: keyof WorkItem,
+    value: string | number
+  ) => {
     setWorkItems(prev =>
-      prev.map(item =>
-        item.id === id ? { ...item, [field]: value } : item
-      )
+      prev.map(item => (item.id === id ? { ...item, [field]: value } : item))
     )
   }
 
@@ -166,12 +176,14 @@ export default function CostCalculator({
     }
   }
 
-  const calculateCosts = (): CostBreakdown => {
+  const calculateCosts = useCallback((): CostBreakdown => {
     const itemsWithCalculatedCosts = workItems.map(item => {
-      const complexityAdjustedHours = item.hours * complexityMultipliers[item.complexity]
-      const riskAdjustedHours = complexityAdjustedHours * (1 + item.riskFactor / 100)
+      const complexityAdjustedHours =
+        item.hours * complexityMultipliers[item.complexity]
+      const riskAdjustedHours =
+        complexityAdjustedHours * (1 + item.riskFactor / 100)
       const cost = riskAdjustedHours * item.hourlyRate
-      
+
       return {
         ...item,
         adjustedHours: riskAdjustedHours,
@@ -179,24 +191,40 @@ export default function CostCalculator({
       }
     })
 
-    const totalHours = itemsWithCalculatedCosts.reduce((sum, item) => sum + item.adjustedHours, 0)
-    const totalBaseCost = itemsWithCalculatedCosts.reduce((sum, item) => sum + item.cost, 0)
+    const totalHours = itemsWithCalculatedCosts.reduce(
+      (sum, item) => sum + item.adjustedHours,
+      0
+    )
+    const totalBaseCost = itemsWithCalculatedCosts.reduce(
+      (sum, item) => sum + item.cost,
+      0
+    )
     const contingency = totalBaseCost * (contingencyRate / 100)
     const grandTotal = totalBaseCost + contingency
 
     // Group by category for phases
-    const phaseGroups = taskCategories.map(category => {
-      const categoryItems = itemsWithCalculatedCosts.filter(item => item.category === category)
-      const totalCost = categoryItems.reduce((sum, item) => sum + item.cost, 0)
-      const totalHours = categoryItems.reduce((sum, item) => sum + item.adjustedHours, 0)
-      
-      return {
-        name: category,
-        duration: Math.ceil(totalHours / 40), // Assuming 40 hours per week
-        cost: totalCost,
-        items: categoryItems.map(item => item.task).filter(Boolean),
-      }
-    }).filter(phase => phase.cost > 0)
+    const phaseGroups = taskCategories
+      .map(category => {
+        const categoryItems = itemsWithCalculatedCosts.filter(
+          item => item.category === category
+        )
+        const totalCost = categoryItems.reduce(
+          (sum, item) => sum + item.cost,
+          0
+        )
+        const totalHours = categoryItems.reduce(
+          (sum, item) => sum + item.adjustedHours,
+          0
+        )
+
+        return {
+          name: category,
+          duration: Math.ceil(totalHours / 40), // Assuming 40 hours per week
+          cost: totalCost,
+          items: categoryItems.map(item => item.task).filter(Boolean),
+        }
+      })
+      .filter(phase => phase.cost > 0)
 
     return {
       workItems,
@@ -213,12 +241,22 @@ export default function CostCalculator({
       exclusions,
       rateCard,
     }
-  }
+  }, [workItems, contingencyRate, assumptions, exclusions, rateCard])
 
   useEffect(() => {
     const breakdown = calculateCosts()
-    onCalculationComplete(breakdown)
-  }, [workItems, contingencyRate, assumptions, exclusions, rateCard])
+    if (onCalculationComplete) {
+      onCalculationComplete(breakdown)
+    }
+  }, [
+    workItems,
+    contingencyRate,
+    assumptions,
+    exclusions,
+    rateCard,
+    calculateCosts,
+    onCalculationComplete,
+  ])
 
   const breakdown = calculateCosts()
 
@@ -241,16 +279,25 @@ export default function CostCalculator({
 
       {/* Rate Card */}
       <div className="space-y-4">
-        <h4 className="text-lg font-medium text-gray-900 dark:text-white">시간당 요금표</h4>
+        <h4 className="text-lg font-medium text-gray-900 dark:text-white">
+          시간당 요금표
+        </h4>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {rateCard.map((rate, index) => (
-            <div key={index} className="flex items-center justify-between p-3 border border-gray-200 dark:border-gray-700 rounded-lg">
-              <span className="font-medium text-gray-900 dark:text-white">{rate.role}</span>
+            <div
+              key={index}
+              className="flex items-center justify-between p-3 border border-gray-200 dark:border-gray-700 rounded-lg"
+            >
+              <span className="font-medium text-gray-900 dark:text-white">
+                {rate.role}
+              </span>
               <div className="flex items-center space-x-2">
                 <input
                   type="number"
                   value={rate.hourlyRate}
-                  onChange={(e) => updateRateCard(rate.role, Number(e.target.value))}
+                  onChange={e =>
+                    updateRateCard(rate.role, Number(e.target.value))
+                  }
                   className="w-24 px-2 py-1 text-right border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
                 />
                 <span className="text-sm text-gray-500">원/시간</span>
@@ -263,7 +310,9 @@ export default function CostCalculator({
       {/* Work Items */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <h4 className="text-lg font-medium text-gray-900 dark:text-white">작업 분해 구조 (WBS)</h4>
+          <h4 className="text-lg font-medium text-gray-900 dark:text-white">
+            작업 분해 구조 (WBS)
+          </h4>
           <button
             onClick={addWorkItem}
             className="px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2"
@@ -274,15 +323,20 @@ export default function CostCalculator({
         </div>
 
         <div className="space-y-3">
-          {workItems.map((item) => (
-            <div key={item.id} className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
+          {workItems.map(item => (
+            <div
+              key={item.id}
+              className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg"
+            >
               <div className="grid grid-cols-1 lg:grid-cols-8 gap-4 items-center">
                 <select
                   value={item.category}
-                  onChange={(e) => updateWorkItem(item.id, 'category', e.target.value)}
+                  onChange={e =>
+                    updateWorkItem(item.id, 'category', e.target.value)
+                  }
                   className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm"
                 >
-                  {taskCategories.map((category) => (
+                  {taskCategories.map(category => (
                     <option key={category} value={category}>
                       {category}
                     </option>
@@ -292,7 +346,9 @@ export default function CostCalculator({
                 <input
                   type="text"
                   value={item.task}
-                  onChange={(e) => updateWorkItem(item.id, 'task', e.target.value)}
+                  onChange={e =>
+                    updateWorkItem(item.id, 'task', e.target.value)
+                  }
                   className="lg:col-span-2 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm"
                   placeholder="작업명"
                 />
@@ -300,17 +356,25 @@ export default function CostCalculator({
                 <input
                   type="number"
                   value={item.hours}
-                  onChange={(e) => updateWorkItem(item.id, 'hours', Number(e.target.value))}
+                  onChange={e =>
+                    updateWorkItem(item.id, 'hours', Number(e.target.value))
+                  }
                   className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm text-right"
                   placeholder="시간"
                 />
 
                 <select
                   value={item.hourlyRate}
-                  onChange={(e) => updateWorkItem(item.id, 'hourlyRate', Number(e.target.value))}
+                  onChange={e =>
+                    updateWorkItem(
+                      item.id,
+                      'hourlyRate',
+                      Number(e.target.value)
+                    )
+                  }
                   className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm"
                 >
-                  {rateCard.map((rate) => (
+                  {rateCard.map(rate => (
                     <option key={rate.role} value={rate.hourlyRate}>
                       {rate.role}
                     </option>
@@ -319,7 +383,9 @@ export default function CostCalculator({
 
                 <select
                   value={item.complexity}
-                  onChange={(e) => updateWorkItem(item.id, 'complexity', e.target.value)}
+                  onChange={e =>
+                    updateWorkItem(item.id, 'complexity', e.target.value)
+                  }
                   className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm"
                 >
                   <option value="low">낮음</option>
@@ -330,7 +396,13 @@ export default function CostCalculator({
                 <input
                   type="number"
                   value={item.riskFactor}
-                  onChange={(e) => updateWorkItem(item.id, 'riskFactor', Number(e.target.value))}
+                  onChange={e =>
+                    updateWorkItem(
+                      item.id,
+                      'riskFactor',
+                      Number(e.target.value)
+                    )
+                  }
                   className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm text-right"
                   placeholder="위험%"
                   min="0"
@@ -357,15 +429,23 @@ export default function CostCalculator({
             <CurrencyDollarIcon className="w-5 h-5" />
             <span>비용 요약</span>
           </h4>
-          
+
           <div className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg space-y-3">
             <div className="flex justify-between">
-              <span className="text-gray-600 dark:text-gray-400">총 예상 시간:</span>
-              <span className="font-medium">{Math.round(breakdown.summary.totalHours)}시간</span>
+              <span className="text-gray-600 dark:text-gray-400">
+                총 예상 시간:
+              </span>
+              <span className="font-medium">
+                {Math.round(breakdown.summary.totalHours)}시간
+              </span>
             </div>
             <div className="flex justify-between">
-              <span className="text-gray-600 dark:text-gray-400">기본 비용:</span>
-              <span className="font-medium">{breakdown.summary.totalBaseCost.toLocaleString()}원</span>
+              <span className="text-gray-600 dark:text-gray-400">
+                기본 비용:
+              </span>
+              <span className="font-medium">
+                {breakdown.summary.totalBaseCost.toLocaleString()}원
+              </span>
             </div>
             <div className="flex justify-between items-center">
               <span className="text-gray-600 dark:text-gray-400">예비비:</span>
@@ -373,7 +453,7 @@ export default function CostCalculator({
                 <input
                   type="number"
                   value={contingencyRate}
-                  onChange={(e) => setContingencyRate(Number(e.target.value))}
+                  onChange={e => setContingencyRate(Number(e.target.value))}
                   className="w-16 px-2 py-1 text-right border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-sm"
                   min="0"
                   max="50"
@@ -382,12 +462,18 @@ export default function CostCalculator({
               </div>
             </div>
             <div className="flex justify-between">
-              <span className="text-gray-600 dark:text-gray-400">예비비 금액:</span>
-              <span className="font-medium">{breakdown.summary.contingency.toLocaleString()}원</span>
+              <span className="text-gray-600 dark:text-gray-400">
+                예비비 금액:
+              </span>
+              <span className="font-medium">
+                {breakdown.summary.contingency.toLocaleString()}원
+              </span>
             </div>
             <div className="flex justify-between text-lg font-semibold pt-2 border-t border-gray-200 dark:border-gray-700">
               <span>총 프로젝트 비용:</span>
-              <span className="text-green-600">{breakdown.summary.grandTotal.toLocaleString()}원</span>
+              <span className="text-green-600">
+                {breakdown.summary.grandTotal.toLocaleString()}원
+              </span>
             </div>
           </div>
         </div>
@@ -398,12 +484,17 @@ export default function CostCalculator({
             <ChartBarIcon className="w-5 h-5" />
             <span>단계별 분석</span>
           </h4>
-          
+
           <div className="space-y-3">
             {breakdown.phases.map((phase, index) => (
-              <div key={index} className="p-3 border border-gray-200 dark:border-gray-700 rounded-lg">
+              <div
+                key={index}
+                className="p-3 border border-gray-200 dark:border-gray-700 rounded-lg"
+              >
                 <div className="flex items-center justify-between mb-2">
-                  <span className="font-medium text-gray-900 dark:text-white">{phase.name}</span>
+                  <span className="font-medium text-gray-900 dark:text-white">
+                    {phase.name}
+                  </span>
                   <div className="flex items-center space-x-3 text-sm text-gray-500 dark:text-gray-400">
                     <span className="flex items-center space-x-1">
                       <ClockIcon className="w-4 h-4" />
@@ -432,16 +523,18 @@ export default function CostCalculator({
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Assumptions */}
         <div className="space-y-4">
-          <h4 className="text-lg font-medium text-gray-900 dark:text-white">전제 조건</h4>
+          <h4 className="text-lg font-medium text-gray-900 dark:text-white">
+            전제 조건
+          </h4>
           <div className="space-y-3">
             <div className="flex space-x-2">
               <input
                 type="text"
                 value={newAssumption}
-                onChange={(e) => setNewAssumption(e.target.value)}
+                onChange={e => setNewAssumption(e.target.value)}
                 className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
                 placeholder="전제 조건 추가"
-                onKeyPress={(e) => e.key === 'Enter' && addAssumption()}
+                onKeyPress={e => e.key === 'Enter' && addAssumption()}
               />
               <button
                 onClick={addAssumption}
@@ -452,8 +545,13 @@ export default function CostCalculator({
             </div>
             <ul className="space-y-2">
               {assumptions.map((assumption, index) => (
-                <li key={index} className="flex items-start space-x-2 p-2 bg-gray-50 dark:bg-gray-800 rounded">
-                  <span className="flex-1 text-sm text-gray-700 dark:text-gray-300">{assumption}</span>
+                <li
+                  key={index}
+                  className="flex items-start space-x-2 p-2 bg-gray-50 dark:bg-gray-800 rounded"
+                >
+                  <span className="flex-1 text-sm text-gray-700 dark:text-gray-300">
+                    {assumption}
+                  </span>
                   <button
                     onClick={() => removeAssumption(index)}
                     className="text-red-500 hover:text-red-700"
@@ -468,16 +566,18 @@ export default function CostCalculator({
 
         {/* Exclusions */}
         <div className="space-y-4">
-          <h4 className="text-lg font-medium text-gray-900 dark:text-white">제외 사항</h4>
+          <h4 className="text-lg font-medium text-gray-900 dark:text-white">
+            제외 사항
+          </h4>
           <div className="space-y-3">
             <div className="flex space-x-2">
               <input
                 type="text"
                 value={newExclusion}
-                onChange={(e) => setNewExclusion(e.target.value)}
+                onChange={e => setNewExclusion(e.target.value)}
                 className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
                 placeholder="제외 사항 추가"
-                onKeyPress={(e) => e.key === 'Enter' && addExclusion()}
+                onKeyPress={e => e.key === 'Enter' && addExclusion()}
               />
               <button
                 onClick={addExclusion}
@@ -488,8 +588,13 @@ export default function CostCalculator({
             </div>
             <ul className="space-y-2">
               {exclusions.map((exclusion, index) => (
-                <li key={index} className="flex items-start space-x-2 p-2 bg-gray-50 dark:bg-gray-800 rounded">
-                  <span className="flex-1 text-sm text-gray-700 dark:text-gray-300">{exclusion}</span>
+                <li
+                  key={index}
+                  className="flex items-start space-x-2 p-2 bg-gray-50 dark:bg-gray-800 rounded"
+                >
+                  <span className="flex-1 text-sm text-gray-700 dark:text-gray-300">
+                    {exclusion}
+                  </span>
                   <button
                     onClick={() => removeExclusion(index)}
                     className="text-red-500 hover:text-red-700"
@@ -512,8 +617,9 @@ export default function CostCalculator({
               비용 산정 주의사항
             </h4>
             <p className="text-sm text-yellow-600 dark:text-yellow-300 mt-1">
-              이 비용 산정은 예상치이며, 실제 프로젝트에서는 요구사항 변경, 기술적 복잡성, 
-              외부 요인 등으로 인해 비용이 달라질 수 있습니다. 충분한 예비비를 고려하세요.
+              이 비용 산정은 예상치이며, 실제 프로젝트에서는 요구사항 변경,
+              기술적 복잡성, 외부 요인 등으로 인해 비용이 달라질 수 있습니다.
+              충분한 예비비를 고려하세요.
             </p>
           </div>
         </div>

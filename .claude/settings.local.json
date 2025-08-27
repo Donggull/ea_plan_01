@@ -41,7 +41,8 @@
       "Bash(echo:*)",
       "Read(/D:\\/**)",
       "Bash(copy:*)",
-      "mcp__playwright-stealth__playwright_get_visible_html"
+      "mcp__playwright-stealth__playwright_get_visible_html",
+      "Bash(npm run lint)"
     ],
     "deny": [],
     "ask": [],

@@ -4,6 +4,7 @@ import './globals.css'
 import { AuthProvider } from '@/contexts/AuthContext'
 import QueryProvider from '@/lib/providers/QueryProvider'
 import EnvironmentProvider from '@/components/providers/EnvironmentProvider'
+import { ReduxProvider } from '@/components/providers/ReduxProvider'
 
 const inter = Inter({
   subsets: ['latin'],
@@ -25,9 +26,11 @@ export default function RootLayout({
     <html lang="ko" className={inter.variable}>
       <body className="font-sans antialiased min-h-screen bg-white dark:bg-slate-900">
         <EnvironmentProvider>
-          <QueryProvider>
-            <AuthProvider>{children}</AuthProvider>
-          </QueryProvider>
+          <ReduxProvider>
+            <QueryProvider>
+              <AuthProvider>{children}</AuthProvider>
+            </QueryProvider>
+          </ReduxProvider>
         </EnvironmentProvider>
       </body>
     </html>
