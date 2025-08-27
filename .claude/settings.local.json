@@ -37,7 +37,8 @@
       "mcp__playwright-stealth__playwright_fill",
       "mcp__playwright-stealth__playwright_click",
       "mcp__playwright-stealth__playwright_evaluate",
-      "Bash(PORT=3008 npm run dev)"
+      "Bash(PORT=3008 npm run dev)",
+      "Bash(echo:*)"
     ],
     "deny": [],
     "ask": [],

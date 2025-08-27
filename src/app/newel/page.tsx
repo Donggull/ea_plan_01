@@ -61,30 +61,124 @@ export default function NewelPage() {
       setLoading(true)
       console.log('Loading bots...')
 
-      // Get current user (fallback to default for testing)
-      const userId = 'afd2a12c-75a5-4914-812e-5eedc4fd3a3d' // 개발환경 기본값 사용
+      // Check if we're using a valid Supabase client
+      const hasValidSupabase = !!(
+        process.env.NEXT_PUBLIC_SUPABASE_URL &&
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+      )
+      console.log('Environment check:', {
+        hasSupabaseUrl: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
+        hasSupabaseKey: !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+        hasValidSupabase,
+        nodeEnv: process.env.NODE_ENV,
+      })
 
-      // Load my bots - simplified query without knowledge base count (테이블이 없으므로)
+      if (!hasValidSupabase && process.env.NODE_ENV === 'development') {
+        // Development mode with mock data
+        console.log('Using mock data for development (no Supabase env vars)')
+
+        // Mock data for development
+        const mockMyBots: CustomBot[] = [
+          {
+            id: '1',
+            name: '코딩 어시스턴트',
+            description:
+              '프로그래밍 관련 질문에 특화된 AI 챗봇입니다. JavaScript, Python, React 등 다양한 기술 스택을 지원합니다.',
+            user_id: 'afd2a12c-75a5-4914-812e-5eedc4fd3a3d',
+            is_public: false,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+            tags: ['개발', 'JavaScript', 'React'],
+            metadata: {
+              avatar: '💻',
+              preferred_model: 'gemini' as const,
+            },
+            knowledge_base_count: 5,
+            usage_count: 24,
+            like_count: 0,
+          },
+          {
+            id: '2',
+            name: '기획 컨설턴트',
+            description:
+              '웹/앱 서비스 기획에 특화된 AI 어시스턴트입니다. 요구사항 분석부터 화면 설계까지 도와드립니다.',
+            user_id: 'afd2a12c-75a5-4914-812e-5eedc4fd3a3d',
+            is_public: true,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+            tags: ['기획', '컨설팅', 'UX'],
+            metadata: {
+              avatar: '📋',
+              preferred_model: 'claude' as const,
+            },
+            knowledge_base_count: 8,
+            usage_count: 42,
+            like_count: 3,
+          },
+        ]
+
+        const mockPublicBots: CustomBot[] = [
+          {
+            id: '3',
+            name: '마케팅 전략가',
+            description:
+              '디지털 마케팅 전략 수립과 콘텐츠 기획에 특화된 AI 어시스턴트입니다.',
+            user_id: 'other-user-id',
+            is_public: true,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+            tags: ['마케팅', '전략', 'SNS'],
+            metadata: {
+              avatar: '📢',
+              preferred_model: 'gpt' as const,
+            },
+            knowledge_base_count: 12,
+            usage_count: 128,
+            like_count: 15,
+          },
+        ]
+
+        // Simulate API delay
+        await new Promise(resolve => setTimeout(resolve, 1000))
+
+        setMyBots(mockMyBots)
+        setPublicBots(mockPublicBots)
+        console.log('Loaded mock data:', {
+          myBots: mockMyBots.length,
+          publicBots: mockPublicBots.length,
+        })
+        return
+      }
+
+      // Get current user (fallback to default for testing)
+      const userId = 'afd2a12c-75a5-4914-812e-5eedc4fd3a3d'
+
+      // Load my bots
+      console.log('Attempting to load bots from Supabase...')
       const { data: myBotsData, error: myBotsError } = await supabase
         .from('custom_bots')
         .select('*')
         .eq('user_id', userId)
         .order('updated_at', { ascending: false })
 
+      console.log('My bots query result:', {
+        data: myBotsData,
+        error: myBotsError,
+      })
+
       if (myBotsError) {
         console.error('Failed to load my bots:', myBotsError)
         setMyBots([])
       } else {
-        // knowledge_base 카운트 없이 봇 설정 (테이블이 존재하지 않으므로)
         const processedMyBots = (myBotsData || []).map(bot => ({
           ...bot,
-          knowledge_base_count: 0, // 기본값 0
+          knowledge_base_count: 0,
         }))
         setMyBots(processedMyBots)
-        console.log(`Loaded ${processedMyBots.length} my bots`)
+        console.log(`Loaded ${processedMyBots.length} my bots from Supabase`)
       }
 
-      // Load public bots - simplified query
+      // Load public bots
       const { data: publicBotsData, error: publicBotsError } = await supabase
         .from('custom_bots')
         .select('*')
@@ -92,17 +186,23 @@ export default function NewelPage() {
         .order('like_count', { ascending: false })
         .limit(20)
 
+      console.log('Public bots query result:', {
+        data: publicBotsData,
+        error: publicBotsError,
+      })
+
       if (publicBotsError) {
         console.error('Failed to load public bots:', publicBotsError)
         setPublicBots([])
       } else {
-        // knowledge_base 카운트 없이 봇 설정 (테이블이 존재하지 않으므로)
         const processedPublicBots = (publicBotsData || []).map(bot => ({
           ...bot,
-          knowledge_base_count: 0, // 기본값 0
+          knowledge_base_count: 0,
         }))
         setPublicBots(processedPublicBots)
-        console.log(`Loaded ${processedPublicBots.length} public bots`)
+        console.log(
+          `Loaded ${processedPublicBots.length} public bots from Supabase`
+        )
       }
     } catch (error) {
       console.error('Failed to load bots:', error)
@@ -113,7 +213,13 @@ export default function NewelPage() {
       setLoading(false)
       setHasLoaded(true)
       setIsInitialized(true)
-      console.log('Bot loading completed')
+      console.log('Bot loading completed. Final state:', {
+        loading: false,
+        hasLoaded: true,
+        isInitialized: true,
+        myBotsCount: myBots.length,
+        publicBotsCount: publicBots.length,
+      })
     }
   }
 
