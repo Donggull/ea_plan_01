@@ -241,7 +241,14 @@ export default function CostCalculator({
       exclusions,
       rateCard,
     }
-  }, [workItems, contingencyRate, assumptions, exclusions, rateCard])
+  }, [
+    workItems,
+    contingencyRate,
+    assumptions,
+    exclusions,
+    rateCard,
+    complexityMultipliers,
+  ])
 
   useEffect(() => {
     const breakdown = calculateCosts()
