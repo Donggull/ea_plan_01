@@ -19,6 +19,7 @@ import {
   XMarkIcon,
   UserIcon,
 } from '@heroicons/react/24/outline'
+import { createClientComponentClient } from '@/lib/supabase'
 
 interface CustomBot {
   id: string
@@ -161,6 +162,9 @@ const ChatBotPage = memo(() => {
         isLoadingRef.current = true
         setLoading(true)
 
+        // Initialize Supabase client
+        const supabase = createClientComponentClient()
+
         // Check for mock data first (development environment)
         const hasValidSupabase = !!(
           process.env.NEXT_PUBLIC_SUPABASE_URL &&
@@ -169,74 +173,64 @@ const ChatBotPage = memo(() => {
 
         let botData: CustomBot | null = null
 
-        // Always use mock data for now to avoid auth issues
-        if (true) {
-          // Use mock data for development
-          const mockBots: CustomBot[] = [
-            {
-              id: 'b1d5c3a7-2f8e-4b9c-a1d6-3e7f9c2a5b8d',
-              name: '코딩 어시스턴트',
-              description:
-                '프로그래밍 관련 질문에 특화된 AI 챗봇입니다. JavaScript, Python, React 등 다양한 기술 스택을 지원합니다.',
-              system_prompt:
-                'You are a helpful programming assistant specializing in web development. Help users with coding questions, debugging, and best practices.',
-              user_id: 'afd2a12c-75a5-4914-812e-5eedc4fd3a3d',
-              is_public: false,
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString(),
-              tags: ['개발', 'JavaScript', 'React'],
-              metadata: {
-                avatar: '💻',
-                preferred_model: 'gemini' as const,
-              },
-              knowledge_base_count: 5,
-              usage_count: 24,
-              like_count: 0,
-            },
-            {
-              id: 'c2e6d4b8-3g9f-5c0d-b2e7-4f8g0d3b6c9e',
-              name: '기획 컨설턴트',
-              description:
-                '웹/앱 서비스 기획에 특화된 AI 어시스턴트입니다. 요구사항 분석부터 화면 설계까지 도와드립니다.',
-              system_prompt:
-                'You are a product planning consultant specializing in web and mobile services. Help users with requirement analysis, feature planning, and UX design.',
-              user_id: 'afd2a12c-75a5-4914-812e-5eedc4fd3a3d',
-              is_public: true,
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString(),
-              tags: ['기획', '컨설팅', 'UX'],
-              metadata: {
-                avatar: '📋',
-                preferred_model: 'claude' as const,
-              },
-              knowledge_base_count: 8,
-              usage_count: 42,
-              like_count: 3,
-            },
-            {
-              id: 'd3f7e5c9-4h0g-6d1e-c3f8-5g9h1e4c7d0f',
-              name: '마케팅 전략가',
-              description:
-                '디지털 마케팅 전략 수립과 콘텐츠 기획에 특화된 AI 어시스턴트입니다.',
-              system_prompt:
-                'You are a digital marketing strategist. Help users with marketing strategy, content planning, and campaign optimization.',
-              user_id: 'other-user-id',
-              is_public: true,
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString(),
-              tags: ['마케팅', '전략', 'SNS'],
-              metadata: {
-                avatar: '📢',
-                preferred_model: 'gpt' as const,
-              },
-              knowledge_base_count: 12,
-              usage_count: 128,
-              like_count: 15,
-            },
-          ]
+        if (hasValidSupabase) {
+          console.log('Attempting to load bots from Supabase...')
 
-          botData = mockBots.find(b => b.id === botId) || null
-          console.log('Using mock bot data:', botData?.name)
+          try {
+            // Try to load from Supabase first
+            const { data: botsData, error } = await supabase
+              .from('custom_bots')
+              .select('*')
+              .or(`id.eq.${botId},and(is_public.eq.true)`)
+              .single()
+
+            if (error) {
+              console.error('Supabase error:', error)
+              // If specific bot not found, try loading it directly
+              const { data: directBot, error: directError } = await supabase
+                .from('custom_bots')
+                .select('*')
+                .eq('id', botId)
+                .single()
+
+              if (directBot && !directError) {
+                botData = directBot
+                console.log('Loaded bot directly from Supabase:', botData.name)
+              } else {
+                console.log('Bot not found in Supabase, botId:', botId)
+              }
+            } else {
+              botData = botsData
+              console.log('Loaded bot from Supabase:', botData.name)
+            }
+          } catch (supabaseError) {
+            console.error('Supabase connection error:', supabaseError)
+          }
+        }
+
+        // Fallback to mock data if Supabase failed or bot not found
+        if (!botData) {
+          console.log('Using mock/fallback bot data for botId:', botId)
+          // Create a generic fallback bot with the requested ID
+          botData = {
+            id: botId,
+            name: '커스텀 챗봇',
+            description: '이 챗봇에 대한 정보를 불러오고 있습니다.',
+            system_prompt: 'You are a helpful AI assistant.',
+            user_id: 'system',
+            is_public: true,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+            tags: ['일반'],
+            metadata: {
+              avatar: '🤖',
+              preferred_model: 'gemini' as const,
+            },
+            knowledge_base_count: 0,
+            usage_count: 0,
+            like_count: 0,
+          }
+          console.log('Using fallback bot data:', botData.name)
         }
 
         if (!botData) {
