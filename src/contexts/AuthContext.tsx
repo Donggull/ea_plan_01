@@ -158,8 +158,17 @@ export function AuthProvider({ children }: AuthProviderProps) {
     const getInitialSession = async () => {
       console.log('Starting getInitialSession')
 
-      // 개발 환경에서는 항상 기본 사용자로 설정
-      if (process.env.NODE_ENV === 'development') {
+      // Supabase 클라이언트가 mock인지 확인 (환경 변수가 없을 때)
+      const isValidSupabase =
+        supabase &&
+        typeof supabase.auth?.getSession === 'function' &&
+        !!(
+          process.env.NEXT_PUBLIC_SUPABASE_URL &&
+          process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+        )
+
+      // 개발 환경이거나 Supabase가 제대로 설정되지 않은 경우 기본 사용자 사용
+      if (process.env.NODE_ENV === 'development' || !isValidSupabase) {
         if (isMounted) {
           const defaultUserId = 'afd2a12c-75a5-4914-812e-5eedc4fd3a3d'
           const mockUser = {
@@ -181,7 +190,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
           setUser(mockUser)
           setUserProfile(defaultProfile)
           setSession(null) // 개발환경에서는 실제 세션 없이 진행
-          console.log('Development mode: using default user profile')
+          console.log(
+            'Development mode or invalid Supabase: using default user profile'
+          )
         }
 
         if (isMounted) {
@@ -192,15 +203,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
       }
 
       try {
-        if (!supabase) {
-          console.error('Supabase client not available in production')
-          if (isMounted) {
-            setLoading(false)
-            initialLoadComplete = true
-          }
-          return
-        }
-
         const {
           data: { session },
           error,
@@ -245,8 +247,16 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
     getInitialSession()
 
-    // Supabase 클라이언트가 있을 때만 구독 설정 (프로덕션 환경에서만)
-    if (supabase && process.env.NODE_ENV !== 'development') {
+    // Supabase 클라이언트가 제대로 설정되어 있을 때만 구독 설정
+    const isValidSupabase =
+      supabase &&
+      typeof supabase.auth?.getSession === 'function' &&
+      !!(
+        process.env.NEXT_PUBLIC_SUPABASE_URL &&
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+      )
+
+    if (isValidSupabase && process.env.NODE_ENV !== 'development') {
       const {
         data: { subscription },
       } = supabase.auth.onAuthStateChange(async (event, session) => {
@@ -285,7 +295,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     return () => {
       isMounted = false
     }
-  }, [])
+  }, [fetchUserProfile])
 
   const signUp = async (
     email: string,
