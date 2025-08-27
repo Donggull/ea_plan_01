@@ -40,7 +40,8 @@
       "Bash(PORT=3008 npm run dev)",
       "Bash(echo:*)",
       "Read(/D:\\/**)",
-      "Bash(copy:*)"
+      "Bash(copy:*)",
+      "mcp__playwright-stealth__playwright_get_visible_html"
     ],
     "deny": [],
     "ask": [],
