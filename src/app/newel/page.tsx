@@ -48,6 +48,7 @@ export default function NewelPage() {
     'my-bots'
   )
   const [hasLoaded, setHasLoaded] = useState(false)
+  const [isInitialized, setIsInitialized] = useState(false)
   const supabase = createClientComponentClient()
 
   const loadBots = useCallback(async () => {
@@ -105,48 +106,76 @@ export default function NewelPage() {
     } finally {
       setLoading(false)
       setHasLoaded(true)
+      setIsInitialized(true)
       console.log('Bot loading completed')
     }
   }, [])
 
   useEffect(() => {
     // Load bots when component mounts or pathname changes to /newel
-    if (pathname === '/newel') {
+    if (pathname === '/newel' && !loading) {
+      console.log('Loading bots on pathname change...')
       setLoading(true)
       loadBots()
     }
-  }, [pathname, loadBots])
+  }, [pathname, loadBots, loading])
 
-  // Handle page visibility change to reload data when user comes back
+  // Handle page visibility change with throttling to prevent infinite loading
   useEffect(() => {
+    let visibilityTimeout: NodeJS.Timeout | null = null
+    let focusTimeout: NodeJS.Timeout | null = null
+
     const handleVisibilityChange = () => {
+      // Clear any existing timeout
+      if (visibilityTimeout) {
+        clearTimeout(visibilityTimeout)
+      }
+
+      // Only reload if conditions are met and not currently loading
       if (
         document.visibilityState === 'visible' &&
         pathname === '/newel' &&
-        hasLoaded
+        isInitialized &&
+        !loading
       ) {
-        console.log('Page became visible, reloading bots...')
-        loadBots()
+        // Add delay to prevent rapid successive calls
+        visibilityTimeout = setTimeout(() => {
+          console.log('Page became visible, reloading bots...')
+          loadBots()
+        }, 500)
+      }
+    }
+
+    const handleFocus = () => {
+      // Clear any existing timeout
+      if (focusTimeout) {
+        clearTimeout(focusTimeout)
+      }
+
+      // Only reload if conditions are met and not currently loading
+      if (pathname === '/newel' && isInitialized && !loading) {
+        // Add delay to prevent rapid successive calls
+        focusTimeout = setTimeout(() => {
+          console.log('Window focused, reloading bots...')
+          loadBots()
+        }, 500)
       }
     }
 
     document.addEventListener('visibilitychange', handleVisibilityChange)
-
-    // Also reload when window gets focus
-    const handleFocus = () => {
-      if (pathname === '/newel' && hasLoaded) {
-        console.log('Window focused, reloading bots...')
-        loadBots()
-      }
-    }
-
     window.addEventListener('focus', handleFocus)
 
     return () => {
+      if (visibilityTimeout) {
+        clearTimeout(visibilityTimeout)
+      }
+      if (focusTimeout) {
+        clearTimeout(focusTimeout)
+      }
       document.removeEventListener('visibilitychange', handleVisibilityChange)
       window.removeEventListener('focus', handleFocus)
     }
-  }, [pathname, hasLoaded, loadBots])
+  }, [pathname, isInitialized, loading, loadBots])
 
   const filteredBots = (bots: CustomBot[]) => {
     if (!searchQuery) return bots
