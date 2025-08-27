@@ -11,7 +11,9 @@ import {
   XMarkIcon,
   SparklesIcon,
   InformationCircleIcon,
+  EyeIcon,
 } from '@heroicons/react/24/outline'
+import FilePreview from './FilePreview'
 
 interface RFPUploadProps {
   onUpload: (
@@ -73,6 +75,14 @@ export default function RFPUpload({ onUpload, projectId }: RFPUploadProps) {
   const [analysisInstructions, setAnalysisInstructions] = useState('')
   const [newGuidelineText, setNewGuidelineText] = useState('')
   const [showAdvancedOptions, setShowAdvancedOptions] = useState(false)
+
+  // 파일 미리보기 상태
+  const [uploadedFile, setUploadedFile] = useState<{
+    name: string
+    type: string
+    textContent: string
+  } | null>(null)
+  const [showPreview, setShowPreview] = useState(false)
 
   const _aiModels: AIModel[] = [
     {
@@ -225,6 +235,13 @@ export default function RFPUpload({ onUpload, projectId }: RFPUploadProps) {
         const uploadResult = await uploadResponse.json()
         console.log('Upload result:', uploadResult)
         const { textContent } = uploadResult
+
+        // 업로드된 파일 정보 저장 (미리보기용)
+        setUploadedFile({
+          name: file.name,
+          type: file.type,
+          textContent,
+        })
 
         // AI 분석 시작
         setUploadStatus('analyzing')
@@ -421,19 +438,42 @@ export default function RFPUpload({ onUpload, projectId }: RFPUploadProps) {
         </div>
       </div>
 
-      {uploadStatus === 'success' && (
+      {uploadStatus === 'success' && uploadedFile && (
         <div className="p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl">
-          <div className="flex items-start space-x-3">
-            <CheckCircleIcon className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
-            <div>
-              <h4 className="font-medium text-green-800 dark:text-green-200">
-                분석 완료
-              </h4>
-              <p className="text-sm text-green-600 dark:text-green-300 mt-1">
-                RFP 문서가 성공적으로 분석되었습니다. 결과를 확인하고 필요시
-                수정하세요.
-              </p>
+          <div className="flex items-start justify-between">
+            <div className="flex items-start space-x-3">
+              <CheckCircleIcon className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
+              <div>
+                <h4 className="font-medium text-green-800 dark:text-green-200">
+                  분석 완료
+                </h4>
+                <p className="text-sm text-green-600 dark:text-green-300 mt-1">
+                  RFP 문서가 성공적으로 분석되었습니다. 결과를 확인하고 필요시
+                  수정하세요.
+                </p>
+              </div>
             </div>
+            <button
+              onClick={() => setShowPreview(true)}
+              className="flex items-center space-x-2 px-3 py-2 text-sm bg-white dark:bg-gray-800 border border-green-200 dark:border-green-800 text-green-700 dark:text-green-300 rounded-lg hover:bg-green-50 dark:hover:bg-green-900/30 transition-colors"
+            >
+              <EyeIcon className="w-4 h-4" />
+              <span>파일 미리보기</span>
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* 파일 미리보기 모달 */}
+      {showPreview && uploadedFile && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
+          <div className="w-full max-w-4xl max-h-[90vh] bg-white dark:bg-gray-800 rounded-xl shadow-xl">
+            <FilePreview
+              fileName={uploadedFile.name}
+              fileType={uploadedFile.type}
+              textContent={uploadedFile.textContent}
+              onClose={() => setShowPreview(false)}
+            />
           </div>
         </div>
       )}
