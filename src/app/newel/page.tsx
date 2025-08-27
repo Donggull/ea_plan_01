@@ -157,17 +157,23 @@ export default function NewelPage() {
         const now = Date.now()
 
         // Double-check all conditions inside timeout
+        // Don't reload if data is already loaded (myBots and publicBots have data)
+        const hasData = myBots.length > 0 || publicBots.length > 0
+
         if (
           pathname === '/newel' &&
           isInitialized &&
           !loadingRef.current &&
+          !hasData && // Only reload if no data exists
           now - lastLoadTimeRef.current >= 5000 // Minimum 5 seconds between reloads
         ) {
-          console.log(`${eventType} triggered, reloading bots...`)
+          console.log(
+            `${eventType} triggered, reloading bots (no data found)...`
+          )
           loadBots()
         } else {
           console.log(
-            `${eventType} triggered but conditions not met, skipping reload`
+            `${eventType} triggered but conditions not met, skipping reload (hasData: ${hasData})`
           )
         }
       }, 1000) // Increased debounce time to 1 second
