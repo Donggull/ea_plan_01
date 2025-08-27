@@ -1,8 +1,9 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { motion } from 'framer-motion'
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute'
+import { usePathname } from 'next/navigation'
 import {
   PlusIcon,
   CpuChipIcon,
@@ -38,6 +39,7 @@ interface CustomBot {
 
 export default function NewelPage() {
   const router = useRouter()
+  const pathname = usePathname()
   const [myBots, setMyBots] = useState<CustomBot[]>([])
   const [publicBots, setPublicBots] = useState<CustomBot[]>([])
   const [loading, setLoading] = useState(true)
@@ -45,18 +47,10 @@ export default function NewelPage() {
   const [activeTab, setActiveTab] = useState<'my-bots' | 'public-bots'>(
     'my-bots'
   )
+  const [hasLoaded, setHasLoaded] = useState(false)
   const supabase = createClientComponentClient()
 
-  useEffect(() => {
-    // Add a small delay to ensure supabase client is ready
-    const timer = setTimeout(() => {
-      loadBots()
-    }, 100)
-
-    return () => clearTimeout(timer)
-  }, [])
-
-  const loadBots = async () => {
+  const loadBots = useCallback(async () => {
     try {
       setLoading(true)
       console.log('Loading bots...')
@@ -110,9 +104,49 @@ export default function NewelPage() {
       setPublicBots([])
     } finally {
       setLoading(false)
+      setHasLoaded(true)
       console.log('Bot loading completed')
     }
-  }
+  }, [])
+
+  useEffect(() => {
+    // Load bots when component mounts or pathname changes to /newel
+    if (pathname === '/newel') {
+      setLoading(true)
+      loadBots()
+    }
+  }, [pathname, loadBots])
+
+  // Handle page visibility change to reload data when user comes back
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (
+        document.visibilityState === 'visible' &&
+        pathname === '/newel' &&
+        hasLoaded
+      ) {
+        console.log('Page became visible, reloading bots...')
+        loadBots()
+      }
+    }
+
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+
+    // Also reload when window gets focus
+    const handleFocus = () => {
+      if (pathname === '/newel' && hasLoaded) {
+        console.log('Window focused, reloading bots...')
+        loadBots()
+      }
+    }
+
+    window.addEventListener('focus', handleFocus)
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+      window.removeEventListener('focus', handleFocus)
+    }
+  }, [pathname, hasLoaded, loadBots])
 
   const filteredBots = (bots: CustomBot[]) => {
     if (!searchQuery) return bots
