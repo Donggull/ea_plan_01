@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback, useRef } from 'react'
 import { motion } from 'framer-motion'
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute'
 import { usePathname } from 'next/navigation'
@@ -49,10 +49,17 @@ export default function NewelPage() {
   )
   const [hasLoaded, setHasLoaded] = useState(false)
   const [isInitialized, setIsInitialized] = useState(false)
+  const loadingRef = useRef(false)
   const supabase = createClientComponentClient()
 
   const loadBots = useCallback(async () => {
+    if (loadingRef.current) {
+      console.log('Already loading bots, skipping...')
+      return
+    }
+
     try {
+      loadingRef.current = true
       setLoading(true)
       console.log('Loading bots...')
 
@@ -104,6 +111,7 @@ export default function NewelPage() {
       setMyBots([])
       setPublicBots([])
     } finally {
+      loadingRef.current = false
       setLoading(false)
       setHasLoaded(true)
       setIsInitialized(true)
@@ -113,12 +121,11 @@ export default function NewelPage() {
 
   useEffect(() => {
     // Load bots when component mounts or pathname changes to /newel
-    if (pathname === '/newel' && !loading) {
-      console.log('Loading bots on pathname change...')
-      setLoading(true)
+    if (pathname === '/newel' && !isInitialized) {
+      console.log('Loading bots on initial mount or pathname change...')
       loadBots()
     }
-  }, [pathname, loadBots, loading])
+  }, [pathname, loadBots, isInitialized])
 
   // Handle page visibility change with throttling to prevent infinite loading
   useEffect(() => {
@@ -136,7 +143,7 @@ export default function NewelPage() {
         document.visibilityState === 'visible' &&
         pathname === '/newel' &&
         isInitialized &&
-        !loading
+        !loadingRef.current
       ) {
         // Add delay to prevent rapid successive calls
         visibilityTimeout = setTimeout(() => {
@@ -153,7 +160,7 @@ export default function NewelPage() {
       }
 
       // Only reload if conditions are met and not currently loading
-      if (pathname === '/newel' && isInitialized && !loading) {
+      if (pathname === '/newel' && isInitialized && !loadingRef.current) {
         // Add delay to prevent rapid successive calls
         focusTimeout = setTimeout(() => {
           console.log('Window focused, reloading bots...')
@@ -175,7 +182,7 @@ export default function NewelPage() {
       document.removeEventListener('visibilitychange', handleVisibilityChange)
       window.removeEventListener('focus', handleFocus)
     }
-  }, [pathname, isInitialized, loading, loadBots])
+  }, [pathname, isInitialized, loadBots])
 
   const filteredBots = (bots: CustomBot[]) => {
     if (!searchQuery) return bots
