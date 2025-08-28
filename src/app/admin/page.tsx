@@ -14,7 +14,7 @@ import {
   PencilIcon,
   TrashIcon
 } from '@heroicons/react/24/outline'
-import { supabase } from '@/lib/supabase/client'
+import { supabase } from '@/lib/supabase'
 
 interface User {
   id: string
