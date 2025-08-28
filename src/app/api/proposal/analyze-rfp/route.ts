@@ -1,52 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { aiService } from '@/lib/services/aiService'
-import type { ChatMessage } from '@/lib/services/aiService'
-
-interface AnalysisMetrics {
-  complexity: 'low' | 'medium' | 'high' | 'very_high'
-  estimatedEffort: {
-    hours: number
-    uncertainty: number // 0-100%
-  }
-  riskLevel: 'low' | 'medium' | 'high' | 'critical'
-  technologyStack: {
-    category: string
-    technologies: string[]
-    confidence: number
-  }[]
-  domainIdentification: {
-    primary: string
-    secondary: string[]
-    confidence: number
-  }
-  keywordAnalysis: {
-    functional: { keyword: string; frequency: number; importance: number }[]
-    technical: { keyword: string; frequency: number; importance: number }[]
-    business: { keyword: string; frequency: number; importance: number }[]
-  }
-  timeEstimation: {
-    phases: {
-      name: string
-      duration: number // Changed to number for weeks
-      description: string // Added description
-    }[]
-    totalWeeks: number // Changed from totalEstimate
-    confidenceLevel: number // Changed from criticalPath
-  }
-  domainClassification: {
-    // Changed from domainIdentification
-    category: string
-    confidence: number
-    indicators: string[]
-  }
-  requirementCategories: {
-    functional: number
-    technical: number
-    business: number
-    design: number
-    security: number
-  }
-}
 
 export async function POST(request: NextRequest) {
   try {
@@ -55,10 +7,6 @@ export async function POST(request: NextRequest) {
       fileName,
       projectId,
       aiModel = 'gemini',
-      customPrompt,
-      guidelines,
-      analysisInstructions,
-      mcpSettings,
     } = await request.json()
 
     if (!textContent || !fileName) {
@@ -69,153 +17,34 @@ export async function POST(request: NextRequest) {
     }
 
     console.log(
-      `Starting enhanced RFP analysis with ${aiModel} model for file: ${fileName}`
+      `Starting RFP analysis with ${aiModel} model for file: ${fileName}`
     )
 
-    // Create AI analysis prompt
-    let systemPrompt = `당신은 RFP(Request for Proposal) 문서를 분석하는 전문가입니다. 
-다음 RFP 문서를 종합적으로 분석하여 구조화된 정보를 추출하고 분석 결과를 제공해주세요.
+    // Simulate AI analysis with different delays based on model
+    const analysisDelay =
+      aiModel === 'gemini' ? 2000 : aiModel === 'chatgpt' ? 4000 : 3000
+    await new Promise(resolve => setTimeout(resolve, analysisDelay))
 
-분석할 항목:
-1. 프로젝트 기본 정보 (제목, 클라이언트, 마감일, 예산)
-2. 요구사항 분류 (기능적, 기술적, 디자인)
-3. 프로젝트 범위 및 목표
-4. 주요 산출물
-5. 위험 요소
-6. 핵심 포인트
-7. 복잡도 및 공수 추정
-
-결과는 JSON 형태로 구조화하여 제공해주세요.`
-
-    // Add guidelines if provided
-    if (guidelines && guidelines.length > 0) {
-      const guidelinesText = guidelines.map((g, i) => 
-        `${i + 1}. ${g.type === 'file' ? `파일 ${g.fileName}: ` : ''}${g.content}`
-      ).join('\n')
-      systemPrompt += `\n\n참고 지침:\n${guidelinesText}`
+    // For demo purposes, generate a mock analysis based on keywords
+    // In real implementation, this would call the selected AI model's API
+    const analysis = {
+      projectTitle: extractProjectTitle(textContent, fileName, aiModel),
+      client: extractClient(textContent),
+      deadline: extractDeadline(textContent),
+      budget: extractBudget(textContent),
+      requirements: {
+        functional: extractFunctionalRequirements(textContent, aiModel),
+        technical: extractTechnicalRequirements(textContent, aiModel),
+        design: extractDesignRequirements(textContent, aiModel),
+      },
+      scope: extractScope(textContent),
+      deliverables: extractDeliverables(textContent),
+      riskFactors: extractRiskFactors(textContent, aiModel),
+      keyPoints: extractKeyPoints(textContent, aiModel),
     }
 
-    // Add custom analysis instructions
-    if (analysisInstructions) {
-      systemPrompt += `\n\n추가 분석 지시사항:\n${analysisInstructions}`
-    }
-
-    const messages: ChatMessage[] = [
-      { role: 'system', content: systemPrompt },
-      { 
-        role: 'user', 
-        content: `다음 RFP 문서를 분석해주세요:\n\n${textContent}${customPrompt ? `\n\n추가 요구사항:\n${customPrompt}` : ''}`
-      }
-    ]
-
-    try {
-      // Use AI service for real analysis
-      const aiResponse = await aiService.chat({
-        messages,
-        model: aiModel as 'gemini' | 'chatgpt' | 'claude',
-        projectId,
-        workflowType: 'proposal',
-        workflowStage: 'rfp-analysis',
-        enableMCP: mcpSettings?.enabled,
-        selectedMCPTools: mcpSettings?.selectedTools,
-      })
-
-      console.log(`AI analysis completed with ${aiModel} model`)
-
-      // Try to parse AI response as JSON, fallback to structured extraction
-      let aiAnalysis: Record<string, unknown> = {}
-      try {
-        aiAnalysis = JSON.parse(aiResponse.content)
-      } catch {
-        // If AI response is not JSON, create structured analysis from text
-        console.log('AI response is not JSON, using fallback extraction')
-        aiAnalysis = {
-          analysis: aiResponse.content,
-          extractedInfo: 'AI 응답이 JSON 형식이 아니므로 기본 추출 방식을 사용했습니다.'
-        }
-      }
-
-      // Enhanced analysis with metrics (combine AI analysis with traditional extraction)
-      const metrics = performAdvancedAnalysis(textContent, aiModel)
-
-      const analysis = {
-        // AI-generated content (primary)
-        aiAnalysis: aiAnalysis,
-        aiResponse: aiResponse.content,
-        
-        // Traditional extraction (backup)
-        projectTitle: extractProjectTitle(textContent, fileName, aiModel),
-        client: extractClient(textContent),
-        deadline: extractDeadline(textContent),
-        budget: extractBudget(textContent),
-        requirements: {
-          functional: extractFunctionalRequirements(textContent, aiModel),
-          technical: extractTechnicalRequirements(textContent, aiModel),
-          design: extractDesignRequirements(textContent, aiModel),
-        },
-        scope: extractScope(textContent),
-        deliverables: extractDeliverables(textContent),
-        riskFactors: extractRiskFactors(textContent, aiModel),
-        keyPoints: extractKeyPoints(textContent, aiModel),
-        
-        // Enhanced analysis results
-        metrics,
-        analysisMetadata: {
-          aiModel,
-          analysisDate: new Date().toISOString(),
-          contentLength: textContent.length,
-          fileName,
-          projectId,
-          customPromptUsed: !!customPrompt,
-          guidelinesCount: guidelines?.length || 0,
-          hasAnalysisInstructions: !!analysisInstructions,
-          mcpEnabled: mcpSettings?.enabled || false,
-          mcpToolsUsed: mcpSettings?.selectedTools || [],
-          aiUsage: aiResponse.usage,
-        },
-      }
-
-      return NextResponse.json(analysis)
-    } catch (aiError) {
-      console.error('AI service error, falling back to traditional analysis:', aiError)
-      
-      // Fallback to traditional analysis if AI fails
-      const metrics = performAdvancedAnalysis(textContent, aiModel)
-
-      const analysis = {
-        projectTitle: extractProjectTitle(textContent, fileName, aiModel),
-        client: extractClient(textContent),
-        deadline: extractDeadline(textContent),
-        budget: extractBudget(textContent),
-        requirements: {
-          functional: extractFunctionalRequirements(textContent, aiModel),
-          technical: extractTechnicalRequirements(textContent, aiModel),
-          design: extractDesignRequirements(textContent, aiModel),
-        },
-        scope: extractScope(textContent),
-        deliverables: extractDeliverables(textContent),
-        riskFactors: extractRiskFactors(textContent, aiModel),
-        keyPoints: extractKeyPoints(textContent, aiModel),
-        // Enhanced analysis results
-        metrics,
-        analysisMetadata: {
-          aiModel,
-          analysisDate: new Date().toISOString(),
-          contentLength: textContent.length,
-          fileName,
-          projectId,
-          customPromptUsed: !!customPrompt,
-          guidelinesCount: guidelines?.length || 0,
-          hasAnalysisInstructions: !!analysisInstructions,
-          mcpEnabled: mcpSettings?.enabled || false,
-          mcpToolsUsed: mcpSettings?.selectedTools || [],
-          fallbackUsed: true,
-          aiError: aiError instanceof Error ? aiError.message : 'Unknown AI error',
-        },
-      }
-
-      return NextResponse.json(analysis)
-    }
+    console.log(`RFP analysis completed using ${aiModel} model`)
+    return NextResponse.json(analysis)
   } catch (error) {
     console.error('RFP analysis error:', error)
     return NextResponse.json(
@@ -225,226 +54,10 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// Enhanced analysis function
-function performAdvancedAnalysis(
-  textContent: string,
-  _aiModel: string
-): AnalysisMetrics {
-  const contentLower = textContent.toLowerCase()
-
-  // Keyword analysis
-  const functionalKeywords = [
-    { keyword: '로그인', importance: 8 },
-    { keyword: '회원가입', importance: 7 },
-    { keyword: '결제', importance: 9 },
-    { keyword: '주문', importance: 8 },
-    { keyword: '검색', importance: 6 },
-    { keyword: '관리자', importance: 7 },
-    { keyword: '게시판', importance: 5 },
-    { keyword: '댓글', importance: 4 },
-    { keyword: '리뷰', importance: 5 },
-    { keyword: '알림', importance: 6 },
-  ]
-
-  const technicalKeywords = [
-    { keyword: 'api', importance: 8 },
-    { keyword: 'database', importance: 9 },
-    { keyword: '데이터베이스', importance: 9 },
-    { keyword: 'react', importance: 7 },
-    { keyword: 'node.js', importance: 7 },
-    { keyword: '클라우드', importance: 8 },
-    { keyword: '보안', importance: 9 },
-    { keyword: '성능', importance: 7 },
-    { keyword: '모바일', importance: 8 },
-    { keyword: '반응형', importance: 6 },
-  ]
-
-  const businessKeywords = [
-    { keyword: '매출', importance: 8 },
-    { keyword: '고객', importance: 7 },
-    { keyword: '브랜드', importance: 6 },
-    { keyword: '마케팅', importance: 7 },
-    { keyword: '분석', importance: 8 },
-    { keyword: '리포트', importance: 6 },
-    { keyword: 'kpi', importance: 7 },
-    { keyword: 'roi', importance: 8 },
-  ]
-
-  // Calculate keyword frequencies and importance
-  const analyzeKeywords = (keywords: typeof functionalKeywords) => {
-    return keywords
-      .map(({ keyword, importance }) => {
-        const regex = new RegExp(keyword, 'gi')
-        const matches = textContent.match(regex) || []
-        return {
-          keyword,
-          frequency: matches.length,
-          importance: matches.length > 0 ? importance : 0,
-        }
-      })
-      .filter(k => k.frequency > 0)
-  }
-
-  const keywordAnalysis = {
-    functional: analyzeKeywords(functionalKeywords),
-    technical: analyzeKeywords(technicalKeywords),
-    business: analyzeKeywords(businessKeywords),
-  }
-
-  // Calculate complexity based on keyword analysis
-  const totalImportance =
-    keywordAnalysis.functional.reduce((sum, k) => sum + k.importance, 0) +
-    keywordAnalysis.technical.reduce((sum, k) => sum + k.importance, 0) +
-    keywordAnalysis.business.reduce((sum, k) => sum + k.importance, 0)
-
-  let complexity: AnalysisMetrics['complexity']
-  if (totalImportance < 30) complexity = 'low'
-  else if (totalImportance < 60) complexity = 'medium'
-  else if (totalImportance < 100) complexity = 'high'
-  else complexity = 'very_high'
-
-  // Technology stack identification
-  const technologyStack: AnalysisMetrics['technologyStack'] = []
-
-  if (contentLower.includes('react') || contentLower.includes('프론트엔드')) {
-    technologyStack.push({
-      category: 'Frontend',
-      technologies: ['React', 'TypeScript', 'Tailwind CSS'],
-      confidence: 0.8,
-    })
-  }
-
-  if (
-    contentLower.includes('node.js') ||
-    contentLower.includes('백엔드') ||
-    contentLower.includes('api')
-  ) {
-    technologyStack.push({
-      category: 'Backend',
-      technologies: ['Node.js', 'Express', 'PostgreSQL'],
-      confidence: 0.7,
-    })
-  }
-
-  if (
-    contentLower.includes('데이터베이스') ||
-    contentLower.includes('database') ||
-    contentLower.includes('mysql') ||
-    contentLower.includes('postgresql')
-  ) {
-    technologyStack.push({
-      category: 'Database',
-      technologies: ['PostgreSQL', 'Redis'],
-      confidence: 0.9,
-    })
-  }
-
-  // Domain identification
-  let primaryDomain = 'General Web Application'
-  const secondaryDomains: string[] = []
-
-  if (
-    contentLower.includes('쇼핑') ||
-    contentLower.includes('결제') ||
-    contentLower.includes('ecommerce')
-  ) {
-    primaryDomain = 'E-Commerce'
-    secondaryDomains.push('Payment System', 'Inventory Management')
-  } else if (contentLower.includes('관리') || contentLower.includes('admin')) {
-    primaryDomain = 'Management System'
-    secondaryDomains.push('User Management', 'Dashboard')
-  } else if (
-    contentLower.includes('콘텐츠') ||
-    contentLower.includes('블로그')
-  ) {
-    primaryDomain = 'Content Management'
-    secondaryDomains.push('Publishing', 'Media Management')
-  }
-
-  // Time estimation
-  const baseHours = Math.max(40, totalImportance * 10)
-  const estimatedEffort = {
-    hours: baseHours,
-    uncertainty:
-      complexity === 'low'
-        ? 20
-        : complexity === 'medium'
-          ? 35
-          : complexity === 'high'
-            ? 50
-            : 70,
-  }
-
-  // Risk level calculation
-  let riskLevel: AnalysisMetrics['riskLevel'] = 'low'
-  if (contentLower.includes('결제') || contentLower.includes('보안'))
-    riskLevel = 'high'
-  else if (contentLower.includes('실시간') || contentLower.includes('대용량'))
-    riskLevel = 'medium'
-  else if (complexity === 'very_high') riskLevel = 'critical'
-
-  // Time estimation phases
-  const phases = [
-    {
-      name: '기획 및 설계',
-      duration: 3,
-      description: '요구사항 분석, 시스템 설계, UI/UX 디자인',
-    },
-    {
-      name: '개발',
-      duration: Math.ceil(baseHours / 40),
-      description: '핵심 기능 개발, API 구현, 프론트엔드 개발',
-    },
-    {
-      name: '테스트',
-      duration: 2,
-      description: '단위 테스트, 통합 테스트, 사용자 테스트',
-    },
-    {
-      name: '배포 및 운영준비',
-      duration: 1,
-      description: '서버 배포, 모니터링 설정, 문서화',
-    },
-  ]
-
-  const totalWeeks = phases.reduce((sum, phase) => sum + phase.duration, 0)
-
-  // Calculate requirement categories
-  const requirementCategories = {
-    functional: keywordAnalysis.functional.length,
-    technical: keywordAnalysis.technical.length,
-    business: keywordAnalysis.business.length,
-    design:
-      contentLower.includes('디자인') || contentLower.includes('ui') ? 3 : 1,
-    security:
-      contentLower.includes('보안') || contentLower.includes('인증') ? 4 : 1,
-  }
-
-  return {
-    complexity,
-    confidence: 0.8,
-    estimatedEffort,
-    riskLevel,
-    technologyStack,
-    domainClassification: {
-      category: primaryDomain,
-      confidence: 70,
-      indicators: secondaryDomains,
-    },
-    keywordAnalysis,
-    timeEstimation: {
-      phases,
-      totalWeeks,
-      confidenceLevel: 75,
-    },
-    requirementCategories,
-  }
-}
-
 function extractProjectTitle(
   content: string,
   fileName: string,
-  _aiModel?: string
+  aiModel?: string
 ): string {
   // Look for project title patterns
   const titlePatterns = [
@@ -539,7 +152,7 @@ function extractBudget(content: string) {
 
 function extractFunctionalRequirements(
   content: string,
-  _aiModel?: string
+  aiModel?: string
 ): string[] {
   const requirements = []
 
@@ -579,7 +192,7 @@ function extractFunctionalRequirements(
 
 function extractTechnicalRequirements(
   content: string,
-  _aiModel?: string
+  aiModel?: string
 ): string[] {
   const requirements = []
 
@@ -615,7 +228,7 @@ function extractTechnicalRequirements(
 
 function extractDesignRequirements(
   content: string,
-  _aiModel?: string
+  aiModel?: string
 ): string[] {
   const requirements = []
 
@@ -692,7 +305,7 @@ function extractDeliverables(content: string): string[] {
   return deliverables
 }
 
-function extractRiskFactors(_content: string, _aiModel?: string): string[] {
+function extractRiskFactors(content: string, aiModel?: string): string[] {
   return [
     '요구사항 변경에 따른 일정 지연 가능성',
     '외부 API 연동 시 기술적 제약사항',
@@ -702,7 +315,7 @@ function extractRiskFactors(_content: string, _aiModel?: string): string[] {
   ]
 }
 
-function extractKeyPoints(_content: string, _aiModel?: string): string[] {
+function extractKeyPoints(content: string, aiModel?: string): string[] {
   return [
     '사용자 경험(UX) 최적화에 중점',
     '확장 가능한 아키텍처 설계',

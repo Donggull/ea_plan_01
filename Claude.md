@@ -3,7 +3,7 @@
 **요청한 요건이 완료되면 마지막에는 반드시 github MCP를 활용해서 커밋 하고 푸시해줘**
 **모든 데이터는 실제 데이터인 supabase와 연동되도록 개발해줘.**
 
-# Recent Development Updates (2025-08-28)
+# Recent Development Updates (2025-08-25)
 
 - ✅ Fixed project loading errors by updating default user ID in ProjectService
 - ✅ Fixed infinite recursion error in project creation by updating Supabase RLS policies
@@ -15,10 +15,6 @@
 - ✅ Improved error handling and logging in project service
 - ✅ Optimized performance by removing complex joins
 - ✅ Enhanced debugging capabilities with comprehensive console logging
-- ✅ Fixed admin dashboard access issue - updated test1@example.com user to super_admin role
-- ✅ Verified admin dashboard functionality with all tabs (Overview, Workflow Templates, User Management, System Settings)
-- ✅ Confirmed both dg.an@eluocnc.com and test1@example.com users have super_admin privileges
-- ✅ Admin access control working correctly - redirects non-admin users to main dashboard
 
 # 웹·앱 서비스 기획자 통합 플랫폼 PRD
 

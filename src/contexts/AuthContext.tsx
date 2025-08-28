@@ -1,17 +1,23 @@
 'use client'
 
-import React, { createContext, useContext, useEffect, useState } from 'react'
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  useCallback,
+} from 'react'
 import { User, Session, AuthError } from '@supabase/supabase-js'
 import { supabase, Database } from '@/lib/supabase'
 
 export type UserProfile = Database['public']['Tables']['users']['Row']
+export type UserInsert = Database['public']['Tables']['users']['Insert']
 
 export interface AuthContextType {
   user: User | null
   userProfile: UserProfile | null
   session: Session | null
   loading: boolean
-  initialized: boolean
   error: string | null
   signUp: (
     email: string,
@@ -29,6 +35,10 @@ export interface AuthContextType {
     error: AuthError | null
   }>
   signOut: () => Promise<{ error: AuthError | null }>
+  resetPassword: (email: string) => Promise<{ error: AuthError | null }>
+  updateProfile: (
+    updates: Partial<UserProfile>
+  ) => Promise<{ error: Error | null }>
   clearError: () => void
 }
 
@@ -44,101 +54,257 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [session, setSession] = useState<Session | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [initialized, setInitialized] = useState(false)
 
-  // 사용자 프로필 가져오기
-  const fetchUserProfile = async (userId: string) => {
-    if (!supabase) return
-
+  const fetchUserProfile = useCallback(async (userId: string) => {
     try {
+      // Supabase 클라이언트가 없으면 스킵
+      if (!supabase) {
+        console.warn('Supabase client not initialized')
+        return
+      }
+
+      // 개발 환경에서 기본 사용자 설정
+      const defaultUserId = 'afd2a12c-75a5-4914-812e-5eedc4fd3a3d'
+      const actualUserId = userId || defaultUserId
+
       const { data, error } = await supabase
         .from('users')
         .select('*')
-        .eq('id', userId)
+        .eq('id', actualUserId)
         .single()
 
-      if (!error && data) {
-        setUserProfile(data)
-      }
-    } catch (err) {
-      console.error('Error fetching user profile:', err)
-    }
-  }
+      if (error) {
+        if (error.code === 'PGRST116') {
+          // 개발 환경에서 기본 프로필 사용
+          if (process.env.NODE_ENV === 'development') {
+            const defaultProfile: UserProfile = {
+              id: defaultUserId,
+              email: 'dg.an@eluocnc.com',
+              name: '안동균',
+              subscription_tier: 'enterprise',
+              user_role: 'super_admin',
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+            } as UserProfile
 
-  useEffect(() => {
-    let mounted = true
-    let authSubscription: { unsubscribe: () => void } | null = null
-
-    // Supabase 설정 확인
-    if (!supabase || !process.env.NEXT_PUBLIC_SUPABASE_URL) {
-      console.warn('Supabase not configured')
-      if (mounted) {
-        setLoading(false)
-        setInitialized(true)
-      }
-      return
-    }
-
-    // 인증 상태 변경 리스너 설정
-    const setupAuthListener = () => {
-      console.log('🔊 AuthContext: Setting up auth state listener')
-
-      const {
-        data: { subscription },
-      } = supabase.auth.onAuthStateChange(async (event, session) => {
-        if (!mounted) return
-
-        console.log(
-          '🔄 AuthContext: Auth state changed:',
-          event,
-          session ? 'Session exists' : 'No session'
-        )
-
-        try {
-          // 상태 업데이트를 동기적으로 처리
-          setSession(session)
-          setUser(session?.user ?? null)
-          setError(null)
-
-          // 프로필 업데이트
-          if (session?.user) {
-            await fetchUserProfile(session.user.id)
-          } else {
-            setUserProfile(null)
+            setUserProfile(defaultProfile)
+            return
           }
 
-          console.log('✅ AuthContext: State update complete', {
-            user: session?.user ? 'Present' : 'None',
-            event,
-            initialized: true,
-          })
-        } catch (error) {
-          console.error('❌ AuthContext: Error in auth state change:', error)
-          setError('인증 상태 업데이트 중 오류가 발생했습니다.')
-        } finally {
-          // 모든 처리 완료 후 초기화 상태 업데이트
-          setLoading(false)
-          setInitialized(true)
+          // 개발 환경에서는 사용자 생성하지 않고 기본 프로필 사용
+          console.log(
+            'User profile not found, using default in development mode'
+          )
+          const defaultProfile: UserProfile = {
+            id: defaultUserId,
+            email: 'dg.an@eluocnc.com',
+            name: '안동균',
+            subscription_tier: 'enterprise',
+            user_role: 'super_admin',
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          } as UserProfile
+
+          setUserProfile(defaultProfile)
+        } else {
+          console.error('Error fetching user profile:', error)
+          // 개발 환경에서는 에러 시 기본 프로필 사용
+          if (process.env.NODE_ENV === 'development') {
+            const defaultProfile: UserProfile = {
+              id: defaultUserId,
+              email: 'dg.an@eluocnc.com',
+              name: '안동균',
+              subscription_tier: 'enterprise',
+              user_role: 'super_admin',
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+            } as UserProfile
+
+            setUserProfile(defaultProfile)
+            return
+          }
+          setError('사용자 프로필을 가져오는 중 오류가 발생했습니다.')
         }
-      })
-
-      authSubscription = subscription
-    }
-
-    // 인증 상태 리스너 설정
-    setupAuthListener()
-
-    // 정리 함수
-    return () => {
-      console.log('🧹 AuthContext: Cleaning up')
-      mounted = false
-      if (authSubscription) {
-        authSubscription.unsubscribe()
+        return
       }
+
+      setUserProfile(data)
+    } catch (err) {
+      console.error('Error in fetchUserProfile:', err)
+      // 개발 환경에서는 에러 시 기본 프로필 사용
+      if (process.env.NODE_ENV === 'development') {
+        const defaultUserId = 'afd2a12c-75a5-4914-812e-5eedc4fd3a3d'
+        const defaultProfile: UserProfile = {
+          id: defaultUserId,
+          email: 'dg.an@eluocnc.com',
+          name: '안동균',
+          subscription_tier: 'enterprise',
+          user_role: 'super_admin',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        } as UserProfile
+
+        setUserProfile(defaultProfile)
+        return
+      }
+      setError('사용자 프로필을 가져오는 중 오류가 발생했습니다.')
     }
   }, [])
 
-  const signUp = async (email: string, password: string, name: string) => {
+  useEffect(() => {
+    let isMounted = true
+    let initialLoadComplete = false
+
+    const getInitialSession = async () => {
+      console.log('Starting getInitialSession')
+
+      // Supabase 클라이언트가 mock인지 확인 (환경 변수가 없을 때)
+      const isValidSupabase =
+        supabase &&
+        typeof supabase.auth?.getSession === 'function' &&
+        !!(
+          process.env.NEXT_PUBLIC_SUPABASE_URL &&
+          process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+        )
+
+      // 개발 환경이거나 Supabase가 제대로 설정되지 않은 경우 기본 사용자 사용
+      if (process.env.NODE_ENV === 'development' || !isValidSupabase) {
+        if (isMounted) {
+          const defaultUserId = 'afd2a12c-75a5-4914-812e-5eedc4fd3a3d'
+          const mockUser = {
+            id: defaultUserId,
+            email: 'dg.an@eluocnc.com',
+            user_metadata: { name: '안동균' },
+          } as User
+
+          const defaultProfile: UserProfile = {
+            id: defaultUserId,
+            email: 'dg.an@eluocnc.com',
+            name: '안동균',
+            subscription_tier: 'enterprise',
+            user_role: 'super_admin',
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          } as UserProfile
+
+          setUser(mockUser)
+          setUserProfile(defaultProfile)
+          setSession(null) // 개발환경에서는 실제 세션 없이 진행
+          console.log(
+            'Development mode or invalid Supabase: using default user profile'
+          )
+        }
+
+        if (isMounted) {
+          setLoading(false)
+          initialLoadComplete = true
+        }
+        return
+      }
+
+      try {
+        const {
+          data: { session },
+          error,
+        } = await supabase.auth.getSession()
+
+        if (error) {
+          console.error('Session error:', error)
+          setError(error.message)
+        }
+
+        if (session && isMounted) {
+          console.log('Valid session found:', session.user.email)
+          setSession(session)
+          setUser(session.user)
+
+          // 프로필은 백그라운드에서 로드하되, 블로킹하지 않음
+          fetchUserProfile(session.user.id).catch(profileError => {
+            console.error(
+              'Profile fetch failed, continuing anyway:',
+              profileError
+            )
+          })
+        } else {
+          console.log('No session found')
+          if (isMounted) {
+            setUser(null)
+            setUserProfile(null)
+            setSession(null)
+          }
+        }
+      } catch (err) {
+        console.error('Critical error in getInitialSession:', err)
+        setError('인증 초기화 중 오류가 발생했습니다.')
+      } finally {
+        if (isMounted) {
+          setLoading(false)
+          initialLoadComplete = true
+        }
+        console.log('getInitialSession completed, loading set to false')
+      }
+    }
+
+    getInitialSession()
+
+    // Supabase 클라이언트가 제대로 설정되어 있을 때만 구독 설정
+    const isValidSupabase =
+      supabase &&
+      typeof supabase.auth?.getSession === 'function' &&
+      !!(
+        process.env.NEXT_PUBLIC_SUPABASE_URL &&
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+      )
+
+    if (isValidSupabase && process.env.NODE_ENV !== 'development') {
+      const {
+        data: { subscription },
+      } = supabase.auth.onAuthStateChange(async (event, session) => {
+        if (!isMounted || !initialLoadComplete) return
+
+        console.log('Auth state changed:', event, session?.user?.id)
+
+        setSession(session)
+        setUser(session?.user ?? null)
+        setError(null)
+
+        if (session?.user) {
+          try {
+            await fetchUserProfile(session.user.id)
+          } catch (profileError) {
+            console.error(
+              'Failed to fetch user profile in auth state change:',
+              profileError
+            )
+          }
+        } else {
+          setUserProfile(null)
+        }
+
+        if (event === 'SIGNED_OUT') {
+          setUserProfile(null)
+        }
+      })
+
+      return () => {
+        isMounted = false
+        subscription.unsubscribe()
+      }
+    }
+
+    return () => {
+      isMounted = false
+    }
+  }, [fetchUserProfile])
+
+  const signUp = async (
+    email: string,
+    password: string,
+    name: string
+  ): Promise<{
+    data: { user: User | null; session: Session | null }
+    error: AuthError | null
+  }> => {
     setLoading(true)
     setError(null)
 
@@ -151,7 +317,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
         email,
         password,
         options: {
-          data: { name },
+          data: {
+            name,
+          },
         },
       })
 
@@ -161,7 +329,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
       return { data, error }
     } catch (err) {
-      console.error('Sign up error:', err)
+      console.error('Error in signUp:', err)
       const errorMessage = '회원가입 중 오류가 발생했습니다.'
       setError(errorMessage)
       return {
@@ -173,7 +341,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
   }
 
-  const signIn = async (email: string, password: string) => {
+  const signIn = async (
+    email: string,
+    password: string
+  ): Promise<{
+    data: { user: User | null; session: Session | null }
+    error: AuthError | null
+  }> => {
     setLoading(true)
     setError(null)
 
@@ -193,7 +367,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
       return { data, error }
     } catch (err) {
-      console.error('Sign in error:', err)
+      console.error('Error in signIn:', err)
       const errorMessage = '로그인 중 오류가 발생했습니다.'
       setError(errorMessage)
       return {
@@ -218,19 +392,88 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
       if (error) {
         setError(getErrorMessage(error))
+      } else {
+        setUser(null)
+        setUserProfile(null)
+        setSession(null)
       }
-
-      // 상태 초기화
-      setUser(null)
-      setUserProfile(null)
-      setSession(null)
 
       return { error }
     } catch (err) {
-      console.error('Sign out error:', err)
+      console.error('Error in signOut:', err)
       const errorMessage = '로그아웃 중 오류가 발생했습니다.'
       setError(errorMessage)
       return { error: { message: errorMessage } as AuthError }
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const resetPassword = async (email: string) => {
+    setLoading(true)
+    setError(null)
+
+    try {
+      if (!supabase) {
+        throw new Error('Supabase client not initialized')
+      }
+
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/auth/reset-password`,
+      })
+
+      if (error) {
+        setError(getErrorMessage(error))
+      }
+
+      return { error }
+    } catch (err) {
+      console.error('Error in resetPassword:', err)
+      const errorMessage = '비밀번호 재설정 중 오류가 발생했습니다.'
+      setError(errorMessage)
+      return { error: { message: errorMessage } as AuthError }
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const updateProfile = async (updates: Partial<UserProfile>) => {
+    if (!user || !userProfile) {
+      const error = new Error('로그인이 필요합니다.')
+      setError(error.message)
+      return { error }
+    }
+
+    setLoading(true)
+    setError(null)
+
+    try {
+      if (!supabase) {
+        throw new Error('Supabase client not initialized')
+      }
+
+      const { data, error } = await supabase
+        .from('users')
+        .update({
+          ...updates,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', user.id)
+        .select()
+        .single()
+
+      if (error) {
+        setError('프로필 업데이트 중 오류가 발생했습니다.')
+        return { error: new Error(error.message) }
+      }
+
+      setUserProfile(data)
+      return { error: null }
+    } catch (err) {
+      console.error('Error in updateProfile:', err)
+      const errorMessage = '프로필 업데이트 중 오류가 발생했습니다.'
+      setError(errorMessage)
+      return { error: new Error(errorMessage) }
     } finally {
       setLoading(false)
     }
@@ -252,6 +495,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
         return '이메일 인증이 필요합니다. 이메일을 확인해주세요.'
       case 'Too many requests':
         return '너무 많은 요청이 발생했습니다. 잠시 후 다시 시도해주세요.'
+      case 'Signup is disabled':
+        return '회원가입이 현재 비활성화되어 있습니다.'
       default:
         return error.message || '알 수 없는 오류가 발생했습니다.'
     }
@@ -262,11 +507,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
     userProfile,
     session,
     loading,
-    initialized,
     error,
     signUp,
     signIn,
     signOut,
+    resetPassword,
+    updateProfile,
     clearError,
   }
 

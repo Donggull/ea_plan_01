@@ -7,7 +7,7 @@ export async function POST(request: NextRequest) {
       sectionTitle,
       projectTitle,
       rfpAnalysis,
-      marketResearch,
+      marketResearch
     } = await request.json()
 
     if (!sectionType || !sectionTitle) {
@@ -29,6 +29,7 @@ export async function POST(request: NextRequest) {
     )
 
     return NextResponse.json({ content })
+
   } catch (error) {
     console.error('Content generation error:', error)
     return NextResponse.json(
@@ -42,12 +43,11 @@ function generateSectionContent(
   sectionType: string,
   sectionTitle: string,
   projectTitle: string,
-  rfpAnalysis?: Record<string, unknown>,
-  marketResearch?: Record<string, unknown>
+  rfpAnalysis?: any,
+  marketResearch?: any
 ): string {
   const templates = {
-    '프로젝트 개요': () =>
-      `
+    '프로젝트 개요': () => `
 ${projectTitle}는 ${rfpAnalysis?.client || '고객사'}의 디지털 혁신을 지원하기 위한 종합적인 웹 솔루션입니다.
 
 본 프로젝트의 핵심 목표는 다음과 같습니다:
@@ -62,28 +62,22 @@ ${rfpAnalysis?.scope || '프로젝트 범위'}를 통해 고객의 비즈니스 
 
     '요구사항 분석': () => {
       let content = `${projectTitle} 프로젝트의 요구사항을 다음과 같이 분석하였습니다.\n\n`
-
+      
       if (rfpAnalysis?.requirements) {
         content += `## 기능적 요구사항\n`
-        rfpAnalysis.requirements.functional?.forEach(
-          (req: string, index: number) => {
-            content += `${index + 1}. ${req}\n`
-          }
-        )
+        rfpAnalysis.requirements.functional?.forEach((req: string, index: number) => {
+          content += `${index + 1}. ${req}\n`
+        })
 
         content += `\n## 기술적 요구사항\n`
-        rfpAnalysis.requirements.technical?.forEach(
-          (req: string, index: number) => {
-            content += `${index + 1}. ${req}\n`
-          }
-        )
+        rfpAnalysis.requirements.technical?.forEach((req: string, index: number) => {
+          content += `${index + 1}. ${req}\n`
+        })
 
         content += `\n## 디자인 요구사항\n`
-        rfpAnalysis.requirements.design?.forEach(
-          (req: string, index: number) => {
-            content += `${index + 1}. ${req}\n`
-          }
-        )
+        rfpAnalysis.requirements.design?.forEach((req: string, index: number) => {
+          content += `${index + 1}. ${req}\n`
+        })
       } else {
         content += `
 1. 사용자 인증 및 권한 관리 시스템
@@ -97,8 +91,7 @@ ${rfpAnalysis?.scope || '프로젝트 범위'}를 통해 고객의 비즈니스 
       return content
     },
 
-    '제안 솔루션': () =>
-      `
+    '제안 솔루션': () => `
 ${projectTitle}에 대한 저희의 솔루션 제안은 다음과 같습니다.
 
 ## 핵심 솔루션 아키텍처
@@ -123,14 +116,9 @@ ${projectTitle}에 대한 저희의 솔루션 제안은 다음과 같습니다.
 
     '기술 스택': () => {
       let content = `${projectTitle} 개발에 사용할 기술 스택입니다.\n\n`
-
+      
       if (marketResearch?.technologyStack) {
-        ;(
-          marketResearch.technologyStack as Array<{
-            category: string
-            technologies: string[]
-          }>
-        ).forEach(stack => {
+        marketResearch.technologyStack.forEach((stack: any) => {
           content += `**${stack.category}**\n`
           stack.technologies.forEach((tech: string) => {
             content += `• ${tech}\n`
@@ -163,16 +151,11 @@ ${projectTitle}에 대한 저희의 솔루션 제안은 다음과 같습니다.
 
     '프로젝트 일정': () => {
       let content = `${projectTitle}의 세부 일정계획입니다.\n\n`
-
+      
       if (marketResearch?.timeline) {
         content += `단계|기간|주요 활동|산출물\n`
-        content += `----|----|----|----\n`(
-          marketResearch.timeline as Array<{
-            phase: string
-            duration: string
-            description: string
-          }>
-        ).forEach(phase => {
+        content += `----|----|----|----\n`
+        marketResearch.timeline.forEach((phase: any) => {
           content += `${phase.phase}|${phase.duration}|${phase.description}|관련 문서 및 결과물\n`
         })
       } else {
@@ -191,7 +174,7 @@ ${projectTitle}에 대한 저희의 솔루션 제안은 다음과 같습니다.
 
     '예산 및 비용': () => {
       let content = `${projectTitle}의 예산 산정 내역입니다.\n\n`
-
+      
       if (marketResearch?.pricing) {
         content += `구분|금액|비고\n`
         content += `----|----|----\n`
@@ -216,8 +199,7 @@ ${projectTitle}에 대한 저희의 솔루션 제안은 다음과 같습니다.
       return content
     },
 
-    '팀 구성': () =>
-      `
+    '팀 구성': () => `
 ${projectTitle} 수행을 위한 전담팀 구성안입니다.
 
 **프로젝트 매니저 (1명)**
@@ -248,7 +230,7 @@ ${projectTitle} 수행을 위한 전담팀 구성안입니다.
 
     '위험 관리': () => {
       let content = `${projectTitle} 진행 시 예상되는 위험요소와 대응방안입니다.\n\n`
-
+      
       if (rfpAnalysis?.riskFactors) {
         rfpAnalysis.riskFactors.forEach((risk: string, index: number) => {
           content += `**위험요소 ${index + 1}: ${risk}**\n`
@@ -276,8 +258,7 @@ ${projectTitle} 수행을 위한 전담팀 구성안입니다.
       return content
     },
 
-    결론: () =>
-      `
+    '결론': () => `
 ${projectTitle}는 ${rfpAnalysis?.client || '고객사'}의 디지털 혁신을 실현하는 핵심 프로젝트입니다.
 
 ## 프로젝트 성공 요인
@@ -296,14 +277,12 @@ ${projectTitle}는 ${rfpAnalysis?.client || '고객사'}의 디지털 혁신을 
 
 ${rfpAnalysis?.keyPoints?.join(', ') || '사용자 중심 설계, 확장 가능한 아키텍처, 보안 강화'}를 통해 
 고객의 비즈니스 목표 달성에 기여하겠습니다.
-    `.trim(),
+    `.trim()
   }
 
   // Get template function or return default content
-  const templateFn =
-    templates[sectionTitle as keyof typeof templates] ||
-    (() =>
-      `${sectionTitle}에 대한 상세 내용을 여기에 작성하세요.\n\n이 섹션은 ${projectTitle} 프로젝트의 중요한 부분입니다.`)
+  const templateFn = templates[sectionTitle as keyof typeof templates] || 
+    (() => `${sectionTitle}에 대한 상세 내용을 여기에 작성하세요.\n\n이 섹션은 ${projectTitle} 프로젝트의 중요한 부분입니다.`)
 
   return templateFn()
 }

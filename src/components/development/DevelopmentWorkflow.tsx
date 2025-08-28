@@ -25,9 +25,6 @@ interface DevelopmentWorkflowProps {
   projectId: string
   projectTitle: string
   projectCategory: string
-  selectedAiModel?: string
-  selectedModelConfig?: string
-  selectedMCPTools?: string[]
 }
 
 const developmentSteps = [

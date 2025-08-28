@@ -1,11 +1,10 @@
 'use client'
 
 import { useState } from 'react'
-import { usePathname, useRouter } from 'next/navigation'
+import { usePathname } from 'next/navigation'
 import Link from 'next/link'
 import { useThemeStore } from '@/stores/theme'
 import { useModalStore } from '@/stores/modalStore'
-import { useAuth } from '@/contexts/AuthContext'
 import {
   Bars3Icon,
   BellIcon,
@@ -48,24 +47,8 @@ const projectCategories = [
 export default function Header({ onMenuToggle }: HeaderProps) {
   const { isDarkMode, toggleTheme } = useThemeStore()
   const { openCreateProjectModal } = useModalStore()
-  const { signOut, user, userProfile, initialized } = useAuth()
   const [searchQuery, setSearchQuery] = useState('')
   const pathname = usePathname()
-  const router = useRouter()
-
-  const handleLogout = async () => {
-    try {
-      await signOut()
-      router.push('/auth/login')
-    } catch (error) {
-      console.error('로그아웃 오류:', error)
-    }
-  }
-
-  // Don't render header if auth is not initialized or user is not authenticated
-  if (!initialized || !user) {
-    return null
-  }
 
   return (
     <header className="bg-gray-900 text-white shadow-lg border-b border-gray-700">
@@ -214,15 +197,7 @@ export default function Header({ onMenuToggle }: HeaderProps) {
                 <Menu.Button className="flex text-sm rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-500 transition-colors">
                   <span className="sr-only">사용자 메뉴 열기</span>
                   <div className="w-8 h-8 bg-slate-600 rounded-full flex items-center justify-center">
-                    <span className="text-white font-medium text-sm">
-                      {userProfile?.name
-                        ? userProfile.name.length > 1
-                          ? userProfile.name.slice(0, 2)
-                          : userProfile.name
-                        : user?.email
-                          ? user.email.slice(0, 2).toUpperCase()
-                          : 'U'}
-                    </span>
+                    <span className="text-white font-medium text-sm">KJ</span>
                   </div>
                 </Menu.Button>
               </div>
@@ -268,7 +243,10 @@ export default function Header({ onMenuToggle }: HeaderProps) {
                   <Menu.Item>
                     {({ active }) => (
                       <button
-                        onClick={handleLogout}
+                        onClick={() => {
+                          // TODO: 로그아웃 로직 구현
+                          console.log('로그아웃')
+                        }}
                         className={`${
                           active
                             ? 'bg-gray-100 dark:bg-gray-700'

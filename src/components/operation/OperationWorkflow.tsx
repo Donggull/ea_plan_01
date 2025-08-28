@@ -26,9 +26,6 @@ interface OperationWorkflowProps {
   projectId: string
   projectTitle: string
   projectCategory: string
-  selectedAiModel?: string
-  selectedModelConfig?: string
-  selectedMCPTools?: string[]
 }
 
 const operationSteps = [

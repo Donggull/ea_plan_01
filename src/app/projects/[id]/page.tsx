@@ -17,15 +17,11 @@ import {
   UsersIcon,
   CalendarIcon,
   ArrowTrendingUpIcon,
-  CogIcon,
-  CheckCircleIcon,
-  XMarkIcon,
 } from '@heroicons/react/24/outline'
 import useProjectStore, { Project } from '@/lib/stores/projectStore'
 import ProposalWorkflow from '@/components/proposal/ProposalWorkflow'
 import DevelopmentWorkflow from '@/components/development/DevelopmentWorkflow'
 import OperationWorkflow from '@/components/operation/OperationWorkflow'
-import ProjectSidebar from '@/components/shared/ProjectSidebar'
 
 interface TabContent {
   id: string
@@ -139,33 +135,12 @@ export default function ProjectDetailPage() {
   const { getProjectById } = useProjectStore()
   const [project, setProject] = useState<Project | null>(null)
   const [activeTab, setActiveTab] = useState<string>('rfp')
-  const [showSettings, setShowSettings] = useState(false)
-  const [selectedModel, setSelectedModel] = useState('gemini-pro')
-  const [selectedModelConfig, setSelectedModelConfig] = useState('')
-  const [selectedMCPTools, setSelectedMCPTools] = useState<string[]>([])
-
-  const handleModelChange = (modelId: string) => {
-    setSelectedModel(modelId)
-  }
-
-  const handleModelConfigChange = (modelId: string, config: string) => {
-    setSelectedModelConfig(config)
-  }
-
-  const handleMCPToolsChange = (toolIds: string[]) => {
-    setSelectedMCPTools(toolIds)
-  }
 
   useEffect(() => {
     if (params?.id) {
       const projectData = getProjectById(params.id as string)
       if (projectData) {
         setProject(projectData)
-        // Load project settings if available
-        const settings = (projectData as Project & { settings?: { aiModel?: string; modelConfig?: string; mcpTools?: string[] } }).settings || {}
-        setSelectedModel(settings.aiModel || 'gemini-pro')
-        setSelectedModelConfig(settings.modelConfig || '')
-        setSelectedMCPTools(settings.mcpTools || [])
         // Set initial active tab based on project category
         const tabs = categoryTabs[projectData.category] || []
         if (tabs.length > 0) {
@@ -259,13 +234,6 @@ export default function ProjectDetailPage() {
               >
                 {statusBadge.label}
               </span>
-              <button 
-                onClick={() => setShowSettings(true)}
-                className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-                title="프로젝트 설정"
-              >
-                <CogIcon className="w-4 h-4 text-gray-600 dark:text-gray-400" />
-              </button>
               <button className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
                 <PencilIcon className="w-4 h-4 text-gray-600 dark:text-gray-400" />
               </button>
@@ -288,9 +256,6 @@ export default function ProjectDetailPage() {
               projectId={project.id}
               projectTitle={project.name}
               projectCategory={project.category}
-              selectedAiModel={selectedModel}
-              selectedModelConfig={selectedModelConfig}
-              selectedMCPTools={selectedMCPTools}
             />
           )}
 
@@ -300,9 +265,6 @@ export default function ProjectDetailPage() {
               projectId={project.id}
               projectTitle={project.name}
               projectCategory={project.category}
-              selectedAiModel={selectedModel}
-              selectedModelConfig={selectedModelConfig}
-              selectedMCPTools={selectedMCPTools}
             />
           )}
 
@@ -312,25 +274,10 @@ export default function ProjectDetailPage() {
               projectId={project.id}
               projectTitle={project.name}
               projectCategory={project.category}
-              selectedAiModel={selectedModel}
-              selectedModelConfig={selectedModelConfig}
-              selectedMCPTools={selectedMCPTools}
             />
           )}
         </motion.div>
       </div>
-
-      {/* Project Settings Sidebar */}
-      <ProjectSidebar
-        isOpen={showSettings}
-        onClose={() => setShowSettings(false)}
-        selectedModel={selectedModel}
-        selectedModelConfig={selectedModelConfig}
-        selectedMCPTools={selectedMCPTools}
-        onModelChange={handleModelChange}
-        onModelConfigChange={handleModelConfigChange}
-        onMCPToolsChange={handleMCPToolsChange}
-      />
     </div>
   )
 }

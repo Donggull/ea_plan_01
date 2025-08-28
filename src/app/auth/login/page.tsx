@@ -7,6 +7,7 @@ import LoginForm from '@/components/auth/LoginForm'
 import { Loading } from '@/components/ui/Loading'
 
 function LoginContent() {
+  const router = useRouter()
   const searchParams = useSearchParams()
   const { user, loading } = useAuth()
 
@@ -16,14 +17,9 @@ function LoginContent() {
   useEffect(() => {
     // 이미 로그인된 사용자는 대시보드로 리다이렉트
     if (user && !loading) {
-      console.log(
-        '🏠 LoginPage: User already logged in, redirecting to:',
-        redirectTo
-      )
-      // window.location을 사용하여 즉시 리다이렉트
-      window.location.href = redirectTo
+      router.replace(redirectTo)
     }
-  }, [user, loading, redirectTo])
+  }, [user, loading, router, redirectTo])
 
   if (loading) {
     return (
@@ -49,9 +45,7 @@ function LoginContent() {
         <LoginForm
           redirectTo={redirectTo}
           onSuccess={() => {
-            console.log('🎯 LoginPage: Login success callback triggered')
-            // window.location을 사용하여 즉시 리다이렉트
-            window.location.href = redirectTo
+            router.replace(redirectTo)
           }}
         />
       </div>

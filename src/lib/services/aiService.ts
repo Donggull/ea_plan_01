@@ -7,8 +7,6 @@ import {
   type ModelSelectionCriteria,
 } from '@/lib/config/aiConfig'
 import { env, validateEnv } from '@/lib/utils/env'
-import { ApiUsageTracker } from '@/services/apiUsageTracker'
-import { mcpManagementService } from './mcpManagementService'
 
 export interface ChatMessage {
   role: 'user' | 'assistant' | 'system'
@@ -24,14 +22,6 @@ export interface ChatRequest {
   temperature?: number
   maxTokens?: number
   criteria?: Partial<ModelSelectionCriteria>
-  // MCP 지원
-  enableMCP?: boolean
-  selectedMCPTools?: string[] // MCP tool IDs
-  // 사용량 추적용 메타데이터
-  projectId?: string
-  conversationId?: string
-  workflowType?: 'proposal' | 'development' | 'operation' | 'chat' | 'image'
-  workflowStage?: string
 }
 
 export interface ChatResponse {
@@ -58,11 +48,9 @@ class AIService {
   private geminiClient: GoogleGenerativeAI | null = null
   private openaiClient: OpenAI | null = null
   private anthropicClient: Anthropic | null = null
-  private usageTracker: ApiUsageTracker
 
   constructor() {
     this.initializeClients()
-    this.usageTracker = ApiUsageTracker.getInstance()
 
     // 환경 변수 검증 (개발 환경에서만)
     if (env.NODE_ENV === 'development') {
@@ -195,85 +183,41 @@ class AIService {
     const temperature = request.temperature || config.temperature
 
     try {
-      let response: ChatResponse
-      
       switch (model) {
         case 'gemini':
-          response = await this.chatWithGemini(request.messages, {
+          return await this.chatWithGemini(request.messages, {
             maxTokens,
             temperature,
           })
-          break
 
         case 'chatgpt':
-          response = await this.chatWithOpenAI(request.messages, {
+          return await this.chatWithOpenAI(request.messages, {
             maxTokens,
             temperature,
           })
-          break
 
         case 'claude':
-          response = await this.chatWithClaude(request.messages, {
+          return await this.chatWithClaude(request.messages, {
             maxTokens,
             temperature,
-            enableMCP: request.enableMCP,
-            selectedMCPTools: request.selectedMCPTools,
           })
-          break
 
         default:
           throw new Error(`Unsupported model: ${model}`)
       }
-
-      // API 사용량 추적
-      await this.trackUsage(model, request, response)
-      
-      return response
     } catch (error) {
       console.error(`Error with ${model}:`, error)
 
       // 에러 발생 시 fallback 모델 시도
       if (model !== 'gemini' && this.geminiClient) {
         console.log('Falling back to Gemini...')
-        const fallbackResponse = await this.chatWithGemini(request.messages, {
+        return await this.chatWithGemini(request.messages, {
           maxTokens,
           temperature,
         })
-        
-        // Fallback 사용량도 추적
-        await this.trackUsage('gemini', request, fallbackResponse)
-        
-        return fallbackResponse
       }
 
       throw error
-    }
-  }
-
-  private async trackUsage(
-    model: AIModel,
-    request: ChatRequest,
-    response: ChatResponse
-  ): Promise<void> {
-    try {
-      const inputText = request.messages.map(m => m.content).join(' ')
-      const outputText = response.content
-      
-      await this.usageTracker.trackUsage(
-        model as 'gemini' | 'chatgpt' | 'claude',
-        '/chat/completions',
-        inputText,
-        outputText,
-        {
-          projectId: request.projectId,
-          conversationId: request.conversationId,
-          workflowType: request.workflowType,
-          workflowStage: request.workflowStage,
-          modelVariant: AI_MODEL_CONFIGS[model].name
-        }
-      )
-    } catch (error) {
-      console.error('Failed to track API usage:', error)
     }
   }
 
@@ -368,7 +312,7 @@ class AIService {
       maxTokens: number; 
       temperature: number;
       enableMCP?: boolean;
-      selectedMCPTools?: string[];
+      availableTools?: string[];
     }
   ): Promise<ChatResponse> {
     if (!this.anthropicClient) {
@@ -378,69 +322,30 @@ class AIService {
     const { system, messages: formattedMessages } =
       this.formatMessagesForClaude(messages)
 
-    // MCP 도구 활성화 시 선택된 도구 정보를 가져와서 시스템 메시지에 추가
+    // MCP 도구 활성화 시 시스템 메시지에 도구 사용 가능 정보 추가
     let enhancedSystem = system || '';
-    let tools: Array<{
-      name: string;
-      description: string;
-      input_schema: Record<string, unknown>;
-    }> = [];
+    if (options.enableMCP !== false) {
+      const toolsInfo = `
 
-    if (options.enableMCP && options.selectedMCPTools && options.selectedMCPTools.length > 0) {
-      try {
-        // 선택된 MCP 도구 정보 가져오기
-        const availableTools = await mcpManagementService.getActiveTools();
-        const selectedTools = availableTools.filter(tool => 
-          options.selectedMCPTools?.includes(tool.id)
-        );
+Available MCP tools:
+- web_search: Search the web for current information
+- file_system: Read and write files 
+- database: Query database information
+- image_generation: Generate images
+- custom: Execute custom tools
 
-        if (selectedTools.length > 0) {
-          // 도구 정보를 시스템 메시지에 추가
-          const toolsInfo = selectedTools.map(tool => 
-            `- ${tool.name}: ${tool.description} (provided by ${tool.provider?.display_name})`
-          ).join('\n');
-
-          enhancedSystem += `\n\nAvailable MCP tools:\n${toolsInfo}\n\nWhen you need to use external information or perform actions, mention which tool you would use and how. The tools will be executed externally and the results will be provided to you.`;
-
-          // Anthropic Tools API 형식으로 변환 (실제 MCP 연동을 위한 준비)
-          tools = selectedTools.map(tool => ({
-            name: tool.name,
-            description: tool.description,
-            input_schema: tool.config || {
-              type: "object",
-              properties: {},
-              required: []
-            }
-          }));
-        }
-      } catch (error) {
-        console.error('Failed to load MCP tools for Claude:', error);
-      }
+When you need to use external information or perform actions, use the appropriate MCP tools.`;
+      enhancedSystem += toolsInfo;
     }
 
-    const createParams: {
-      model: string;
-      max_tokens: number;
-      temperature: number;
-      top_p: number;
-      system?: string;
-      messages: Array<{ role: string; content: string }>;
-      tools?: Array<{ name: string; description: string; input_schema: Record<string, unknown> }>;
-    } = {
+    const message = await this.anthropicClient.messages.create({
       model: AI_MODEL_CONFIGS.claude.name,
       max_tokens: options.maxTokens,
       temperature: options.temperature,
       top_p: AI_MODEL_CONFIGS.claude.topP,
       system: enhancedSystem || undefined,
       messages: formattedMessages,
-    };
-
-    // 도구가 있으면 tools 파라미터 추가 (향후 실제 MCP 연동을 위한 준비)
-    if (tools.length > 0) {
-      createParams.tools = tools;
-    }
-
-    const message = await this.anthropicClient.messages.create(createParams);
+    })
 
     const content = message.content[0]
     const text = content.type === 'text' ? content.text : ''
@@ -495,8 +400,6 @@ class AIService {
           yield* this.streamChatWithClaude(request.messages, {
             maxTokens,
             temperature,
-            enableMCP: request.enableMCP,
-            selectedMCPTools: request.selectedMCPTools,
           })
           break
 
@@ -607,12 +510,7 @@ class AIService {
 
   private async *streamChatWithClaude(
     messages: ChatMessage[],
-    options: { 
-      maxTokens: number; 
-      temperature: number;
-      enableMCP?: boolean;
-      selectedMCPTools?: string[];
-    }
+    options: { maxTokens: number; temperature: number }
   ): AsyncGenerator<StreamingChatResponse> {
     if (!this.anthropicClient) {
       throw new Error('Anthropic client not initialized')
@@ -621,71 +519,15 @@ class AIService {
     const { system, messages: formattedMessages } =
       this.formatMessagesForClaude(messages)
 
-    // MCP 도구 활성화 시 선택된 도구 정보를 가져와서 시스템 메시지에 추가
-    let enhancedSystem = system || '';
-    let tools: Array<{
-      name: string;
-      description: string;
-      input_schema: Record<string, unknown>;
-    }> = [];
-
-    if (options.enableMCP && options.selectedMCPTools && options.selectedMCPTools.length > 0) {
-      try {
-        // 선택된 MCP 도구 정보 가져오기
-        const availableTools = await mcpManagementService.getActiveTools();
-        const selectedTools = availableTools.filter(tool => 
-          options.selectedMCPTools?.includes(tool.id)
-        );
-
-        if (selectedTools.length > 0) {
-          // 도구 정보를 시스템 메시지에 추가
-          const toolsInfo = selectedTools.map(tool => 
-            `- ${tool.name}: ${tool.description} (provided by ${tool.provider?.display_name})`
-          ).join('\n');
-
-          enhancedSystem += `\n\nAvailable MCP tools:\n${toolsInfo}\n\nWhen you need to use external information or perform actions, mention which tool you would use and how. The tools will be executed externally and the results will be provided to you.`;
-
-          // Anthropic Tools API 형식으로 변환 (실제 MCP 연동을 위한 준비)
-          tools = selectedTools.map(tool => ({
-            name: tool.name,
-            description: tool.description,
-            input_schema: tool.config || {
-              type: "object",
-              properties: {},
-              required: []
-            }
-          }));
-        }
-      } catch (error) {
-        console.error('Failed to load MCP tools for Claude streaming:', error);
-      }
-    }
-
-    const createParams: {
-      model: string;
-      max_tokens: number;
-      temperature: number;
-      top_p: number;
-      system?: string;
-      messages: Array<{ role: string; content: string }>;
-      stream: boolean;
-      tools?: Array<{ name: string; description: string; input_schema: Record<string, unknown> }>;
-    } = {
+    const stream = await this.anthropicClient.messages.create({
       model: AI_MODEL_CONFIGS.claude.name,
       max_tokens: options.maxTokens,
       temperature: options.temperature,
       top_p: AI_MODEL_CONFIGS.claude.topP,
-      system: enhancedSystem || undefined,
+      system: system || undefined,
       messages: formattedMessages,
       stream: true,
-    };
-
-    // 도구가 있으면 tools 파라미터 추가 (향후 실제 MCP 연동을 위한 준비)
-    if (tools.length > 0) {
-      createParams.tools = tools;
-    }
-
-    const stream = await this.anthropicClient.messages.create(createParams);
+    })
 
     for await (const chunk of stream) {
       if (

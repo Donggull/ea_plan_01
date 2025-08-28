@@ -6,7 +6,6 @@ const nextConfig: NextConfig = {
     '@google/generative-ai',
     'openai',
     '@anthropic-ai/sdk',
-    'mammoth',
   ],
 
   // 환경 변수 최적화

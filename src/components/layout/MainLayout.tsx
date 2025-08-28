@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react'
 import { usePathname } from 'next/navigation'
 import { useThemeStore } from '@/stores/theme'
-import { useAuth } from '@/contexts/AuthContext'
 import Header from './Header'
 import Sidebar from './Sidebar'
 
@@ -14,7 +13,6 @@ interface MainLayoutProps {
 export default function MainLayout({ children }: MainLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const { isDarkMode, setTheme } = useThemeStore()
-  const { user, loading, initialized } = useAuth()
   const pathname = usePathname()
 
   useEffect(() => {
@@ -35,60 +33,30 @@ export default function MainLayout({ children }: MainLayoutProps) {
 
   // Check if current page should have the new layout (exclude homepage only)
   const isHomePage = pathname === '/'
-  const isAuthPage = pathname.startsWith('/auth')
-  const shouldUseSidebarLayout = !isHomePage && !isAuthPage
+  const shouldUseSidebarLayout = !isHomePage
 
-  // For homepage, render without authentication checks
   if (isHomePage) {
     return <div className={isDarkMode ? 'dark' : ''}>{children}</div>
   }
-
-  // For auth pages, render without header/sidebar
-  if (isAuthPage) {
-    return <div className={isDarkMode ? 'dark' : ''}>{children}</div>
-  }
-
-  // Wait for authentication to initialize
-  if (!initialized || loading) {
-    return (
-      <div
-        className={`min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 ${isDarkMode ? 'dark' : ''}`}
-      >
-        <div className="text-center">
-          <div className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-sm text-gray-600 dark:text-gray-400">
-            {!initialized
-              ? '인증 시스템을 초기화하는 중...'
-              : '인증 상태를 확인하는 중...'}
-          </p>
-        </div>
-      </div>
-    )
-  }
-
-  // Only render header and sidebar if user is authenticated
-  const shouldShowHeaderAndSidebar = user && shouldUseSidebarLayout
 
   return (
     <div
       className={`min-h-screen flex flex-col bg-gray-50 dark:bg-gray-900 ${isDarkMode ? 'dark' : ''}`}
     >
-      {/* Header - Only show if authenticated */}
-      {shouldShowHeaderAndSidebar && (
-        <Header onMenuToggle={() => setSidebarOpen(true)} />
-      )}
+      {/* Header - Full width at top */}
+      <Header onMenuToggle={() => setSidebarOpen(true)} />
 
       {/* Content area with sidebar */}
       <div className="flex flex-1">
-        {/* Left Sidebar - Only show if authenticated */}
-        {shouldShowHeaderAndSidebar && (
+        {/* Left Sidebar - Always visible on desktop, positioned below header */}
+        {shouldUseSidebarLayout && (
           <div className="hidden lg:flex lg:w-80 lg:flex-col lg:min-h-0">
             <Sidebar />
           </div>
         )}
 
-        {/* Mobile sidebar - Only show if authenticated */}
-        {shouldShowHeaderAndSidebar && sidebarOpen && (
+        {/* Mobile sidebar */}
+        {shouldUseSidebarLayout && sidebarOpen && (
           <div className="fixed inset-0 flex z-40 lg:hidden">
             <div
               className="fixed inset-0 bg-gray-600 bg-opacity-75"
