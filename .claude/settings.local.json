@@ -44,10 +44,14 @@
       "mcp__playwright-stealth__playwright_get_visible_html",
       "Bash(npm run lint)",
       "Bash(npx next:*)",
-      "Read(/D:\\d D:/**)"
+      "Read(/D:\\d D:/**)",
+      "Bash(npm uninstall:*)",
+      "mcp__playwright-stealth__playwright_press_key"
     ],
     "deny": [],
     "ask": [],
-    "additionalDirectories": ["D:\\"]
+    "additionalDirectories": [
+      "D:\\"
+    ]
   }
 }

@@ -7,6 +7,7 @@ import {
   type ModelSelectionCriteria,
 } from '@/lib/config/aiConfig'
 import { env, validateEnv } from '@/lib/utils/env'
+import { ApiUsageTracker } from '@/services/apiUsageTracker'
 
 export interface ChatMessage {
   role: 'user' | 'assistant' | 'system'
@@ -22,6 +23,11 @@ export interface ChatRequest {
   temperature?: number
   maxTokens?: number
   criteria?: Partial<ModelSelectionCriteria>
+  // 사용량 추적용 메타데이터
+  projectId?: string
+  conversationId?: string
+  workflowType?: 'proposal' | 'development' | 'operation' | 'chat' | 'image'
+  workflowStage?: string
 }
 
 export interface ChatResponse {
@@ -48,9 +54,11 @@ class AIService {
   private geminiClient: GoogleGenerativeAI | null = null
   private openaiClient: OpenAI | null = null
   private anthropicClient: Anthropic | null = null
+  private usageTracker: ApiUsageTracker
 
   constructor() {
     this.initializeClients()
+    this.usageTracker = ApiUsageTracker.getInstance()
 
     // 환경 변수 검증 (개발 환경에서만)
     if (env.NODE_ENV === 'development') {
@@ -183,41 +191,83 @@ class AIService {
     const temperature = request.temperature || config.temperature
 
     try {
+      let response: ChatResponse
+      
       switch (model) {
         case 'gemini':
-          return await this.chatWithGemini(request.messages, {
+          response = await this.chatWithGemini(request.messages, {
             maxTokens,
             temperature,
           })
+          break
 
         case 'chatgpt':
-          return await this.chatWithOpenAI(request.messages, {
+          response = await this.chatWithOpenAI(request.messages, {
             maxTokens,
             temperature,
           })
+          break
 
         case 'claude':
-          return await this.chatWithClaude(request.messages, {
+          response = await this.chatWithClaude(request.messages, {
             maxTokens,
             temperature,
           })
+          break
 
         default:
           throw new Error(`Unsupported model: ${model}`)
       }
+
+      // API 사용량 추적
+      await this.trackUsage(model, request, response)
+      
+      return response
     } catch (error) {
       console.error(`Error with ${model}:`, error)
 
       // 에러 발생 시 fallback 모델 시도
       if (model !== 'gemini' && this.geminiClient) {
         console.log('Falling back to Gemini...')
-        return await this.chatWithGemini(request.messages, {
+        const fallbackResponse = await this.chatWithGemini(request.messages, {
           maxTokens,
           temperature,
         })
+        
+        // Fallback 사용량도 추적
+        await this.trackUsage('gemini', request, fallbackResponse)
+        
+        return fallbackResponse
       }
 
       throw error
+    }
+  }
+
+  private async trackUsage(
+    model: AIModel,
+    request: ChatRequest,
+    response: ChatResponse
+  ): Promise<void> {
+    try {
+      const inputText = request.messages.map(m => m.content).join(' ')
+      const outputText = response.content
+      
+      await this.usageTracker.trackUsage(
+        model as any,
+        '/chat/completions',
+        inputText,
+        outputText,
+        {
+          projectId: request.projectId,
+          conversationId: request.conversationId,
+          workflowType: request.workflowType,
+          workflowStage: request.workflowStage,
+          modelVariant: AI_MODEL_CONFIGS[model].name
+        }
+      )
+    } catch (error) {
+      console.error('Failed to track API usage:', error)
     }
   }
 
