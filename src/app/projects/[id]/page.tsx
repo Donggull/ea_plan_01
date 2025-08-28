@@ -25,7 +25,7 @@ import useProjectStore, { Project } from '@/lib/stores/projectStore'
 import ProposalWorkflow from '@/components/proposal/ProposalWorkflow'
 import DevelopmentWorkflow from '@/components/development/DevelopmentWorkflow'
 import OperationWorkflow from '@/components/operation/OperationWorkflow'
-import { MCPTool } from '@/lib/services/mcpManagementService'
+import ProjectSidebar from '@/components/shared/ProjectSidebar'
 
 interface TabContent {
   id: string
@@ -140,33 +140,21 @@ export default function ProjectDetailPage() {
   const [project, setProject] = useState<Project | null>(null)
   const [activeTab, setActiveTab] = useState<string>('rfp')
   const [showSettings, setShowSettings] = useState(false)
-  const [selectedModel, setSelectedModel] = useState('gemini')
+  const [selectedModel, setSelectedModel] = useState('gemini-pro')
+  const [selectedModelConfig, setSelectedModelConfig] = useState('')
   const [selectedMCPTools, setSelectedMCPTools] = useState<string[]>([])
-  const [availableMCPTools, setAvailableMCPTools] = useState<MCPTool[]>([])
 
-  const availableModels = [
-    { id: 'gemini', name: 'Google Gemini', description: '빠르고 효율적인 AI 모델' },
-    { id: 'chatgpt', name: 'OpenAI GPT-4', description: '높은 품질의 텍스트 생성' },
-    { id: 'claude', name: 'Anthropic Claude', description: 'MCP 연동 지원' },
-  ]
+  const handleModelChange = (modelId: string) => {
+    setSelectedModel(modelId)
+  }
 
-  // Load MCP tools
-  useEffect(() => {
-    const loadMCPTools = async () => {
-      try {
-        // Mock MCP tools - in reality, fetch from mcpManagementService.getActiveTools()
-        setAvailableMCPTools([
-          { id: '1', name: 'web_search', display_name: '웹 검색', icon: '🔍' },
-          { id: '2', name: 'file_system', display_name: '파일 시스템', icon: '📁' },
-          { id: '3', name: 'database', display_name: '데이터베이스', icon: '🗄️' },
-          { id: '4', name: 'image_gen', display_name: '이미지 생성', icon: '🎨' },
-        ])
-      } catch (error) {
-        console.error('Failed to load MCP tools:', error)
-      }
-    }
-    loadMCPTools()
-  }, [])
+  const handleModelConfigChange = (modelId: string, config: string) => {
+    setSelectedModelConfig(config)
+  }
+
+  const handleMCPToolsChange = (toolIds: string[]) => {
+    setSelectedMCPTools(toolIds)
+  }
 
   useEffect(() => {
     if (params?.id) {
@@ -174,8 +162,9 @@ export default function ProjectDetailPage() {
       if (projectData) {
         setProject(projectData)
         // Load project settings if available
-        const settings = (projectData as Project & { settings?: { aiModel?: string; mcpTools?: string[] } }).settings || {}
-        setSelectedModel(settings.aiModel || 'gemini')
+        const settings = (projectData as Project & { settings?: { aiModel?: string; modelConfig?: string; mcpTools?: string[] } }).settings || {}
+        setSelectedModel(settings.aiModel || 'gemini-pro')
+        setSelectedModelConfig(settings.modelConfig || '')
         setSelectedMCPTools(settings.mcpTools || [])
         // Set initial active tab based on project category
         const tabs = categoryTabs[projectData.category] || []
@@ -299,6 +288,9 @@ export default function ProjectDetailPage() {
               projectId={project.id}
               projectTitle={project.name}
               projectCategory={project.category}
+              selectedAiModel={selectedModel}
+              selectedModelConfig={selectedModelConfig}
+              selectedMCPTools={selectedMCPTools}
             />
           )}
 
@@ -308,6 +300,9 @@ export default function ProjectDetailPage() {
               projectId={project.id}
               projectTitle={project.name}
               projectCategory={project.category}
+              selectedAiModel={selectedModel}
+              selectedModelConfig={selectedModelConfig}
+              selectedMCPTools={selectedMCPTools}
             />
           )}
 
@@ -317,138 +312,25 @@ export default function ProjectDetailPage() {
               projectId={project.id}
               projectTitle={project.name}
               projectCategory={project.category}
+              selectedAiModel={selectedModel}
+              selectedModelConfig={selectedModelConfig}
+              selectedMCPTools={selectedMCPTools}
             />
           )}
         </motion.div>
       </div>
 
-      {/* Settings Modal */}
-      {showSettings && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="bg-white dark:bg-gray-800 rounded-xl shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto"
-          >
-            <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                  프로젝트 설정
-                </h3>
-                <button
-                  onClick={() => setShowSettings(false)}
-                  className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-                >
-                  <XMarkIcon className="w-5 h-5 text-gray-500" />
-                </button>
-              </div>
-            </div>
-
-            <div className="p-6 space-y-6">
-              {/* AI Model Selection */}
-              <div>
-                <h4 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
-                  AI 모델 선택
-                </h4>
-                <div className="space-y-3">
-                  {availableModels.map((model) => (
-                    <label
-                      key={model.id}
-                      className={`flex items-center p-4 border rounded-lg cursor-pointer transition-colors ${
-                        selectedModel === model.id
-                          ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
-                          : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
-                      }`}
-                    >
-                      <input
-                        type="radio"
-                        name="aiModel"
-                        value={model.id}
-                        checked={selectedModel === model.id}
-                        onChange={(e) => setSelectedModel(e.target.value)}
-                        className="mr-4"
-                      />
-                      <div>
-                        <div className="font-medium text-gray-900 dark:text-white">
-                          {model.name}
-                        </div>
-                        <div className="text-sm text-gray-600 dark:text-gray-400">
-                          {model.description}
-                        </div>
-                      </div>
-                      {selectedModel === model.id && (
-                        <CheckCircleIcon className="w-5 h-5 text-blue-600 ml-auto" />
-                      )}
-                    </label>
-                  ))}
-                </div>
-              </div>
-
-              {/* MCP Tools Selection */}
-              <div>
-                <h4 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
-                  MCP 도구 선택
-                </h4>
-                <div className="text-sm text-gray-600 dark:text-gray-400 mb-3">
-                  관리자가 승인한 MCP 도구 중에서 선택하세요.
-                </div>
-                <div className="space-y-2">
-                  {availableMCPTools.map((tool) => (
-                    <label
-                      key={tool.id}
-                      className="flex items-center p-3 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-750 cursor-pointer transition-colors"
-                    >
-                      <input
-                        type="checkbox"
-                        checked={selectedMCPTools.includes(tool.id)}
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            setSelectedMCPTools([...selectedMCPTools, tool.id])
-                          } else {
-                            setSelectedMCPTools(selectedMCPTools.filter(id => id !== tool.id))
-                          }
-                        }}
-                        className="mr-3"
-                      />
-                      <span className="text-xl mr-3">{tool.icon}</span>
-                      <div>
-                        <div className="font-medium text-gray-900 dark:text-white">
-                          {tool.display_name}
-                        </div>
-                        <div className="text-sm text-gray-600 dark:text-gray-400">
-                          {tool.name}
-                        </div>
-                      </div>
-                    </label>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            <div className="px-6 py-4 bg-gray-50 dark:bg-gray-750 flex justify-end space-x-3 border-t border-gray-200 dark:border-gray-700">
-              <button
-                onClick={() => setShowSettings(false)}
-                className="px-4 py-2 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors"
-              >
-                취소
-              </button>
-              <button
-                onClick={() => {
-                  // TODO: Save settings to project
-                  console.log('Saving settings:', {
-                    aiModel: selectedModel,
-                    mcpTools: selectedMCPTools,
-                  })
-                  setShowSettings(false)
-                }}
-                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
-              >
-                저장
-              </button>
-            </div>
-          </motion.div>
-        </div>
-      )}
+      {/* Project Settings Sidebar */}
+      <ProjectSidebar
+        isOpen={showSettings}
+        onClose={() => setShowSettings(false)}
+        selectedModel={selectedModel}
+        selectedModelConfig={selectedModelConfig}
+        selectedMCPTools={selectedMCPTools}
+        onModelChange={handleModelChange}
+        onModelConfigChange={handleModelConfigChange}
+        onMCPToolsChange={handleMCPToolsChange}
+      />
     </div>
   )
 }

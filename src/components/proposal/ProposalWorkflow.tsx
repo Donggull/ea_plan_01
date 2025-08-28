@@ -18,7 +18,6 @@ import ProposalBuilder from './ProposalBuilder'
 import CostCalculator from './CostCalculator'
 import PersonaAnalysis from './PersonaAnalysis'
 import AIQuestionGenerator from './AIQuestionGenerator'
-import AIModelSelector from './AIModelSelector'
 import type { RFPAnalysisResult, ProjectContext } from './RFPUpload'
 import type { MarketResearchResult } from './MarketResearch'
 import type { PersonaAnalysisResult } from './PersonaAnalysis'
@@ -27,10 +26,12 @@ interface ProposalWorkflowProps {
   projectId: string
   projectTitle: string
   projectCategory: string
+  selectedAiModel: string
+  selectedModelConfig: string
+  selectedMCPTools: string[]
 }
 
 type WorkflowStep =
-  | 'model-select'
   | 'upload'
   | 'analysis'
   | 'analysis-questions'
@@ -46,8 +47,11 @@ export default function ProposalWorkflow({
   projectId,
   projectTitle,
   projectCategory,
+  selectedAiModel,
+  selectedModelConfig,
+  selectedMCPTools,
 }: ProposalWorkflowProps) {
-  const [currentStep, setCurrentStep] = useState<WorkflowStep>('model-select')
+  const [currentStep, setCurrentStep] = useState<WorkflowStep>('upload')
   const [rfpFile, setRfpFile] = useState<File | null>(null)
   const [rfpAnalysis, setRfpAnalysis] = useState<RFPAnalysisResult | null>(null)
   const [_projectContext, _setProjectContext] = useState<ProjectContext | null>(
@@ -59,20 +63,11 @@ export default function ProposalWorkflow({
     useState<PersonaAnalysisResult | null>(null)
   const [proposal, setProposal] = useState<unknown>(null)
   const [costBreakdown, setCostBreakdown] = useState<unknown>(null)
-  const [selectedAiModel, setSelectedAiModel] = useState<string>('gemini-pro')
-  const [selectedModelConfig, setSelectedModelConfig] = useState<string>('')
   const [analysisQuestions, setAnalysisQuestions] = useState<unknown>(null)
   const [researchQuestions, setResearchQuestions] = useState<unknown>(null)
   const [personaQuestions, setPersonaQuestions] = useState<unknown>(null)
 
   const steps = [
-    {
-      id: 'model-select',
-      title: 'AI 모델 선택',
-      description: 'AI 모델 및 설정 선택',
-      icon: CpuChipIcon,
-      completed: selectedAiModel !== '',
-    },
     {
       id: 'upload',
       title: 'RFP 업로드',
@@ -116,15 +111,6 @@ export default function ProposalWorkflow({
       completed: costBreakdown !== null,
     },
   ]
-
-  const handleAiModelSelect = (modelId: string) => {
-    setSelectedAiModel(modelId)
-    setCurrentStep('upload')
-  }
-
-  const handleModelConfigChange = (modelId: string, config: string) => {
-    setSelectedModelConfig(config)
-  }
 
   const handleRFPUpload = (file: File, analysis?: RFPAnalysisResult) => {
     setRfpFile(file)
@@ -178,10 +164,6 @@ export default function ProposalWorkflow({
 
   const canProceedToStep = (stepId: WorkflowStep): boolean => {
     switch (stepId) {
-      case 'model-select':
-        return true
-      case 'upload':
-        return selectedAiModel !== ''
       case 'analysis':
         return rfpFile !== null
       case 'analysis-questions':
@@ -205,38 +187,6 @@ export default function ProposalWorkflow({
 
   const renderStepContent = () => {
     switch (currentStep) {
-      case 'model-select':
-        return (
-          <div className="space-y-6">
-            <div className="text-center mb-8">
-              <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-                AI 모델을 선택하세요
-              </h3>
-              <p className="text-gray-600 dark:text-gray-400">
-                프로젝트 분석에 사용할 AI 모델과 설정을 선택하세요. 각 모델의
-                특성을 고려하여 선택해주세요.
-              </p>
-            </div>
-            <AIModelSelector
-              selectedModel={selectedAiModel}
-              selectedModelConfig={selectedModelConfig}
-              onModelChange={handleAiModelSelect}
-              onModelConfigChange={handleModelConfigChange}
-            />
-            {selectedAiModel && (
-              <div className="flex justify-end mt-6">
-                <button
-                  onClick={() => setCurrentStep('upload')}
-                  className="bg-gradient-to-r from-blue-600 to-blue-700 text-white px-6 py-3 rounded-xl font-medium hover:shadow-lg transition-all duration-300 flex items-center space-x-2"
-                >
-                  <span>계속하기</span>
-                  <ChevronRightIcon className="w-5 h-5" />
-                </button>
-              </div>
-            )}
-          </div>
-        )
-
       case 'upload':
         return <RFPUpload onUpload={handleRFPUpload} projectId={projectId} />
 
