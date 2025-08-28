@@ -101,6 +101,17 @@ export async function middleware(req: NextRequest) {
 
     if (error) {
       console.error('Middleware auth error:', error)
+      // 세션 확인 실패 시 안전을 위해 인증되지 않은 상태로 처리
+      // 단, 보호된 경로가 아니라면 계속 진행
+      const isProtectedPath = protectedPaths.some(path =>
+        pathname.startsWith(path)
+      )
+      if (isProtectedPath) {
+        const redirectUrl = new URL('/auth/login', req.url)
+        redirectUrl.searchParams.set('redirectTo', pathname)
+        redirectUrl.searchParams.set('error', 'session_error')
+        return NextResponse.redirect(redirectUrl)
+      }
     }
 
     const user = session?.user
@@ -123,13 +134,25 @@ export async function middleware(req: NextRequest) {
     // 사용자 프로필 가져오기 (구독 레벨 체크를 위해)
     let userProfile = null
     if (user) {
-      const { data: profile } = await supabase
-        .from('users')
-        .select('subscription_tier')
-        .eq('id', user.id)
-        .single()
+      try {
+        const { data: profile, error: profileError } = await supabase
+          .from('users')
+          .select('subscription_tier')
+          .eq('id', user.id)
+          .single()
 
-      userProfile = profile
+        if (profileError) {
+          console.error('Middleware profile fetch error:', profileError)
+          // 프로필 조회 실패 시 기본 구독으로 처리 (보안상 안전)
+          userProfile = { subscription_tier: 'free' }
+        } else {
+          userProfile = profile
+        }
+      } catch (dbError) {
+        console.error('Middleware database error:', dbError)
+        // 데이터베이스 오류 시 기본 구독으로 처리
+        userProfile = { subscription_tier: 'free' }
+      }
     }
 
     // 1. 인증된 사용자가 로그인/회원가입 페이지에 접근하는 경우

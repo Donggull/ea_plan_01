@@ -79,57 +79,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
       return
     }
 
-    // 인증 초기화 함수
-    const initializeAuth = async () => {
-      try {
-        console.log('🔐 AuthContext: Initializing authentication...')
-
-        // 현재 세션 가져오기
-        const {
-          data: { session },
-          error,
-        } = await supabase.auth.getSession()
-
-        if (error) {
-          console.error('❌ Error getting session:', error)
-          throw error
-        }
-
-        if (!mounted) return
-
-        console.log(
-          '📱 AuthContext: Session retrieved:',
-          session ? 'Found' : 'None'
-        )
-
-        // 세션 상태 업데이트
-        setSession(session)
-        setUser(session?.user ?? null)
-        setError(null)
-
-        // 사용자 프로필 로드
-        if (session?.user) {
-          console.log('👤 AuthContext: Loading user profile...')
-          await fetchUserProfile(session.user.id)
-        } else {
-          setUserProfile(null)
-        }
-
-        // 로딩 완료
-        setLoading(false)
-        setInitialized(true)
-
-        console.log('✅ AuthContext: Initialization complete')
-      } catch (err) {
-        console.error('💥 AuthContext: Initialization error:', err)
-        if (mounted) {
-          setError('인증 초기화 중 오류가 발생했습니다.')
-          setLoading(false)
-          setInitialized(true)
-        }
-      }
-    }
-
     // 인증 상태 변경 리스너 설정
     const setupAuthListener = () => {
       console.log('🔊 AuthContext: Setting up auth state listener')
@@ -145,20 +94,29 @@ export function AuthProvider({ children }: AuthProviderProps) {
           session ? 'Session exists' : 'No session'
         )
 
-        // 상태 업데이트
-        setSession(session)
-        setUser(session?.user ?? null)
-        setError(null)
+        try {
+          // 상태 업데이트를 동기적으로 처리
+          setSession(session)
+          setUser(session?.user ?? null)
+          setError(null)
 
-        // 프로필 업데이트
-        if (session?.user) {
-          await fetchUserProfile(session.user.id)
-        } else {
-          setUserProfile(null)
-        }
+          // 프로필 업데이트
+          if (session?.user) {
+            await fetchUserProfile(session.user.id)
+          } else {
+            setUserProfile(null)
+          }
 
-        // 초기화가 아직 완료되지 않았다면 완료 처리
-        if (event === 'INITIAL_SESSION') {
+          console.log('✅ AuthContext: State update complete', {
+            user: session?.user ? 'Present' : 'None',
+            event,
+            initialized: true,
+          })
+        } catch (error) {
+          console.error('❌ AuthContext: Error in auth state change:', error)
+          setError('인증 상태 업데이트 중 오류가 발생했습니다.')
+        } finally {
+          // 모든 처리 완료 후 초기화 상태 업데이트
           setLoading(false)
           setInitialized(true)
         }
@@ -167,9 +125,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
       authSubscription = subscription
     }
 
-    // 초기화 시작
+    // 인증 상태 리스너 설정
     setupAuthListener()
-    initializeAuth()
 
     // 정리 함수
     return () => {

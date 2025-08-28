@@ -41,15 +41,21 @@ export function ProtectedRoute({
       userRole: userProfile?.user_role,
     })
 
-    // 인증이 필요한데 로그인되지 않은 경우
-    if (requireAuth && !user) {
-      console.log('🚪 ProtectedRoute: Redirecting to login')
-      const loginUrl =
-        redirectTo || `/auth/login?redirectTo=${encodeURIComponent(pathname)}`
+    // 인증이 필요한 경우에만 사용자 체크
+    if (requireAuth) {
+      if (!user) {
+        console.log('🚪 ProtectedRoute: No user found, redirecting to login')
+        const loginUrl =
+          redirectTo || `/auth/login?redirectTo=${encodeURIComponent(pathname)}`
 
-      // 즉시 리다이렉트 (router.replace 대신 window.location 사용)
-      window.location.href = loginUrl
-      return
+        // 짧은 지연 후 리다이렉트 (상태 업데이트 완료 대기)
+        setTimeout(() => {
+          window.location.href = loginUrl
+        }, 100)
+        return
+      } else {
+        console.log('✅ ProtectedRoute: User authenticated, allowing access')
+      }
     }
 
     // 인증이 필요하지 않은데 로그인된 경우 (예: 로그인 페이지)
