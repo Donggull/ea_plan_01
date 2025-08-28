@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { useDropzone } from 'react-dropzone'
 import {
   DocumentTextIcon,
@@ -14,8 +14,11 @@ import {
   EyeIcon,
   PlayIcon,
   TrashIcon,
+  CogIcon,
 } from '@heroicons/react/24/outline'
 import FilePreview from './FilePreview'
+import mcpManagementService, { type MCPTool } from '@/lib/services/mcpManagementService'
+import { useAuth } from '@/contexts/AuthContext'
 
 interface RFPUploadProps {
   onUpload: (
@@ -64,6 +67,7 @@ export interface RFPAnalysisResult {
 }
 
 export default function RFPUpload({ onUpload, projectId }: RFPUploadProps) {
+  const { userProfile } = useAuth()
   const [uploadStatus, setUploadStatus] = useState<
     'idle' | 'uploading' | 'ready' | 'analyzing' | 'success' | 'error'
   >('idle')
@@ -71,10 +75,9 @@ export default function RFPUpload({ onUpload, projectId }: RFPUploadProps) {
   const [analysisProgress, setAnalysisProgress] = useState(0)
   const [selectedModel, setSelectedModel] = useState<string>('gemini')
   const [enableMCP, setEnableMCP] = useState<boolean>(true)
-  const [selectedMCPTools, setSelectedMCPTools] = useState<string[]>([
-    'web_search',
-    'file_system',
-  ])
+  const [selectedMCPTools, setSelectedMCPTools] = useState<string[]>([])
+  const [availableMCPTools, setAvailableMCPTools] = useState<MCPTool[]>([])
+  const [mcpLoading, setMcpLoading] = useState(true)
 
   // 프로젝트 설정
   const [customPrompt, setCustomPrompt] = useState('')
@@ -122,37 +125,57 @@ export default function RFPUpload({ onUpload, projectId }: RFPUploadProps) {
     },
   ]
 
-  const mcpTools = [
-    {
-      id: 'web_search',
-      name: '웹 검색',
-      description: '실시간 정보 검색 및 수집',
-    },
-    {
-      id: 'file_system',
-      name: '파일 시스템',
-      description: '문서 읽기 및 분석',
-    },
-    {
-      id: 'database',
-      name: '데이터베이스',
-      description: '프로젝트 데이터 조회',
-    },
-    {
-      id: 'image_generation',
-      name: '이미지 생성',
-      description: '시각적 자료 생성',
-    },
-    { id: 'custom', name: '커스텀 도구', description: '특화된 분석 도구' },
-  ]
+  // Load available MCP tools
+  useEffect(() => {
+    const loadMCPTools = async () => {
+      try {
+        const tools = await mcpManagementService.getActiveTools()
+        setAvailableMCPTools(tools)
+        
+        // Set default selected tools (first 2 active tools)
+        const defaultTools = tools.slice(0, 2).map(tool => tool.id)
+        setSelectedMCPTools(defaultTools)
+        
+        // Load user's saved MCP settings if available
+        if (userProfile?.id) {
+          const userSettings = await mcpManagementService.getUserSettings(
+            userProfile.id, 
+            projectId
+          )
+          if (userSettings && userSettings.enabled_tools.length > 0) {
+            setSelectedMCPTools(userSettings.enabled_tools)
+            setEnableMCP(userSettings.enabled_tools.length > 0)
+          }
+        }
+      } catch (error) {
+        console.error('Failed to load MCP tools:', error)
+      } finally {
+        setMcpLoading(false)
+      }
+    }
+    
+    loadMCPTools()
+  }, [userProfile?.id, projectId])
 
   // MCP 도구 관리 함수들
-  const handleMCPToolToggle = (toolId: string) => {
-    setSelectedMCPTools(prev =>
-      prev.includes(toolId)
-        ? prev.filter(id => id !== toolId)
-        : [...prev, toolId]
-    )
+  const handleMCPToolToggle = async (toolId: string) => {
+    const newSelectedTools = selectedMCPTools.includes(toolId)
+      ? selectedMCPTools.filter(id => id !== toolId)
+      : [...selectedMCPTools, toolId]
+    
+    setSelectedMCPTools(newSelectedTools)
+    
+    // Save user's MCP settings
+    if (userProfile?.id) {
+      try {
+        await mcpManagementService.updateUserSettings(userProfile.id, {
+          projectId,
+          enabledTools: newSelectedTools,
+        })
+      } catch (error) {
+        console.error('Failed to save MCP settings:', error)
+      }
+    }
   }
 
   // 지침 관리 함수들
@@ -661,29 +684,47 @@ export default function RFPUpload({ onUpload, projectId }: RFPUploadProps) {
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
                   사용할 도구 선택
                 </label>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  {mcpTools.map(tool => (
-                    <label
-                      key={tool.id}
-                      className="flex items-start space-x-3 p-3 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer"
-                    >
-                      <input
-                        type="checkbox"
-                        checked={selectedMCPTools.includes(tool.id)}
-                        onChange={() => handleMCPToolToggle(tool.id)}
-                        className="w-4 h-4 text-indigo-600 bg-gray-100 border-gray-300 rounded focus:ring-indigo-500 dark:focus:ring-indigo-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600 mt-0.5"
-                      />
-                      <div className="flex-1">
-                        <div className="text-sm font-medium text-gray-900 dark:text-white">
-                          {tool.name}
+                {mcpLoading ? (
+                  <div className="flex items-center justify-center py-8">
+                    <div className="text-sm text-gray-500 dark:text-gray-400">
+                      도구를 불러오는 중...
+                    </div>
+                  </div>
+                ) : availableMCPTools.length === 0 ? (
+                  <div className="text-sm text-gray-500 dark:text-gray-400 p-4 text-center border border-gray-200 dark:border-gray-700 rounded-lg">
+                    사용 가능한 MCP 도구가 없습니다.
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {availableMCPTools.map(tool => (
+                      <label
+                        key={tool.id}
+                        className="flex items-start space-x-3 p-3 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={selectedMCPTools.includes(tool.id)}
+                          onChange={() => handleMCPToolToggle(tool.id)}
+                          className="w-4 h-4 text-indigo-600 bg-gray-100 border-gray-300 rounded focus:ring-indigo-500 dark:focus:ring-indigo-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600 mt-0.5"
+                        />
+                        <div className="flex-1">
+                          <div className="flex items-center space-x-2">
+                            <span className="text-lg">{tool.provider?.icon || '🔧'}</span>
+                            <div className="text-sm font-medium text-gray-900 dark:text-white">
+                              {tool.display_name}
+                            </div>
+                          </div>
+                          <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                            {tool.description}
+                          </div>
+                          <div className="text-xs text-indigo-600 dark:text-indigo-400 mt-1">
+                            {tool.provider?.display_name}
+                          </div>
                         </div>
-                        <div className="text-xs text-gray-500 dark:text-gray-400">
-                          {tool.description}
-                        </div>
-                      </div>
-                    </label>
-                  ))}
-                </div>
+                      </label>
+                    ))}
+                  </div>
+                )}
 
                 {selectedMCPTools.length === 0 && (
                   <div className="mt-3 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">

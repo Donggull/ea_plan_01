@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { aiService } from '@/lib/services/aiService'
+import type { ChatMessage } from '@/lib/services/aiService'
 
 interface AnalysisMetrics {
   complexity: 'low' | 'medium' | 'high' | 'very_high'
@@ -56,6 +58,7 @@ export async function POST(request: NextRequest) {
       customPrompt,
       guidelines,
       analysisInstructions,
+      mcpSettings,
     } = await request.json()
 
     if (!textContent || !fileName) {
@@ -69,46 +72,150 @@ export async function POST(request: NextRequest) {
       `Starting enhanced RFP analysis with ${aiModel} model for file: ${fileName}`
     )
 
-    // Simulate AI analysis with progressive updates
-    const analysisDelay =
-      aiModel === 'gemini' ? 3000 : aiModel === 'chatgpt' ? 5000 : 4000
+    // Create AI analysis prompt
+    let systemPrompt = `당신은 RFP(Request for Proposal) 문서를 분석하는 전문가입니다. 
+다음 RFP 문서를 종합적으로 분석하여 구조화된 정보를 추출하고 분석 결과를 제공해주세요.
 
-    // Progressive analysis simulation
-    await new Promise(resolve => setTimeout(resolve, analysisDelay))
+분석할 항목:
+1. 프로젝트 기본 정보 (제목, 클라이언트, 마감일, 예산)
+2. 요구사항 분류 (기능적, 기술적, 디자인)
+3. 프로젝트 범위 및 목표
+4. 주요 산출물
+5. 위험 요소
+6. 핵심 포인트
+7. 복잡도 및 공수 추정
 
-    // Enhanced analysis with metrics
-    const metrics = performAdvancedAnalysis(textContent, aiModel)
+결과는 JSON 형태로 구조화하여 제공해주세요.`
 
-    const analysis = {
-      projectTitle: extractProjectTitle(textContent, fileName, aiModel),
-      client: extractClient(textContent),
-      deadline: extractDeadline(textContent),
-      budget: extractBudget(textContent),
-      requirements: {
-        functional: extractFunctionalRequirements(textContent, aiModel),
-        technical: extractTechnicalRequirements(textContent, aiModel),
-        design: extractDesignRequirements(textContent, aiModel),
-      },
-      scope: extractScope(textContent),
-      deliverables: extractDeliverables(textContent),
-      riskFactors: extractRiskFactors(textContent, aiModel),
-      keyPoints: extractKeyPoints(textContent, aiModel),
-      // Enhanced analysis results
-      metrics,
-      analysisMetadata: {
-        aiModel,
-        analysisDate: new Date().toISOString(),
-        contentLength: textContent.length,
-        fileName,
-        projectId,
-        customPromptUsed: !!customPrompt,
-        guidelinesCount: guidelines?.length || 0,
-        hasAnalysisInstructions: !!analysisInstructions,
-      },
+    // Add guidelines if provided
+    if (guidelines && guidelines.length > 0) {
+      const guidelinesText = guidelines.map((g, i) => 
+        `${i + 1}. ${g.type === 'file' ? `파일 ${g.fileName}: ` : ''}${g.content}`
+      ).join('\n')
+      systemPrompt += `\n\n참고 지침:\n${guidelinesText}`
     }
 
-    console.log(`Enhanced RFP analysis completed using ${aiModel} model`)
-    return NextResponse.json(analysis)
+    // Add custom analysis instructions
+    if (analysisInstructions) {
+      systemPrompt += `\n\n추가 분석 지시사항:\n${analysisInstructions}`
+    }
+
+    const messages: ChatMessage[] = [
+      { role: 'system', content: systemPrompt },
+      { 
+        role: 'user', 
+        content: `다음 RFP 문서를 분석해주세요:\n\n${textContent}${customPrompt ? `\n\n추가 요구사항:\n${customPrompt}` : ''}`
+      }
+    ]
+
+    try {
+      // Use AI service for real analysis
+      const aiResponse = await aiService.chat({
+        messages,
+        model: aiModel as any,
+        projectId,
+        workflowType: 'proposal',
+        workflowStage: 'rfp-analysis',
+        enableMCP: mcpSettings?.enabled,
+        selectedMCPTools: mcpSettings?.selectedTools,
+      })
+
+      console.log(`AI analysis completed with ${aiModel} model`)
+
+      // Try to parse AI response as JSON, fallback to structured extraction
+      let aiAnalysis: any = {}
+      try {
+        aiAnalysis = JSON.parse(aiResponse.content)
+      } catch {
+        // If AI response is not JSON, create structured analysis from text
+        console.log('AI response is not JSON, using fallback extraction')
+        aiAnalysis = {
+          analysis: aiResponse.content,
+          extractedInfo: 'AI 응답이 JSON 형식이 아니므로 기본 추출 방식을 사용했습니다.'
+        }
+      }
+
+      // Enhanced analysis with metrics (combine AI analysis with traditional extraction)
+      const metrics = performAdvancedAnalysis(textContent, aiModel)
+
+      const analysis = {
+        // AI-generated content (primary)
+        aiAnalysis: aiAnalysis,
+        aiResponse: aiResponse.content,
+        
+        // Traditional extraction (backup)
+        projectTitle: extractProjectTitle(textContent, fileName, aiModel),
+        client: extractClient(textContent),
+        deadline: extractDeadline(textContent),
+        budget: extractBudget(textContent),
+        requirements: {
+          functional: extractFunctionalRequirements(textContent, aiModel),
+          technical: extractTechnicalRequirements(textContent, aiModel),
+          design: extractDesignRequirements(textContent, aiModel),
+        },
+        scope: extractScope(textContent),
+        deliverables: extractDeliverables(textContent),
+        riskFactors: extractRiskFactors(textContent, aiModel),
+        keyPoints: extractKeyPoints(textContent, aiModel),
+        
+        // Enhanced analysis results
+        metrics,
+        analysisMetadata: {
+          aiModel,
+          analysisDate: new Date().toISOString(),
+          contentLength: textContent.length,
+          fileName,
+          projectId,
+          customPromptUsed: !!customPrompt,
+          guidelinesCount: guidelines?.length || 0,
+          hasAnalysisInstructions: !!analysisInstructions,
+          mcpEnabled: mcpSettings?.enabled || false,
+          mcpToolsUsed: mcpSettings?.selectedTools || [],
+          aiUsage: aiResponse.usage,
+        },
+      }
+
+      return NextResponse.json(analysis)
+    } catch (aiError) {
+      console.error('AI service error, falling back to traditional analysis:', aiError)
+      
+      // Fallback to traditional analysis if AI fails
+      const metrics = performAdvancedAnalysis(textContent, aiModel)
+
+      const analysis = {
+        projectTitle: extractProjectTitle(textContent, fileName, aiModel),
+        client: extractClient(textContent),
+        deadline: extractDeadline(textContent),
+        budget: extractBudget(textContent),
+        requirements: {
+          functional: extractFunctionalRequirements(textContent, aiModel),
+          technical: extractTechnicalRequirements(textContent, aiModel),
+          design: extractDesignRequirements(textContent, aiModel),
+        },
+        scope: extractScope(textContent),
+        deliverables: extractDeliverables(textContent),
+        riskFactors: extractRiskFactors(textContent, aiModel),
+        keyPoints: extractKeyPoints(textContent, aiModel),
+        // Enhanced analysis results
+        metrics,
+        analysisMetadata: {
+          aiModel,
+          analysisDate: new Date().toISOString(),
+          contentLength: textContent.length,
+          fileName,
+          projectId,
+          customPromptUsed: !!customPrompt,
+          guidelinesCount: guidelines?.length || 0,
+          hasAnalysisInstructions: !!analysisInstructions,
+          mcpEnabled: mcpSettings?.enabled || false,
+          mcpToolsUsed: mcpSettings?.selectedTools || [],
+          fallbackUsed: true,
+          aiError: aiError instanceof Error ? aiError.message : 'Unknown AI error',
+        },
+      }
+
+      return NextResponse.json(analysis)
+    }
   } catch (error) {
     console.error('RFP analysis error:', error)
     return NextResponse.json(
