@@ -59,16 +59,6 @@ export default function AdminDashboard() {
     useState(false)
   const router = useRouter()
 
-  useEffect(() => {
-    checkAdminAccess()
-  }, [checkAdminAccess])
-
-  useEffect(() => {
-    if (user?.user_role && ['admin', 'super_admin'].includes(user.user_role)) {
-      loadDashboardData()
-    }
-  }, [user, activeTab, loadDashboardData])
-
   const checkAdminAccess = useCallback(async () => {
     try {
       const {
@@ -237,6 +227,16 @@ export default function AdminDashboard() {
       console.error('Failed to load dashboard data:', error)
     }
   }, [activeTab])
+
+  useEffect(() => {
+    checkAdminAccess()
+  }, [checkAdminAccess])
+
+  useEffect(() => {
+    if (user?.user_role && ['admin', 'super_admin'].includes(user.user_role)) {
+      loadDashboardData()
+    }
+  }, [user, activeTab, loadDashboardData])
 
   const toggleTemplateStatus = async (
     templateId: string,
