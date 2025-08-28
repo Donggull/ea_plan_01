@@ -243,7 +243,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       const {
         data: { subscription },
       } = supabase.auth.onAuthStateChange(async (event, session) => {
-        if (!isMounted || !initialLoadComplete) return
+        if (!isMounted) return
 
         console.log('Auth state changed:', event, session?.user?.id)
 
@@ -382,12 +382,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
         setUser(null)
         setUserProfile(null)
         setSession(null)
-        
+
         // 브라우저 스토리지 명시적 정리
         if (typeof window !== 'undefined') {
           // sessionStorage 정리 (세션 관련 데이터)
           sessionStorage.clear()
-          
+
           // localStorage에서 Supabase 관련 항목만 제거
           const keysToRemove = []
           for (let i = 0; i < localStorage.length; i++) {
