@@ -337,8 +337,9 @@ export const supabase =
     ? createClient(supabaseUrl, supabaseAnonKey, {
         auth: {
           autoRefreshToken: true,
-          persistSession: true,
+          persistSession: false,  // 브라우저 종료시 세션 자동 삭제
           detectSessionInUrl: true,
+          storage: typeof window !== 'undefined' ? window.sessionStorage : undefined,  // sessionStorage 사용으로 브라우저 종료시 자동 삭제
         },
       })
     : (mockSupabaseClient as ReturnType<typeof createClient>)
@@ -354,8 +355,9 @@ export const createClientComponentClient = () => {
   return createClient<Database>(supabaseUrl, supabaseAnonKey, {
     auth: {
       autoRefreshToken: true,
-      persistSession: true,
+      persistSession: false,  // 브라우저 종료시 세션 자동 삭제
       detectSessionInUrl: true,
+      storage: typeof window !== 'undefined' ? window.sessionStorage : undefined,  // sessionStorage 사용으로 브라우저 종료시 자동 삭제
     },
   })
 }

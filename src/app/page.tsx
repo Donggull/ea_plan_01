@@ -1,17 +1,41 @@
 'use client'
 
+import { useState, Fragment } from 'react'
 import { motion } from 'framer-motion'
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute'
+import { useAuth } from '@/contexts/AuthContext'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { Menu, Transition } from '@headlessui/react'
 import {
   ChartBarIcon,
   Square3Stack3DIcon,
   UserGroupIcon,
   ChatBubbleLeftRightIcon,
   ArrowRightIcon,
+  UserCircleIcon,
+  Cog6ToothIcon,
+  ArrowRightOnRectangleIcon,
+  ArrowLeftOnRectangleIcon,
+  ShieldCheckIcon,
 } from '@heroicons/react/24/outline'
 
 export default function HomePage() {
+  const { user, userProfile, signOut } = useAuth()
+  const router = useRouter()
+
+  const handleLogout = async () => {
+    try {
+      await signOut()
+      router.refresh()
+    } catch (error) {
+      console.error('로그아웃 오류:', error)
+    }
+  }
+
+  const handleLogin = () => {
+    router.push('/auth/login')
+  }
   const features = [
     {
       title: '제안 진행',
@@ -164,9 +188,134 @@ export default function HomePage() {
                 프로젝트
               </button>
             </Link>
-            <button className="w-8 h-8 bg-gray-700 rounded-full flex items-center justify-center">
-              <span className="text-xl">⚙️</span>
-            </button>
+            {/* 사용자 메뉴 */}
+            <Menu as="div" className="relative">
+              <div>
+                <Menu.Button className="w-8 h-8 bg-gray-700 hover:bg-gray-600 rounded-full flex items-center justify-center transition-colors">
+                  {user ? (
+                    <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center">
+                      <span className="text-white font-medium text-xs">
+                        {userProfile?.name?.charAt(0) || user.email?.charAt(0)?.toUpperCase()}
+                      </span>
+                    </div>
+                  ) : (
+                    <span className="text-xl">⚙️</span>
+                  )}
+                </Menu.Button>
+              </div>
+              <Transition
+                as={Fragment}
+                enter="transition ease-out duration-100"
+                enterFrom="transform opacity-0 scale-95"
+                enterTo="transform opacity-100 scale-100"
+                leave="transition ease-in duration-75"
+                leaveFrom="transform opacity-100 scale-100"
+                leaveTo="transform opacity-0 scale-95"
+              >
+                <Menu.Items className="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg py-1 bg-white dark:bg-gray-800 ring-1 ring-black ring-opacity-5 focus:outline-none z-50">
+                  {user ? (
+                    <>
+                      {/* 로그인 상태 메뉴 */}
+                      <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
+                        <p className="text-sm text-gray-900 dark:text-white font-medium">
+                          {userProfile?.name || '사용자'}
+                        </p>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">
+                          {user.email}
+                        </p>
+                        {userProfile?.user_role === 'super_admin' && (
+                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 mt-1">
+                            <ShieldCheckIcon className="w-3 h-3 mr-1" />
+                            관리자
+                          </span>
+                        )}
+                      </div>
+                      <Menu.Item>
+                        {({ active }) => (
+                          <Link
+                            href="/dashboard"
+                            className={`${
+                              active
+                                ? 'bg-gray-100 dark:bg-gray-700'
+                                : 'text-gray-700 dark:text-gray-300'
+                            } group flex px-4 py-2 text-sm`}
+                          >
+                            <UserCircleIcon className="mr-3 h-5 w-5" />
+                            대시보드
+                          </Link>
+                        )}
+                      </Menu.Item>
+                      {userProfile?.user_role === 'super_admin' && (
+                        <Menu.Item>
+                          {({ active }) => (
+                            <Link
+                              href="/admin"
+                              className={`${
+                                active
+                                  ? 'bg-gray-100 dark:bg-gray-700'
+                                  : 'text-gray-700 dark:text-gray-300'
+                              } group flex px-4 py-2 text-sm`}
+                            >
+                              <Cog6ToothIcon className="mr-3 h-5 w-5" />
+                              관리자 페이지
+                            </Link>
+                          )}
+                        </Menu.Item>
+                      )}
+                      <Menu.Item>
+                        {({ active }) => (
+                          <button
+                            onClick={handleLogout}
+                            className={`${
+                              active
+                                ? 'bg-gray-100 dark:bg-gray-700'
+                                : 'text-gray-700 dark:text-gray-300'
+                            } group flex px-4 py-2 text-sm w-full text-left`}
+                          >
+                            <ArrowRightOnRectangleIcon className="mr-3 h-5 w-5" />
+                            로그아웃
+                          </button>
+                        )}
+                      </Menu.Item>
+                    </>
+                  ) : (
+                    <>
+                      {/* 로그아웃 상태 메뉴 */}
+                      <Menu.Item>
+                        {({ active }) => (
+                          <button
+                            onClick={handleLogin}
+                            className={`${
+                              active
+                                ? 'bg-gray-100 dark:bg-gray-700'
+                                : 'text-gray-700 dark:text-gray-300'
+                            } group flex px-4 py-2 text-sm w-full text-left`}
+                          >
+                            <ArrowLeftOnRectangleIcon className="mr-3 h-5 w-5" />
+                            로그인
+                          </button>
+                        )}
+                      </Menu.Item>
+                      <Menu.Item>
+                        {({ active }) => (
+                          <Link
+                            href="/auth/signup"
+                            className={`${
+                              active
+                                ? 'bg-gray-100 dark:bg-gray-700'
+                                : 'text-gray-700 dark:text-gray-300'
+                            } group flex px-4 py-2 text-sm`}
+                          >
+                            <UserCircleIcon className="mr-3 h-5 w-5" />
+                            회원가입
+                          </Link>
+                        )}
+                      </Menu.Item>
+                    </>
+                  )}
+                </Menu.Items>
+              </Transition>
+            </Menu>
           </div>
         </header>
 

@@ -175,32 +175,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
           process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
         )
 
-      // Supabase가 제대로 설정되지 않은 경우 기본 사용자 사용
-      if (!isValidSupabase) {
-        if (isMounted) {
-          const defaultUserId = 'afd2a12c-75a5-4914-812e-5eedc4fd3a3d'
-          const mockUser = {
-            id: defaultUserId,
-            email: 'dg.an@eluocnc.com',
-            user_metadata: { name: '안동균' },
-          } as User
-
-          const defaultProfile: UserProfile = {
-            id: defaultUserId,
-            email: 'dg.an@eluocnc.com',
-            name: '안동균',
-            subscription_tier: 'enterprise',
-            user_role: 'super_admin',
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          } as UserProfile
-
-          setUser(mockUser)
-          setUserProfile(defaultProfile)
-          setSession(null) // 개발환경에서는 실제 세션 없이 진행
-          console.log('Invalid Supabase: using default user profile')
-        }
-
+      // Supabase가 제대로 설정되지 않은 경우에만 기본 사용자 사용 (프로덕션에서는 사용하지 않음)
+      if (!isValidSupabase && process.env.NODE_ENV === 'development') {
+        console.warn('Supabase not configured properly, using fallback mode')
         if (isMounted) {
           setLoading(false)
           initialLoadComplete = true
@@ -401,9 +378,26 @@ export function AuthProvider({ children }: AuthProviderProps) {
       if (error) {
         setError(getErrorMessage(error))
       } else {
+        // 상태 초기화
         setUser(null)
         setUserProfile(null)
         setSession(null)
+        
+        // 브라우저 스토리지 명시적 정리
+        if (typeof window !== 'undefined') {
+          // sessionStorage 정리 (세션 관련 데이터)
+          sessionStorage.clear()
+          
+          // localStorage에서 Supabase 관련 항목만 제거
+          const keysToRemove = []
+          for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i)
+            if (key && (key.startsWith('sb-') || key.includes('supabase'))) {
+              keysToRemove.push(key)
+            }
+          }
+          keysToRemove.forEach(key => localStorage.removeItem(key))
+        }
       }
 
       return { error }

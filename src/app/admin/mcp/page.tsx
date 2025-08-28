@@ -15,8 +15,6 @@ import {
   TrashIcon,
   ClockIcon,
   ShieldCheckIcon,
-  ExclamationTriangleIcon,
-  TagIcon,
 } from '@heroicons/react/24/outline'
 import mcpManagementService, {
   type MCPProvider,
@@ -28,8 +26,14 @@ export default function MCPAdminPage() {
   const [tools, setTools] = useState<MCPTool[]>([])
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState<'providers' | 'tools' | 'approval'>('providers')
-  const [approvalRequests, setApprovalRequests] = useState<any[]>([]) // TODO: Add proper type
-  const [categories, setCategories] = useState<any[]>([]) // TODO: Add proper type
+  const [categories, setCategories] = useState<Array<{
+    id: string
+    name: string
+    display_name: string
+    description?: string
+    is_active: boolean
+    sort_order: number
+  }>>([]) 
   const [isAddingProvider, setIsAddingProvider] = useState(false)
   const [isAddingTool, setIsAddingTool] = useState(false)
   const [editingProvider, setEditingProvider] = useState<MCPProvider | null>(null)
