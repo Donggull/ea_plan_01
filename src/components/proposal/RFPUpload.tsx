@@ -70,6 +70,11 @@ export default function RFPUpload({ onUpload, projectId }: RFPUploadProps) {
   const [error, setError] = useState<string | null>(null)
   const [analysisProgress, setAnalysisProgress] = useState(0)
   const [selectedModel, setSelectedModel] = useState<string>('gemini')
+  const [enableMCP, setEnableMCP] = useState<boolean>(true)
+  const [selectedMCPTools, setSelectedMCPTools] = useState<string[]>([
+    'web_search',
+    'file_system',
+  ])
 
   // 프로젝트 설정
   const [customPrompt, setCustomPrompt] = useState('')
@@ -112,10 +117,43 @@ export default function RFPUpload({ onUpload, projectId }: RFPUploadProps) {
     {
       id: 'claude',
       name: 'Claude Sonnet',
-      description: '도구 연동 지원, 구조화된 분석',
+      description: 'MCP 도구 연동, 고품질 분석',
       icon: '🧠',
     },
   ]
+
+  const mcpTools = [
+    {
+      id: 'web_search',
+      name: '웹 검색',
+      description: '실시간 정보 검색 및 수집',
+    },
+    {
+      id: 'file_system',
+      name: '파일 시스템',
+      description: '문서 읽기 및 분석',
+    },
+    {
+      id: 'database',
+      name: '데이터베이스',
+      description: '프로젝트 데이터 조회',
+    },
+    {
+      id: 'image_generation',
+      name: '이미지 생성',
+      description: '시각적 자료 생성',
+    },
+    { id: 'custom', name: '커스텀 도구', description: '특화된 분석 도구' },
+  ]
+
+  // MCP 도구 관리 함수들
+  const handleMCPToolToggle = (toolId: string) => {
+    setSelectedMCPTools(prev =>
+      prev.includes(toolId)
+        ? prev.filter(id => id !== toolId)
+        : [...prev, toolId]
+    )
+  }
 
   // 지침 관리 함수들
   const addTextGuideline = () => {
@@ -290,6 +328,13 @@ export default function RFPUpload({ onUpload, projectId }: RFPUploadProps) {
           customPrompt: customPrompt.trim() || undefined,
           guidelines: guidelines?.length ? guidelines : undefined,
           analysisInstructions: analysisInstructions.trim() || undefined,
+          mcpSettings:
+            selectedModel === 'claude'
+              ? {
+                  enabled: enableMCP,
+                  selectedTools: selectedMCPTools,
+                }
+              : undefined,
         }),
       })
 
@@ -578,6 +623,94 @@ export default function RFPUpload({ onUpload, projectId }: RFPUploadProps) {
           </div>
         </div>
       )}
+
+      {/* Claude MCP 도구 선택 */}
+      {(uploadedFiles.length > 0 || showAdvancedOptions) &&
+        selectedModel === 'claude' && (
+          <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+            <div className="flex items-center space-x-2 mb-4">
+              <SparklesIcon className="w-5 h-5 text-indigo-500" />
+              <h4 className="text-lg font-medium text-gray-900 dark:text-white">
+                MCP 도구 설정
+              </h4>
+              <span className="px-2 py-1 bg-indigo-100 dark:bg-indigo-900/20 text-indigo-800 dark:text-indigo-300 text-xs rounded-full font-medium">
+                Claude 전용
+              </span>
+            </div>
+
+            <div className="mb-4">
+              <label className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  checked={enableMCP}
+                  onChange={e => setEnableMCP(e.target.checked)}
+                  className="w-4 h-4 text-indigo-600 bg-gray-100 border-gray-300 rounded focus:ring-indigo-500 dark:focus:ring-indigo-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+                />
+                <span className="text-sm font-medium text-gray-900 dark:text-white">
+                  MCP 도구 사용 활성화
+                </span>
+              </label>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                Claude가 외부 도구와 데이터에 접근하여 더 정확하고 포괄적인
+                분석을 수행합니다
+              </p>
+            </div>
+
+            {enableMCP && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                  사용할 도구 선택
+                </label>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {mcpTools.map(tool => (
+                    <label
+                      key={tool.id}
+                      className="flex items-start space-x-3 p-3 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={selectedMCPTools.includes(tool.id)}
+                        onChange={() => handleMCPToolToggle(tool.id)}
+                        className="w-4 h-4 text-indigo-600 bg-gray-100 border-gray-300 rounded focus:ring-indigo-500 dark:focus:ring-indigo-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600 mt-0.5"
+                      />
+                      <div className="flex-1">
+                        <div className="text-sm font-medium text-gray-900 dark:text-white">
+                          {tool.name}
+                        </div>
+                        <div className="text-xs text-gray-500 dark:text-gray-400">
+                          {tool.description}
+                        </div>
+                      </div>
+                    </label>
+                  ))}
+                </div>
+
+                {selectedMCPTools.length === 0 && (
+                  <div className="mt-3 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
+                    <div className="flex items-center space-x-2">
+                      <svg
+                        className="w-4 h-4 text-amber-500"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"
+                        />
+                      </svg>
+                      <span className="text-sm text-amber-800 dark:text-amber-300">
+                        최소 하나의 도구를 선택해주세요
+                      </span>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
 
       {/* 고급 옵션 토글 */}
       <div className="text-center">
