@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   Cog6ToothIcon,
@@ -59,7 +59,7 @@ export default function AdminDashboard() {
     useState(false)
   const router = useRouter()
 
-  const checkAdminAccess = useCallback(async () => {
+  const checkAdminAccess = async () => {
     try {
       const {
         data: { user: authUser },
@@ -94,9 +94,9 @@ export default function AdminDashboard() {
     } finally {
       setIsLoading(false)
     }
-  }, [router])
+  }
 
-  const loadDashboardData = useCallback(async () => {
+  const loadDashboardData = async () => {
     try {
       console.log('Loading dashboard data...')
 
@@ -226,17 +226,17 @@ export default function AdminDashboard() {
     } catch (error) {
       console.error('Failed to load dashboard data:', error)
     }
-  }, [activeTab])
+  }
 
   useEffect(() => {
     checkAdminAccess()
-  }, [checkAdminAccess])
+  }, [])
 
   useEffect(() => {
     if (user?.user_role && ['admin', 'super_admin'].includes(user.user_role)) {
       loadDashboardData()
     }
-  }, [user, activeTab, loadDashboardData])
+  }, [user, activeTab])
 
   const toggleTemplateStatus = async (
     templateId: string,
