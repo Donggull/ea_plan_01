@@ -339,8 +339,16 @@ export const supabase =
           autoRefreshToken: true,
           persistSession: true, // 세션 유지
           detectSessionInUrl: true,
+          flowType: 'pkce', // PKCE 플로우 사용으로 보안 강화
           storage:
             typeof window !== 'undefined' ? window.localStorage : undefined, // localStorage 사용으로 세션 유지
+          storageKey: 'sb-ea-plan-01-auth-token', // 고유한 스토리지 키
+          debug: process.env.NODE_ENV === 'development', // 개발 환경에서 디버그 로그
+        },
+        global: {
+          headers: {
+            'x-my-custom-header': 'ea-plan-01',
+          },
         },
       })
     : (mockSupabaseClient as ReturnType<typeof createClient>)

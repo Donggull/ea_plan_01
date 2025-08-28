@@ -153,84 +153,18 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   useEffect(() => {
     let isMounted = true
-    let initialLoadComplete = false
+    let authInitialized = false
 
-    // 타임아웃 설정: 10초 후에도 loading이 true이면 강제로 false로 설정
+    // 타임아웃 설정: 15초 후에도 loading이 true이면 강제로 false로 설정
     const loadingTimeout = setTimeout(() => {
-      if (isMounted && loading) {
+      if (isMounted && loading && !authInitialized) {
         console.warn('Auth loading timeout reached, forcing loading to false')
         setLoading(false)
+        authInitialized = true
       }
-    }, 10000)
+    }, 15000)
 
-    const getInitialSession = async () => {
-      console.log('Starting getInitialSession')
-
-      // Supabase 클라이언트가 mock인지 확인 (환경 변수가 없을 때)
-      const isValidSupabase =
-        supabase &&
-        typeof supabase.auth?.getSession === 'function' &&
-        !!(
-          process.env.NEXT_PUBLIC_SUPABASE_URL &&
-          process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-        )
-
-      // Supabase가 제대로 설정되지 않은 경우에만 기본 사용자 사용 (프로덕션에서는 사용하지 않음)
-      if (!isValidSupabase && process.env.NODE_ENV === 'development') {
-        console.warn('Supabase not configured properly, using fallback mode')
-        if (isMounted) {
-          setLoading(false)
-          initialLoadComplete = true
-        }
-        return
-      }
-
-      try {
-        const {
-          data: { session },
-          error,
-        } = await supabase.auth.getSession()
-
-        if (error) {
-          console.error('Session error:', error)
-          setError(error.message)
-        }
-
-        if (session && isMounted) {
-          console.log('Valid session found:', session.user.email)
-          setSession(session)
-          setUser(session.user)
-
-          // 프로필은 백그라운드에서 로드하되, 블로킹하지 않음
-          fetchUserProfile(session.user.id).catch(profileError => {
-            console.error(
-              'Profile fetch failed, continuing anyway:',
-              profileError
-            )
-          })
-        } else {
-          console.log('No session found')
-          if (isMounted) {
-            setUser(null)
-            setUserProfile(null)
-            setSession(null)
-          }
-        }
-      } catch (err) {
-        console.error('Critical error in getInitialSession:', err)
-        setError('인증 초기화 중 오류가 발생했습니다.')
-      } finally {
-        if (isMounted) {
-          setLoading(false)
-          initialLoadComplete = true
-        }
-        console.log('getInitialSession completed, loading set to false')
-      }
-    }
-
-    getInitialSession()
-
-    // Supabase 클라이언트가 제대로 설정되어 있을 때만 구독 설정
+    // Supabase 클라이언트 유효성 확인
     const isValidSupabase =
       supabase &&
       typeof supabase.auth?.getSession === 'function' &&
@@ -239,46 +173,83 @@ export function AuthProvider({ children }: AuthProviderProps) {
         process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
       )
 
-    if (isValidSupabase) {
-      const {
-        data: { subscription },
-      } = supabase.auth.onAuthStateChange(async (event, session) => {
-        if (!isMounted) return
-
-        console.log('Auth state changed:', event, session?.user?.id)
-
-        setSession(session)
-        setUser(session?.user ?? null)
-        setError(null)
-
-        if (session?.user) {
-          try {
-            await fetchUserProfile(session.user.id)
-          } catch (profileError) {
-            console.error(
-              'Failed to fetch user profile in auth state change:',
-              profileError
-            )
-          }
-        } else {
-          setUserProfile(null)
-        }
-
-        if (event === 'SIGNED_OUT') {
-          setUserProfile(null)
-        }
-      })
-
+    // Supabase가 제대로 설정되지 않은 경우 개발 모드에서만 폴백
+    if (!isValidSupabase && process.env.NODE_ENV === 'development') {
+      console.warn('Supabase not configured properly, using fallback mode')
+      if (isMounted) {
+        setLoading(false)
+        authInitialized = true
+      }
       return () => {
         isMounted = false
         clearTimeout(loadingTimeout)
-        subscription.unsubscribe()
       }
     }
+
+    if (!isValidSupabase) {
+      console.error('Supabase client is not properly configured')
+      if (isMounted) {
+        setError('인증 서비스를 초기화할 수 없습니다.')
+        setLoading(false)
+        authInitialized = true
+      }
+      return () => {
+        isMounted = false
+        clearTimeout(loadingTimeout)
+      }
+    }
+
+    console.log('Initializing Auth with onAuthStateChange only')
+
+    // onAuthStateChange만 사용하여 모든 인증 상태 관리
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (!isMounted) return
+
+      console.log(
+        'Auth state changed:',
+        event,
+        session?.user?.email || 'no user'
+      )
+
+      // 첫 번째 INITIAL_SESSION 이벤트에서 로딩 완료 처리
+      if (event === 'INITIAL_SESSION' && !authInitialized) {
+        authInitialized = true
+        setLoading(false)
+        console.log('Auth initialization completed')
+      }
+
+      // 세션 상태 업데이트
+      setSession(session)
+      setUser(session?.user ?? null)
+      setError(null)
+
+      if (session?.user) {
+        // 프로필은 백그라운드에서 로드
+        try {
+          await fetchUserProfile(session.user.id)
+        } catch (profileError) {
+          console.error('Failed to fetch user profile:', profileError)
+          // 프로필 로드 실패해도 세션은 유지
+        }
+      } else {
+        setUserProfile(null)
+      }
+
+      // 로그아웃 시 추가 정리
+      if (event === 'SIGNED_OUT') {
+        setUser(null)
+        setSession(null)
+        setUserProfile(null)
+        setError(null)
+      }
+    })
 
     return () => {
       isMounted = false
       clearTimeout(loadingTimeout)
+      subscription.unsubscribe()
     }
   }, [fetchUserProfile])
 
