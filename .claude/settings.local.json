@@ -80,7 +80,8 @@
       "Read(C:\\Users\\dg.an\\.claude/**)",
       "Bash(rm:*)",
       "Bash(PORT=3009 npm run dev)",
-      "Bash(PORT=3009 npm run dev)"
+      "Bash(PORT=3009 npm run dev)",
+      "Bash(PORT=3010 npm run dev)"
     ],
     "deny": [],
     "ask": [],

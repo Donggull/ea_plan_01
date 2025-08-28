@@ -36,6 +36,18 @@ export default function HomePage() {
   const handleLogin = () => {
     router.push('/auth/login')
   }
+
+  // 기능 버튼 클릭 핸들러 - 로그인 상태 확인
+  const handleFeatureClick = (targetPath: string) => {
+    if (user) {
+      // 로그인된 사용자는 해당 페이지로 이동
+      router.push(targetPath)
+    } else {
+      // 비로그인 사용자는 로그인 페이지로 이동 (리다이렉트 URL 포함)
+      router.push(`/auth/login?redirectTo=${encodeURIComponent(targetPath)}`)
+    }
+  }
+
   const features = [
     {
       title: '제안 진행',
@@ -178,16 +190,18 @@ export default function HomePage() {
             </nav>
           </div>
           <div className="flex items-center space-x-4">
-            <Link href="/dashboard">
-              <button className="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg text-sm font-medium transition-colors">
-                대시보드
-              </button>
-            </Link>
-            <Link href="/projects">
-              <button className="bg-purple-600 hover:bg-purple-700 px-4 py-2 rounded-lg text-sm font-medium transition-colors">
-                프로젝트
-              </button>
-            </Link>
+            <button
+              onClick={() => handleFeatureClick('/dashboard')}
+              className="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+            >
+              대시보드
+            </button>
+            <button
+              onClick={() => handleFeatureClick('/projects')}
+              className="bg-purple-600 hover:bg-purple-700 px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+            >
+              프로젝트
+            </button>
             {/* 사용자 메뉴 */}
             <Menu as="div" className="relative">
               <div>
@@ -382,14 +396,13 @@ export default function HomePage() {
                       </p>
 
                       {/* Button */}
-                      <Link href={feature.href}>
-                        <button
-                          className={`w-full ${feature.buttonColor} text-white py-4 rounded-2xl font-semibold text-lg transition-all duration-300 hover:transform hover:scale-105 shadow-lg flex items-center justify-center space-x-2`}
-                        >
-                          <span>{feature.buttonText}</span>
-                          <ArrowRightIcon className="w-5 h-5" />
-                        </button>
-                      </Link>
+                      <button
+                        onClick={() => handleFeatureClick(feature.href)}
+                        className={`w-full ${feature.buttonColor} text-white py-4 rounded-2xl font-semibold text-lg transition-all duration-300 hover:transform hover:scale-105 shadow-lg flex items-center justify-center space-x-2`}
+                      >
+                        <span>{feature.buttonText}</span>
+                        <ArrowRightIcon className="w-5 h-5" />
+                      </button>
                     </div>
                   </div>
                 </motion.div>
