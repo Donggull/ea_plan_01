@@ -8,7 +8,7 @@ import {
 } from '@/lib/config/aiConfig'
 import { env, validateEnv } from '@/lib/utils/env'
 import { ApiUsageTracker } from '@/services/apiUsageTracker'
-import { mcpManagementService, type MCPTool } from './mcpManagementService'
+import { mcpManagementService } from './mcpManagementService'
 
 export interface ChatMessage {
   role: 'user' | 'assistant' | 'system'
@@ -260,7 +260,7 @@ class AIService {
       const outputText = response.content
       
       await this.usageTracker.trackUsage(
-        model as any,
+        model as 'gemini' | 'chatgpt' | 'claude',
         '/chat/completions',
         inputText,
         outputText,
@@ -380,7 +380,11 @@ class AIService {
 
     // MCP 도구 활성화 시 선택된 도구 정보를 가져와서 시스템 메시지에 추가
     let enhancedSystem = system || '';
-    let tools: any[] = [];
+    let tools: Array<{
+      name: string;
+      description: string;
+      input_schema: Record<string, unknown>;
+    }> = [];
 
     if (options.enableMCP && options.selectedMCPTools && options.selectedMCPTools.length > 0) {
       try {
@@ -414,7 +418,15 @@ class AIService {
       }
     }
 
-    const createParams: any = {
+    const createParams: {
+      model: string;
+      max_tokens: number;
+      temperature: number;
+      top_p: number;
+      system?: string;
+      messages: Array<{ role: string; content: string }>;
+      tools?: Array<{ name: string; description: string; input_schema: Record<string, unknown> }>;
+    } = {
       model: AI_MODEL_CONFIGS.claude.name,
       max_tokens: options.maxTokens,
       temperature: options.temperature,
@@ -611,7 +623,11 @@ class AIService {
 
     // MCP 도구 활성화 시 선택된 도구 정보를 가져와서 시스템 메시지에 추가
     let enhancedSystem = system || '';
-    let tools: any[] = [];
+    let tools: Array<{
+      name: string;
+      description: string;
+      input_schema: Record<string, unknown>;
+    }> = [];
 
     if (options.enableMCP && options.selectedMCPTools && options.selectedMCPTools.length > 0) {
       try {
@@ -645,7 +661,16 @@ class AIService {
       }
     }
 
-    const createParams: any = {
+    const createParams: {
+      model: string;
+      max_tokens: number;
+      temperature: number;
+      top_p: number;
+      system?: string;
+      messages: Array<{ role: string; content: string }>;
+      stream: boolean;
+      tools?: Array<{ name: string; description: string; input_schema: Record<string, unknown> }>;
+    } = {
       model: AI_MODEL_CONFIGS.claude.name,
       max_tokens: options.maxTokens,
       temperature: options.temperature,

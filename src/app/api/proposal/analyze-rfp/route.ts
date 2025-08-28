@@ -112,7 +112,7 @@ export async function POST(request: NextRequest) {
       // Use AI service for real analysis
       const aiResponse = await aiService.chat({
         messages,
-        model: aiModel as any,
+        model: aiModel as 'gemini' | 'chatgpt' | 'claude',
         projectId,
         workflowType: 'proposal',
         workflowStage: 'rfp-analysis',
@@ -123,7 +123,7 @@ export async function POST(request: NextRequest) {
       console.log(`AI analysis completed with ${aiModel} model`)
 
       // Try to parse AI response as JSON, fallback to structured extraction
-      let aiAnalysis: any = {}
+      let aiAnalysis: Record<string, unknown> = {}
       try {
         aiAnalysis = JSON.parse(aiResponse.content)
       } catch {
@@ -228,7 +228,7 @@ export async function POST(request: NextRequest) {
 // Enhanced analysis function
 function performAdvancedAnalysis(
   textContent: string,
-  aiModel: string
+  _aiModel: string
 ): AnalysisMetrics {
   const contentLower = textContent.toLowerCase()
 
@@ -444,7 +444,7 @@ function performAdvancedAnalysis(
 function extractProjectTitle(
   content: string,
   fileName: string,
-  aiModel?: string
+  _aiModel?: string
 ): string {
   // Look for project title patterns
   const titlePatterns = [
@@ -539,7 +539,7 @@ function extractBudget(content: string) {
 
 function extractFunctionalRequirements(
   content: string,
-  aiModel?: string
+  _aiModel?: string
 ): string[] {
   const requirements = []
 
@@ -579,7 +579,7 @@ function extractFunctionalRequirements(
 
 function extractTechnicalRequirements(
   content: string,
-  aiModel?: string
+  _aiModel?: string
 ): string[] {
   const requirements = []
 
@@ -615,7 +615,7 @@ function extractTechnicalRequirements(
 
 function extractDesignRequirements(
   content: string,
-  aiModel?: string
+  _aiModel?: string
 ): string[] {
   const requirements = []
 
@@ -692,7 +692,7 @@ function extractDeliverables(content: string): string[] {
   return deliverables
 }
 
-function extractRiskFactors(content: string, aiModel?: string): string[] {
+function extractRiskFactors(_content: string, _aiModel?: string): string[] {
   return [
     '요구사항 변경에 따른 일정 지연 가능성',
     '외부 API 연동 시 기술적 제약사항',
@@ -702,7 +702,7 @@ function extractRiskFactors(content: string, aiModel?: string): string[] {
   ]
 }
 
-function extractKeyPoints(content: string, aiModel?: string): string[] {
+function extractKeyPoints(_content: string, _aiModel?: string): string[] {
   return [
     '사용자 경험(UX) 최적화에 중점',
     '확장 가능한 아키텍처 설계',

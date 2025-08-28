@@ -13,6 +13,10 @@ import {
   ChartBarIcon,
   UsersIcon,
   TrashIcon,
+  ClockIcon,
+  ShieldCheckIcon,
+  ExclamationTriangleIcon,
+  TagIcon,
 } from '@heroicons/react/24/outline'
 import mcpManagementService, {
   type MCPProvider,
@@ -23,7 +27,9 @@ export default function MCPAdminPage() {
   const [providers, setProviders] = useState<MCPProvider[]>([])
   const [tools, setTools] = useState<MCPTool[]>([])
   const [loading, setLoading] = useState(true)
-  const [activeTab, setActiveTab] = useState<'providers' | 'tools'>('providers')
+  const [activeTab, setActiveTab] = useState<'providers' | 'tools' | 'approval'>('providers')
+  const [approvalRequests, setApprovalRequests] = useState<any[]>([]) // TODO: Add proper type
+  const [categories, setCategories] = useState<any[]>([]) // TODO: Add proper type
   const [isAddingProvider, setIsAddingProvider] = useState(false)
   const [isAddingTool, setIsAddingTool] = useState(false)
   const [editingProvider, setEditingProvider] = useState<MCPProvider | null>(null)
@@ -38,6 +44,10 @@ export default function MCPAdminPage() {
     endpoint_url: '',
     connection_type: 'http' as 'http' | 'websocket' | 'stdio',
     is_active: true,
+    category_id: '',
+    tags: [] as string[],
+    documentation_url: '',
+    support_url: '',
   })
 
   // Tool form state
@@ -49,6 +59,10 @@ export default function MCPAdminPage() {
     tool_type: 'function' as 'function' | 'resource' | 'prompt',
     sort_order: 0,
     is_active: true,
+    category_id: '',
+    tags: [] as string[],
+    documentation_url: '',
+    example_usage: {},
   })
 
   useEffect(() => {
@@ -57,16 +71,37 @@ export default function MCPAdminPage() {
 
   const loadData = async () => {
     try {
-      const [providersData, toolsData] = await Promise.all([
+      const [providersData, toolsData, categoriesData] = await Promise.all([
         mcpManagementService.getProviders(),
         mcpManagementService.getTools(),
+        loadCategories(),
       ])
       setProviders(providersData)
       setTools(toolsData)
+      setCategories(categoriesData)
     } catch (error) {
       console.error('Failed to load data:', error)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const loadCategories = async () => {
+    try {
+      // For now, return mock categories - implement proper service later
+      return [
+        { id: '1', name: 'search', display_name: 'Web Search', icon: '🔍' },
+        { id: '2', name: 'file', display_name: 'File Management', icon: '📁' },
+        { id: '3', name: 'database', display_name: 'Database Operations', icon: '🗄️' },
+        { id: '4', name: 'ai', display_name: 'AI & ML Services', icon: '🤖' },
+        { id: '5', name: 'communication', display_name: 'Communication', icon: '💬' },
+        { id: '6', name: 'development', display_name: 'Development Tools', icon: '⚙️' },
+        { id: '7', name: 'analysis', display_name: 'Data Analysis', icon: '📊' },
+        { id: '8', name: 'custom', display_name: 'Custom Tools', icon: '🛠️' },
+      ]
+    } catch (error) {
+      console.error('Failed to load categories:', error)
+      return []
     }
   }
 
@@ -111,6 +146,10 @@ export default function MCPAdminPage() {
       endpoint_url: '',
       connection_type: 'http',
       is_active: true,
+      category_id: '',
+      tags: [],
+      documentation_url: '',
+      support_url: '',
     })
   }
 
@@ -123,6 +162,10 @@ export default function MCPAdminPage() {
       tool_type: 'function',
       sort_order: 0,
       is_active: true,
+      category_id: '',
+      tags: [],
+      documentation_url: '',
+      example_usage: {},
     })
   }
 
@@ -136,6 +179,10 @@ export default function MCPAdminPage() {
       endpoint_url: provider.endpoint_url || '',
       connection_type: provider.connection_type,
       is_active: provider.is_active,
+      category_id: (provider as any).category_id || '',
+      tags: (provider as any).tags || [],
+      documentation_url: (provider as any).documentation_url || '',
+      support_url: (provider as any).support_url || '',
     })
     setIsAddingProvider(true)
   }
@@ -150,6 +197,10 @@ export default function MCPAdminPage() {
       tool_type: tool.tool_type,
       sort_order: tool.sort_order,
       is_active: tool.is_active,
+      category_id: (tool as any).category_id || '',
+      tags: (tool as any).tags || [],
+      documentation_url: (tool as any).documentation_url || '',
+      example_usage: (tool as any).example_usage || {},
     })
     setIsAddingTool(true)
   }
@@ -194,6 +245,52 @@ export default function MCPAdminPage() {
         await loadData()
       } catch (error) {
         console.error('Failed to delete tool:', error)
+      }
+    }
+  }
+
+  const handleApproveProvider = async (provider: MCPProvider) => {
+    try {
+      // TODO: Get actual user ID from auth context
+      await mcpManagementService.approveProvider(provider.id, 'admin-user-id')
+      await loadData()
+    } catch (error) {
+      console.error('Failed to approve provider:', error)
+    }
+  }
+
+  const handleRejectProvider = async (provider: MCPProvider) => {
+    const reason = window.prompt('거부 사유를 입력하세요:')
+    if (reason !== null) {
+      try {
+        // TODO: Get actual user ID from auth context
+        await mcpManagementService.rejectProvider(provider.id, 'admin-user-id', reason)
+        await loadData()
+      } catch (error) {
+        console.error('Failed to reject provider:', error)
+      }
+    }
+  }
+
+  const handleApproveTool = async (tool: MCPTool) => {
+    try {
+      // TODO: Get actual user ID from auth context
+      await mcpManagementService.approveTool(tool.id, 'admin-user-id')
+      await loadData()
+    } catch (error) {
+      console.error('Failed to approve tool:', error)
+    }
+  }
+
+  const handleRejectTool = async (tool: MCPTool) => {
+    const reason = window.prompt('거부 사유를 입력하세요:')
+    if (reason !== null) {
+      try {
+        // TODO: Get actual user ID from auth context
+        await mcpManagementService.rejectTool(tool.id, 'admin-user-id', reason)
+        await loadData()
+      } catch (error) {
+        console.error('Failed to reject tool:', error)
       }
     }
   }
@@ -401,6 +498,23 @@ export default function MCPAdminPage() {
                             >
                               {provider.connection_type}
                             </span>
+                            {(provider as any).approval_status && (
+                              <span
+                                className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                  (provider as any).approval_status === 'approved'
+                                    ? 'bg-green-100 text-green-800'
+                                    : (provider as any).approval_status === 'pending'
+                                    ? 'bg-yellow-100 text-yellow-800'
+                                    : 'bg-red-100 text-red-800'
+                                }`}
+                              >
+                                {(provider as any).approval_status === 'approved'
+                                  ? '승인됨'
+                                  : (provider as any).approval_status === 'pending'
+                                  ? '승인대기'
+                                  : '거부됨'}
+                              </span>
+                            )}
                             <span className="text-xs text-gray-400">
                               {new Date(provider.created_at).toLocaleDateString('ko-KR')}
                             </span>
@@ -472,6 +586,23 @@ export default function MCPAdminPage() {
                             >
                               {tool.tool_type}
                             </span>
+                            {(tool as any).approval_status && (
+                              <span
+                                className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                  (tool as any).approval_status === 'approved'
+                                    ? 'bg-green-100 text-green-800'
+                                    : (tool as any).approval_status === 'pending'
+                                    ? 'bg-yellow-100 text-yellow-800'
+                                    : 'bg-red-100 text-red-800'
+                                }`}
+                              >
+                                {(tool as any).approval_status === 'approved'
+                                  ? '승인됨'
+                                  : (tool as any).approval_status === 'pending'
+                                  ? '승인대기'
+                                  : '거부됨'}
+                              </span>
+                            )}
                             <span className="text-xs text-gray-400">
                               Provider: {tool.provider?.display_name}
                             </span>
@@ -519,6 +650,153 @@ export default function MCPAdminPage() {
                   </motion.div>
                 ))
               )}
+            </div>
+          </div>
+
+          {/* Approval Management Section */}
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm mt-6">
+            <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+                승인 관리
+              </h2>
+            </div>
+            <div className="divide-y divide-gray-200 dark:divide-gray-700">
+              {/* Approval Management Tab Content */}
+                <div className="p-6">
+                  <div className="space-y-6">
+                    {/* Pending Providers */}
+                    {providers.filter(p => (p as any).approval_status === 'pending').length > 0 && (
+                      <div>
+                        <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
+                          승인 대기 중인 제공자
+                        </h3>
+                        <div className="space-y-4">
+                          {providers.filter(p => (p as any).approval_status === 'pending').map((provider, index) => (
+                            <motion.div
+                              key={provider.id}
+                              initial={{ opacity: 0, x: -20 }}
+                              animate={{ opacity: 1, x: 0 }}
+                              transition={{ delay: index * 0.1 }}
+                              className="border border-yellow-200 dark:border-yellow-800 rounded-lg p-4 bg-yellow-50 dark:bg-yellow-900/20"
+                            >
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center space-x-4">
+                                  <span className="text-2xl">{provider.icon}</span>
+                                  <div>
+                                    <h4 className="text-lg font-medium text-gray-900 dark:text-white">
+                                      {provider.display_name}
+                                    </h4>
+                                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                                      {provider.description}
+                                    </p>
+                                    <div className="flex items-center space-x-2 mt-1">
+                                      <ClockIcon className="w-4 h-4 text-yellow-500" />
+                                      <span className="text-xs text-yellow-600 dark:text-yellow-400">
+                                        승인 대기 중
+                                      </span>
+                                      <span className="text-xs text-gray-400">
+                                        생성일: {new Date(provider.created_at).toLocaleDateString('ko-KR')}
+                                      </span>
+                                    </div>
+                                  </div>
+                                </div>
+                                <div className="flex items-center space-x-2">
+                                  <button 
+                                    onClick={() => handleApproveProvider(provider)}
+                                    className="inline-flex items-center px-3 py-1 bg-green-600 hover:bg-green-700 text-white text-xs rounded transition-colors"
+                                  >
+                                    <ShieldCheckIcon className="w-4 h-4 mr-1" />
+                                    승인
+                                  </button>
+                                  <button 
+                                    onClick={() => handleRejectProvider(provider)}
+                                    className="inline-flex items-center px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-xs rounded transition-colors"
+                                  >
+                                    <XCircleIcon className="w-4 h-4 mr-1" />
+                                    거부
+                                  </button>
+                                </div>
+                              </div>
+                            </motion.div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Pending Tools */}
+                    {tools.filter(t => (t as any).approval_status === 'pending').length > 0 && (
+                      <div>
+                        <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
+                          승인 대기 중인 도구
+                        </h3>
+                        <div className="space-y-4">
+                          {tools.filter(t => (t as any).approval_status === 'pending').map((tool, index) => (
+                            <motion.div
+                              key={tool.id}
+                              initial={{ opacity: 0, x: -20 }}
+                              animate={{ opacity: 1, x: 0 }}
+                              transition={{ delay: index * 0.1 }}
+                              className="border border-yellow-200 dark:border-yellow-800 rounded-lg p-4 bg-yellow-50 dark:bg-yellow-900/20"
+                            >
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center space-x-4">
+                                  <span className="text-2xl">{tool.provider?.icon || '🔧'}</span>
+                                  <div>
+                                    <h4 className="text-lg font-medium text-gray-900 dark:text-white">
+                                      {tool.display_name}
+                                    </h4>
+                                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                                      {tool.description}
+                                    </p>
+                                    <div className="flex items-center space-x-2 mt-1">
+                                      <ClockIcon className="w-4 h-4 text-yellow-500" />
+                                      <span className="text-xs text-yellow-600 dark:text-yellow-400">
+                                        승인 대기 중
+                                      </span>
+                                      <span className="text-xs text-gray-400">
+                                        Provider: {tool.provider?.display_name}
+                                      </span>
+                                    </div>
+                                  </div>
+                                </div>
+                                <div className="flex items-center space-x-2">
+                                  <button 
+                                    onClick={() => handleApproveTool(tool)}
+                                    className="inline-flex items-center px-3 py-1 bg-green-600 hover:bg-green-700 text-white text-xs rounded transition-colors"
+                                  >
+                                    <ShieldCheckIcon className="w-4 h-4 mr-1" />
+                                    승인
+                                  </button>
+                                  <button 
+                                    onClick={() => handleRejectTool(tool)}
+                                    className="inline-flex items-center px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-xs rounded transition-colors"
+                                  >
+                                    <XCircleIcon className="w-4 h-4 mr-1" />
+                                    거부
+                                  </button>
+                                </div>
+                              </div>
+                            </motion.div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* No Pending Items */}
+                    {providers.filter(p => (p as any).approval_status === 'pending').length === 0 && 
+                     tools.filter(t => (t as any).approval_status === 'pending').length === 0 && (
+                      <div className="text-center py-12">
+                        <ShieldCheckIcon className="w-16 h-16 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
+                        <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+                          승인 대기 중인 항목이 없습니다
+                        </h3>
+                        <p className="text-gray-600 dark:text-gray-400">
+                          모든 MCP 제공자와 도구가 승인되었거나 처리되었습니다.
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
             </div>
           </div>
 
@@ -629,6 +907,59 @@ export default function MCPAdminPage() {
                       }
                       className="w-full px-3 py-2 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                       placeholder="https://api.example.com/mcp"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      카테고리
+                    </label>
+                    <select
+                      value={providerForm.category_id}
+                      onChange={e =>
+                        setProviderForm({
+                          ...providerForm,
+                          category_id: e.target.value,
+                        })
+                      }
+                      className="w-full px-3 py-2 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="">카테고리 선택 (선택사항)</option>
+                      {categories.map(category => (
+                        <option key={category.id} value={category.id}>
+                          {category.icon} {category.display_name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      문서 URL (선택사항)
+                    </label>
+                    <input
+                      type="url"
+                      value={providerForm.documentation_url}
+                      onChange={e =>
+                        setProviderForm({ ...providerForm, documentation_url: e.target.value })
+                      }
+                      className="w-full px-3 py-2 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="https://docs.example.com"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      지원 URL (선택사항)
+                    </label>
+                    <input
+                      type="url"
+                      value={providerForm.support_url}
+                      onChange={e =>
+                        setProviderForm({ ...providerForm, support_url: e.target.value })
+                      }
+                      className="w-full px-3 py-2 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="https://support.example.com"
                     />
                   </div>
 
@@ -792,6 +1123,44 @@ export default function MCPAdminPage() {
                       className="w-full px-3 py-2 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                       placeholder="0"
                       min="0"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      카테고리
+                    </label>
+                    <select
+                      value={toolForm.category_id}
+                      onChange={e =>
+                        setToolForm({
+                          ...toolForm,
+                          category_id: e.target.value,
+                        })
+                      }
+                      className="w-full px-3 py-2 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="">카테고리 선택 (선택사항)</option>
+                      {categories.map(category => (
+                        <option key={category.id} value={category.id}>
+                          {category.icon} {category.display_name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      문서 URL (선택사항)
+                    </label>
+                    <input
+                      type="url"
+                      value={toolForm.documentation_url}
+                      onChange={e =>
+                        setToolForm({ ...toolForm, documentation_url: e.target.value })
+                      }
+                      className="w-full px-3 py-2 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="https://docs.example.com/tool-name"
                     />
                   </div>
 

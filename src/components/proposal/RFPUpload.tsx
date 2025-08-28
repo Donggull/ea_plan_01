@@ -14,7 +14,6 @@ import {
   EyeIcon,
   PlayIcon,
   TrashIcon,
-  CogIcon,
 } from '@heroicons/react/24/outline'
 import FilePreview from './FilePreview'
 import mcpManagementService, { type MCPTool } from '@/lib/services/mcpManagementService'
@@ -258,7 +257,7 @@ export default function RFPUpload({ onUpload, projectId }: RFPUploadProps) {
             let errorData
             try {
               errorData = JSON.parse(errorText)
-            } catch (parseError) {
+            } catch (_parseError) {
               errorData = {
                 error: `HTTP ${uploadResponse.status}: ${uploadResponse.statusText}`,
                 details: errorText || 'No additional error details available',

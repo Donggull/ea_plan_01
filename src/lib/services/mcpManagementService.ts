@@ -10,11 +10,26 @@ export interface MCPProvider {
   icon: string
   endpoint_url?: string
   connection_type: 'http' | 'websocket' | 'stdio'
-  config_schema?: any
+  config_schema?: Record<string, unknown>
   is_active: boolean
   created_by?: string
   created_at: string
   updated_at: string
+  // Enhanced fields
+  approval_status?: 'pending' | 'approved' | 'rejected' | 'suspended'
+  approved_by?: string
+  approved_at?: string
+  rejection_reason?: string
+  version?: number
+  last_tested_at?: string
+  test_status?: 'untested' | 'testing' | 'passed' | 'failed'
+  test_results?: Record<string, unknown>
+  usage_count?: number
+  priority?: number
+  category_id?: string
+  tags?: string[]
+  documentation_url?: string
+  support_url?: string
 }
 
 export interface MCPTool {
@@ -24,12 +39,24 @@ export interface MCPTool {
   display_name: string
   description?: string
   tool_type: 'function' | 'resource' | 'prompt'
-  config?: any
+  config?: Record<string, unknown>
   is_active: boolean
   sort_order: number
   created_at: string
   updated_at: string
   provider?: MCPProvider
+  // Enhanced fields
+  approval_status?: 'pending' | 'approved' | 'rejected' | 'suspended'
+  approved_by?: string
+  approved_at?: string
+  rejection_reason?: string
+  version?: number
+  required_permissions?: string[]
+  usage_count?: number
+  example_usage?: Record<string, unknown>
+  category_id?: string
+  tags?: string[]
+  documentation_url?: string
 }
 
 export interface UserMCPSettings {
@@ -37,7 +64,7 @@ export interface UserMCPSettings {
   user_id: string
   project_id?: string
   enabled_tools: string[]
-  default_settings?: any
+  default_settings?: Record<string, unknown>
   created_at: string
   updated_at: string
 }
@@ -142,6 +169,8 @@ class MCPManagementService {
       `)
       .eq('is_active', true)
       .eq('provider.is_active', true)
+      .eq('approval_status', 'approved')
+      .eq('provider.approval_status', 'approved')
       .order('sort_order')
       .order('display_name')
 
@@ -231,7 +260,7 @@ class MCPManagementService {
     settings: {
       projectId?: string
       enabledTools: string[]
-      defaultSettings?: any
+      defaultSettings?: Record<string, unknown>
     }
   ): Promise<UserMCPSettings> {
     const existingSettings = await this.getUserSettings(userId, settings.projectId)
@@ -278,7 +307,14 @@ class MCPManagementService {
   }
 
   // Claude API와의 MCP 도구 연동을 위한 도구 정보 포맷팅
-  formatToolsForClaude(tools: MCPTool[]): any[] {
+  formatToolsForClaude(tools: MCPTool[]): Array<{
+    type: string;
+    function: {
+      name: string;
+      description: string;
+      parameters: Record<string, unknown>;
+    };
+  }> {
     return tools.map(tool => ({
       type: 'function',
       function: {
@@ -318,6 +354,117 @@ class MCPManagementService {
       console.error('Error in logToolUsage:', error)
     }
   }
+
+  // 승인 관련 메소드
+  async approveProvider(id: string, approverId: string): Promise<MCPProvider> {
+    const { data, error } = await supabase
+      .from('mcp_providers')
+      .update({
+        approval_status: 'approved',
+        approved_by: approverId,
+        approved_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', id)
+      .select()
+      .single()
+
+    if (error) {
+      console.error('Error approving provider:', error)
+      throw error
+    }
+
+    return data
+  }
+
+  async rejectProvider(id: string, approverId: string, reason: string): Promise<MCPProvider> {
+    const { data, error } = await supabase
+      .from('mcp_providers')
+      .update({
+        approval_status: 'rejected',
+        approved_by: approverId,
+        approved_at: new Date().toISOString(),
+        rejection_reason: reason,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', id)
+      .select()
+      .single()
+
+    if (error) {
+      console.error('Error rejecting provider:', error)
+      throw error
+    }
+
+    return data
+  }
+
+  async approveTool(id: string, approverId: string): Promise<MCPTool> {
+    const { data, error } = await supabase
+      .from('mcp_tools')
+      .update({
+        approval_status: 'approved',
+        approved_by: approverId,
+        approved_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', id)
+      .select()
+      .single()
+
+    if (error) {
+      console.error('Error approving tool:', error)
+      throw error
+    }
+
+    return data
+  }
+
+  async rejectTool(id: string, approverId: string, reason: string): Promise<MCPTool> {
+    const { data, error } = await supabase
+      .from('mcp_tools')
+      .update({
+        approval_status: 'rejected',
+        approved_by: approverId,
+        approved_at: new Date().toISOString(),
+        rejection_reason: reason,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', id)
+      .select()
+      .single()
+
+    if (error) {
+      console.error('Error rejecting tool:', error)
+      throw error
+    }
+
+    return data
+  }
+
+  // 카테고리 관리
+  async getCategories(): Promise<Array<{
+    id: string
+    name: string
+    display_name: string
+    description?: string
+    is_active: boolean
+    sort_order: number
+  }>> {
+    const { data, error } = await supabase
+      .from('mcp_categories')
+      .select('*')
+      .eq('is_active', true)
+      .order('sort_order')
+      .order('display_name')
+
+    if (error) {
+      console.error('Error fetching categories:', error)
+      throw error
+    }
+
+    return data || []
+  }
 }
 
 // 사용량 로그 테이블 생성 (마이그레이션에서 처리할 수도 있음)
@@ -326,6 +473,73 @@ export const createUsageLogTable = async () => {
   if (error) {
     console.error('Error creating usage logs table:', error)
   }
+}
+
+// MCP 등록 예시 데이터
+export const MCPRegistrationExamples = {
+  providers: [
+    {
+      name: 'web_search',
+      display_name: '웹 검색',
+      description: '실시간 웹 검색을 통해 최신 정보를 제공합니다.',
+      icon: '🔍',
+      connection_type: 'http',
+      endpoint_url: 'https://api.tavily.com',
+      documentation_url: 'https://docs.tavily.com',
+      support_url: 'https://support.tavily.com',
+    },
+    {
+      name: 'file_system',
+      display_name: '파일 시스템',
+      description: '로컬 파일 시스템에 접근하여 파일을 읽고 쓸 수 있습니다.',
+      icon: '📁',
+      connection_type: 'stdio',
+      documentation_url: 'https://modelcontextprotocol.io/docs/tools/filesystem',
+    },
+    {
+      name: 'database',
+      display_name: '데이터베이스',
+      description: 'PostgreSQL, MySQL 등의 데이터베이스에 쿼리를 실행할 수 있습니다.',
+      icon: '🗄️',
+      connection_type: 'http',
+      documentation_url: 'https://modelcontextprotocol.io/docs/tools/database',
+    },
+  ],
+  tools: [
+    {
+      name: 'search_web',
+      display_name: '웹 검색',
+      description: '키워드로 웹을 검색하고 관련 결과를 반환합니다.',
+      tool_type: 'function',
+      example_usage: {
+        query: 'Next.js 최신 업데이트',
+        max_results: 5,
+        include_content: true,
+      },
+      documentation_url: 'https://docs.tavily.com/search',
+    },
+    {
+      name: 'read_file',
+      display_name: '파일 읽기',
+      description: '지정된 경로의 파일을 읽어 내용을 반환합니다.',
+      tool_type: 'function',
+      example_usage: {
+        path: '/path/to/file.txt',
+        encoding: 'utf-8',
+      },
+    },
+    {
+      name: 'execute_sql',
+      display_name: 'SQL 실행',
+      description: 'SQL 쿼리를 실행하고 결과를 반환합니다.',
+      tool_type: 'function',
+      example_usage: {
+        query: 'SELECT * FROM users WHERE active = true',
+        database: 'main',
+      },
+      required_permissions: ['database.read', 'database.write'],
+    },
+  ],
 }
 
 export const mcpManagementService = new MCPManagementService()
