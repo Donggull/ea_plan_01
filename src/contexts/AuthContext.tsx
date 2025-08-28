@@ -1,11 +1,6 @@
 'use client'
 
-import React, {
-  createContext,
-  useContext,
-  useEffect,
-  useState,
-} from 'react'
+import React, { createContext, useContext, useEffect, useState } from 'react'
 import { User, Session, AuthError } from '@supabase/supabase-js'
 import { supabase, Database } from '@/lib/supabase'
 
@@ -16,12 +11,20 @@ export interface AuthContextType {
   userProfile: UserProfile | null
   session: Session | null
   loading: boolean
+  initialized: boolean
   error: string | null
-  signUp: (email: string, password: string, name: string) => Promise<{
+  signUp: (
+    email: string,
+    password: string,
+    name: string
+  ) => Promise<{
     data: { user: User | null; session: Session | null }
     error: AuthError | null
   }>
-  signIn: (email: string, password: string) => Promise<{
+  signIn: (
+    email: string,
+    password: string
+  ) => Promise<{
     data: { user: User | null; session: Session | null }
     error: AuthError | null
   }>
@@ -41,11 +44,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [session, setSession] = useState<Session | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [initialized, setInitialized] = useState(false)
 
   // 사용자 프로필 가져오기
   const fetchUserProfile = async (userId: string) => {
     if (!supabase) return
-    
+
     try {
       const { data, error } = await supabase
         .from('users')
@@ -63,67 +67,121 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   useEffect(() => {
     let mounted = true
+    let authSubscription: { unsubscribe: () => void } | null = null
 
     // Supabase 설정 확인
     if (!supabase || !process.env.NEXT_PUBLIC_SUPABASE_URL) {
       console.warn('Supabase not configured')
-      if (mounted) setLoading(false)
+      if (mounted) {
+        setLoading(false)
+        setInitialized(true)
+      }
       return
     }
 
-    // 초기 세션 가져오기
+    // 인증 초기화 함수
     const initializeAuth = async () => {
       try {
-        const { data: { session } } = await supabase.auth.getSession()
-        
-        if (mounted) {
-          setSession(session)
-          setUser(session?.user ?? null)
-          
-          if (session?.user) {
-            await fetchUserProfile(session.user.id)
-          }
-          
-          setLoading(false)
-        }
-      } catch (err) {
-        console.error('Error initializing auth:', err)
-        if (mounted) setLoading(false)
-      }
-    }
+        console.log('🔐 AuthContext: Initializing authentication...')
 
-    // 인증 상태 변경 리스너
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+        // 현재 세션 가져오기
+        const {
+          data: { session },
+          error,
+        } = await supabase.auth.getSession()
+
+        if (error) {
+          console.error('❌ Error getting session:', error)
+          throw error
+        }
+
         if (!mounted) return
 
-        console.log('Auth state changed:', event)
-        
+        console.log(
+          '📱 AuthContext: Session retrieved:',
+          session ? 'Found' : 'None'
+        )
+
+        // 세션 상태 업데이트
         setSession(session)
         setUser(session?.user ?? null)
         setError(null)
 
+        // 사용자 프로필 로드
+        if (session?.user) {
+          console.log('👤 AuthContext: Loading user profile...')
+          await fetchUserProfile(session.user.id)
+        } else {
+          setUserProfile(null)
+        }
+
+        // 로딩 완료
+        setLoading(false)
+        setInitialized(true)
+
+        console.log('✅ AuthContext: Initialization complete')
+      } catch (err) {
+        console.error('💥 AuthContext: Initialization error:', err)
+        if (mounted) {
+          setError('인증 초기화 중 오류가 발생했습니다.')
+          setLoading(false)
+          setInitialized(true)
+        }
+      }
+    }
+
+    // 인증 상태 변경 리스너 설정
+    const setupAuthListener = () => {
+      console.log('🔊 AuthContext: Setting up auth state listener')
+
+      const {
+        data: { subscription },
+      } = supabase.auth.onAuthStateChange(async (event, session) => {
+        if (!mounted) return
+
+        console.log(
+          '🔄 AuthContext: Auth state changed:',
+          event,
+          session ? 'Session exists' : 'No session'
+        )
+
+        // 상태 업데이트
+        setSession(session)
+        setUser(session?.user ?? null)
+        setError(null)
+
+        // 프로필 업데이트
         if (session?.user) {
           await fetchUserProfile(session.user.id)
         } else {
           setUserProfile(null)
         }
-      }
-    )
 
+        // 초기화가 아직 완료되지 않았다면 완료 처리
+        if (event === 'INITIAL_SESSION') {
+          setLoading(false)
+          setInitialized(true)
+        }
+      })
+
+      authSubscription = subscription
+    }
+
+    // 초기화 시작
+    setupAuthListener()
     initializeAuth()
 
+    // 정리 함수
     return () => {
+      console.log('🧹 AuthContext: Cleaning up')
       mounted = false
-      subscription.unsubscribe()
+      if (authSubscription) {
+        authSubscription.unsubscribe()
+      }
     }
   }, [])
 
-  const signUp = async (
-    email: string,
-    password: string,
-    name: string
-  ) => {
+  const signUp = async (email: string, password: string, name: string) => {
     setLoading(true)
     setError(null)
 
@@ -247,6 +305,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     userProfile,
     session,
     loading,
+    initialized,
     error,
     signUp,
     signIn,

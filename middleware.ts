@@ -4,15 +4,14 @@ import type { NextRequest } from 'next/server'
 import type { Database } from '@/lib/supabase'
 
 // 인증이 필요한 경로들
-// 데모 모드를 위해 일부 경로는 인증 불필요
 const protectedPaths = [
-  // '/dashboard',  // 데모 모드에서는 대시보드 접근 허용
-  // '/projects',   // 데모 모드에서는 프로젝트 접근 허용
-  // '/chat',       // 데모 모드에서는 채팅 접근 허용
-  // '/canvas',     // 데모 모드에서는 캔버스 접근 허용
-  // '/images',     // 데모 모드에서는 이미지 접근 허용
-  '/profile', // 프로필은 여전히 인증 필요
-  '/settings', // 설정은 여전히 인증 필요
+  '/dashboard', // 대시보드는 인증 필요
+  '/projects', // 프로젝트는 인증 필요
+  '/chat', // 채팅은 인증 필요
+  '/canvas', // 캔버스는 인증 필요
+  '/images', // 이미지는 인증 필요
+  '/profile', // 프로필은 인증 필요
+  '/settings', // 설정은 인증 필요
 ]
 
 // 인증된 사용자가 접근할 수 없는 경로들
@@ -169,9 +168,12 @@ export async function middleware(req: NextRequest) {
 
     // 4. 루트 경로 처리
     if (pathname === '/') {
-      // 데모 모드: 항상 대시보드로 리다이렉트
-      const redirectUrl = new URL('/dashboard', req.url)
-      return NextResponse.redirect(redirectUrl)
+      // 로그인된 사용자는 대시보드로, 미로그인 사용자는 홈 페이지로
+      if (user) {
+        const redirectUrl = new URL('/dashboard', req.url)
+        return NextResponse.redirect(redirectUrl)
+      }
+      // 홈 페이지는 인증이 필요하지 않으므로 그대로 진행
     }
 
     return res
@@ -180,9 +182,8 @@ export async function middleware(req: NextRequest) {
 
     // 에러 발생 시 기본 동작
     if (pathname === '/') {
-      // 데모 모드: 에러 발생해도 대시보드로 리다이렉트
-      const redirectUrl = new URL('/dashboard', req.url)
-      return NextResponse.redirect(redirectUrl)
+      // 에러 발생 시 홈 페이지는 그대로 진행
+      return res
     }
 
     return res

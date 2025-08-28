@@ -22,40 +22,50 @@ export function ProtectedRoute({
 }: ProtectedRouteProps) {
   const router = useRouter()
   const pathname = usePathname()
-  const { user, userProfile, loading } = useAuth()
+  const { user, userProfile, loading, initialized } = useAuth()
 
   useEffect(() => {
-    // 로딩 중이거나 아직 인증 상태가 확정되지 않았으면 대기
-    if (loading) {
-      console.log('ProtectedRoute: Still loading, waiting...')
+    // 인증이 초기화되지 않았으면 대기
+    if (!initialized || loading) {
+      console.log('🔒 ProtectedRoute: Waiting for auth initialization...', {
+        initialized,
+        loading,
+      })
       return
     }
 
-    console.log('ProtectedRoute: Auth state resolved', {
+    console.log('🔓 ProtectedRoute: Auth state resolved', {
       user: !!user,
       requireAuth,
       pathname,
+      userRole: userProfile?.user_role,
     })
 
     // 인증이 필요한데 로그인되지 않은 경우
     if (requireAuth && !user) {
-      console.log('ProtectedRoute: Redirecting to login')
+      console.log('🚪 ProtectedRoute: Redirecting to login')
       const loginUrl =
         redirectTo || `/auth/login?redirectTo=${encodeURIComponent(pathname)}`
-      router.replace(loginUrl)
+
+      // 즉시 리다이렉트 (router.replace 대신 window.location 사용)
+      window.location.href = loginUrl
       return
     }
 
     // 인증이 필요하지 않은데 로그인된 경우 (예: 로그인 페이지)
     if (!requireAuth && user) {
-      console.log('ProtectedRoute: Already logged in, redirecting to dashboard')
+      console.log(
+        '🏠 ProtectedRoute: Already logged in, redirecting to dashboard'
+      )
       const dashboardUrl = redirectTo || '/dashboard'
-      router.replace(dashboardUrl)
+
+      // 즉시 리다이렉트
+      window.location.href = dashboardUrl
       return
     }
 
     // 구독 레벨 체크
-    if (requireSubscription && userProfile) {
+    if (requireSubscription && user && userProfile) {
       const userTier = userProfile.subscription_tier
       const hasRequiredSubscription =
         (requireSubscription === 'pro' &&
@@ -63,17 +73,18 @@ export function ProtectedRoute({
         (requireSubscription === 'enterprise' && userTier === 'enterprise')
 
       if (!hasRequiredSubscription) {
-        console.log('ProtectedRoute: Insufficient subscription level')
-        router.replace('/pricing?upgrade=' + requireSubscription)
+        console.log('💳 ProtectedRoute: Insufficient subscription level')
+        window.location.href = `/pricing?upgrade=${requireSubscription}`
         return
       }
     }
 
-    console.log('ProtectedRoute: All checks passed, rendering children')
+    console.log('✅ ProtectedRoute: All checks passed, rendering children')
   }, [
     user,
     userProfile,
     loading,
+    initialized,
     requireAuth,
     requireSubscription,
     router,
@@ -81,15 +92,17 @@ export function ProtectedRoute({
     redirectTo,
   ])
 
-  // 로딩 중
-  if (loading) {
+  // 초기화되지 않았거나 로딩 중
+  if (!initialized || loading) {
     return (
       fallback || (
         <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900">
           <div className="text-center">
             <Loading size="lg" />
             <p className="mt-4 text-sm text-slate-600 dark:text-slate-400">
-              인증 상태를 확인하는 중...
+              {!initialized
+                ? '인증 시스템을 초기화하는 중...'
+                : '인증 상태를 확인하는 중...'}
             </p>
           </div>
         </div>
