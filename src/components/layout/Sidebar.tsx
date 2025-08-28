@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { usePathname } from 'next/navigation'
 import { useThemeStore } from '@/stores/theme'
+import { useAuth } from '@/contexts/AuthContext'
 import useProjectStore from '@/lib/stores/projectStore'
 import {
   MagnifyingGlassIcon,
@@ -81,7 +82,13 @@ interface SidebarProps {
 
 export default function Sidebar({ onClose }: SidebarProps) {
   const pathname = usePathname()
+  const { user, initialized } = useAuth()
   useThemeStore()
+
+  // Don't render sidebar if auth is not initialized or user is not authenticated
+  if (!initialized || !user) {
+    return null
+  }
 
   // Get page-specific sidebar content
   const getSidebarContent = () => {

@@ -48,7 +48,7 @@ const projectCategories = [
 export default function Header({ onMenuToggle }: HeaderProps) {
   const { isDarkMode, toggleTheme } = useThemeStore()
   const { openCreateProjectModal } = useModalStore()
-  const { signOut, user, userProfile } = useAuth()
+  const { signOut, user, userProfile, initialized } = useAuth()
   const [searchQuery, setSearchQuery] = useState('')
   const pathname = usePathname()
   const router = useRouter()
@@ -60,6 +60,11 @@ export default function Header({ onMenuToggle }: HeaderProps) {
     } catch (error) {
       console.error('로그아웃 오류:', error)
     }
+  }
+
+  // Don't render header if auth is not initialized or user is not authenticated
+  if (!initialized || !user) {
+    return null
   }
 
   return (
@@ -210,14 +215,13 @@ export default function Header({ onMenuToggle }: HeaderProps) {
                   <span className="sr-only">사용자 메뉴 열기</span>
                   <div className="w-8 h-8 bg-slate-600 rounded-full flex items-center justify-center">
                     <span className="text-white font-medium text-sm">
-                      {userProfile?.name ? 
-                        userProfile.name.length > 1 ? 
-                          userProfile.name.slice(0, 2) 
-                          : userProfile.name 
-                        : user?.email ? 
-                          user.email.slice(0, 2).toUpperCase() 
-                          : 'U'
-                      }
+                      {userProfile?.name
+                        ? userProfile.name.length > 1
+                          ? userProfile.name.slice(0, 2)
+                          : userProfile.name
+                        : user?.email
+                          ? user.email.slice(0, 2).toUpperCase()
+                          : 'U'}
                     </span>
                   </div>
                 </Menu.Button>
