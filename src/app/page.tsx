@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, Fragment } from 'react'
+import { Fragment } from 'react'
 import { motion } from 'framer-motion'
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute'
 import { useAuth } from '@/contexts/AuthContext'
@@ -195,7 +195,8 @@ export default function HomePage() {
                   {user ? (
                     <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center">
                       <span className="text-white font-medium text-xs">
-                        {userProfile?.name?.charAt(0) || user.email?.charAt(0)?.toUpperCase()}
+                        {userProfile?.name?.charAt(0) ||
+                          user.email?.charAt(0)?.toUpperCase()}
                       </span>
                     </div>
                   ) : (

@@ -9,6 +9,7 @@ import {
   PencilIcon,
   CalculatorIcon,
   UserGroupIcon,
+  CpuChipIcon,
 } from '@heroicons/react/24/outline'
 import RFPUpload from './RFPUpload'
 import RFPAnalysis from './RFPAnalysis'
@@ -17,6 +18,7 @@ import ProposalBuilder from './ProposalBuilder'
 import CostCalculator from './CostCalculator'
 import PersonaAnalysis from './PersonaAnalysis'
 import AIQuestionGenerator from './AIQuestionGenerator'
+import AIModelSelector from './AIModelSelector'
 import type { RFPAnalysisResult, ProjectContext } from './RFPUpload'
 import type { MarketResearchResult } from './MarketResearch'
 import type { PersonaAnalysisResult } from './PersonaAnalysis'
@@ -27,16 +29,17 @@ interface ProposalWorkflowProps {
   projectCategory: string
 }
 
-type WorkflowStep = 
-  | 'upload' 
-  | 'analysis' 
+type WorkflowStep =
+  | 'model-select'
+  | 'upload'
+  | 'analysis'
   | 'analysis-questions'
-  | 'research' 
+  | 'research'
   | 'research-questions'
-  | 'persona' 
+  | 'persona'
   | 'persona-questions'
-  | 'proposal' 
-  | 'cost' 
+  | 'proposal'
+  | 'cost'
   | 'complete'
 
 export default function ProposalWorkflow({
@@ -44,19 +47,32 @@ export default function ProposalWorkflow({
   projectTitle,
   projectCategory,
 }: ProposalWorkflowProps) {
-  const [currentStep, setCurrentStep] = useState<WorkflowStep>('upload')
+  const [currentStep, setCurrentStep] = useState<WorkflowStep>('model-select')
   const [rfpFile, setRfpFile] = useState<File | null>(null)
   const [rfpAnalysis, setRfpAnalysis] = useState<RFPAnalysisResult | null>(null)
-  const [_projectContext, _setProjectContext] = useState<ProjectContext | null>(null)
-  const [marketResearch, setMarketResearch] = useState<MarketResearchResult | null>(null)
-  const [personaAnalysis, setPersonaAnalysis] = useState<PersonaAnalysisResult | null>(null)
+  const [_projectContext, _setProjectContext] = useState<ProjectContext | null>(
+    null
+  )
+  const [marketResearch, setMarketResearch] =
+    useState<MarketResearchResult | null>(null)
+  const [personaAnalysis, setPersonaAnalysis] =
+    useState<PersonaAnalysisResult | null>(null)
   const [proposal, setProposal] = useState<unknown>(null)
   const [costBreakdown, setCostBreakdown] = useState<unknown>(null)
+  const [selectedAiModel, setSelectedAiModel] = useState<string>('gemini-pro')
+  const [selectedModelConfig, setSelectedModelConfig] = useState<string>('')
   const [analysisQuestions, setAnalysisQuestions] = useState<unknown>(null)
   const [researchQuestions, setResearchQuestions] = useState<unknown>(null)
   const [personaQuestions, setPersonaQuestions] = useState<unknown>(null)
 
   const steps = [
+    {
+      id: 'model-select',
+      title: 'AI 모델 선택',
+      description: 'AI 모델 및 설정 선택',
+      icon: CpuChipIcon,
+      completed: selectedAiModel !== '',
+    },
     {
       id: 'upload',
       title: 'RFP 업로드',
@@ -100,6 +116,15 @@ export default function ProposalWorkflow({
       completed: costBreakdown !== null,
     },
   ]
+
+  const handleAiModelSelect = (modelId: string) => {
+    setSelectedAiModel(modelId)
+    setCurrentStep('upload')
+  }
+
+  const handleModelConfigChange = (modelId: string, config: string) => {
+    setSelectedModelConfig(config)
+  }
 
   const handleRFPUpload = (file: File, analysis?: RFPAnalysisResult) => {
     setRfpFile(file)
@@ -153,8 +178,10 @@ export default function ProposalWorkflow({
 
   const canProceedToStep = (stepId: WorkflowStep): boolean => {
     switch (stepId) {
-      case 'upload':
+      case 'model-select':
         return true
+      case 'upload':
+        return selectedAiModel !== ''
       case 'analysis':
         return rfpFile !== null
       case 'analysis-questions':
@@ -178,14 +205,41 @@ export default function ProposalWorkflow({
 
   const renderStepContent = () => {
     switch (currentStep) {
-      case 'upload':
+      case 'model-select':
         return (
-          <RFPUpload
-            onUpload={handleRFPUpload}
-            projectId={projectId}
-          />
+          <div className="space-y-6">
+            <div className="text-center mb-8">
+              <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+                AI 모델을 선택하세요
+              </h3>
+              <p className="text-gray-600 dark:text-gray-400">
+                프로젝트 분석에 사용할 AI 모델과 설정을 선택하세요. 각 모델의
+                특성을 고려하여 선택해주세요.
+              </p>
+            </div>
+            <AIModelSelector
+              selectedModel={selectedAiModel}
+              selectedModelConfig={selectedModelConfig}
+              onModelChange={handleAiModelSelect}
+              onModelConfigChange={handleModelConfigChange}
+            />
+            {selectedAiModel && (
+              <div className="flex justify-end mt-6">
+                <button
+                  onClick={() => setCurrentStep('upload')}
+                  className="bg-gradient-to-r from-blue-600 to-blue-700 text-white px-6 py-3 rounded-xl font-medium hover:shadow-lg transition-all duration-300 flex items-center space-x-2"
+                >
+                  <span>계속하기</span>
+                  <ChevronRightIcon className="w-5 h-5" />
+                </button>
+              </div>
+            )}
+          </div>
         )
-      
+
+      case 'upload':
+        return <RFPUpload onUpload={handleRFPUpload} projectId={projectId} />
+
       case 'analysis':
         return rfpAnalysis ? (
           <RFPAnalysis
@@ -198,7 +252,7 @@ export default function ProposalWorkflow({
             <p className="text-gray-500">RFP 분석 중...</p>
           </div>
         )
-      
+
       case 'analysis-questions':
         return (
           <AIQuestionGenerator
@@ -210,7 +264,7 @@ export default function ProposalWorkflow({
             onAllAnswered={handleAnalysisQuestionsComplete}
           />
         )
-      
+
       case 'research':
         return (
           <MarketResearch
@@ -219,7 +273,7 @@ export default function ProposalWorkflow({
             onResearchComplete={handleResearchComplete}
           />
         )
-      
+
       case 'research-questions':
         return (
           <AIQuestionGenerator
@@ -232,7 +286,7 @@ export default function ProposalWorkflow({
             onAllAnswered={handleResearchQuestionsComplete}
           />
         )
-      
+
       case 'persona':
         return (
           <PersonaAnalysis
@@ -242,7 +296,7 @@ export default function ProposalWorkflow({
             onAnalysisComplete={handlePersonaAnalysisComplete}
           />
         )
-      
+
       case 'persona-questions':
         return (
           <AIQuestionGenerator
@@ -256,7 +310,7 @@ export default function ProposalWorkflow({
             onAllAnswered={handlePersonaQuestionsComplete}
           />
         )
-      
+
       case 'proposal':
         return (
           <ProposalBuilder
@@ -267,7 +321,7 @@ export default function ProposalWorkflow({
             onSave={handleProposalComplete}
           />
         )
-      
+
       case 'cost':
         return (
           <CostCalculator
@@ -275,7 +329,7 @@ export default function ProposalWorkflow({
             initialData={costBreakdown}
           />
         )
-      
+
       default:
         return null
     }
@@ -288,7 +342,7 @@ export default function ProposalWorkflow({
         <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-6">
           제안 진행 워크플로우
         </h2>
-        
+
         <div className="flex items-center justify-between">
           {steps.map((step, index) => {
             const StepIcon = step.icon
@@ -299,42 +353,52 @@ export default function ProposalWorkflow({
             return (
               <div key={step.id} className="flex items-center">
                 <button
-                  onClick={() => canAccess && setCurrentStep(step.id as WorkflowStep)}
+                  onClick={() =>
+                    canAccess && setCurrentStep(step.id as WorkflowStep)
+                  }
                   className={`relative flex flex-col items-center p-4 rounded-lg transition-all ${
                     isActive
                       ? 'bg-blue-50 dark:bg-blue-900/20 border-2 border-blue-500'
                       : isCompleted
-                      ? 'bg-green-50 dark:bg-green-900/20 border-2 border-green-500 hover:bg-green-100 dark:hover:bg-green-900/30'
-                      : canAccess
-                      ? 'hover:bg-gray-50 dark:hover:bg-gray-800 border-2 border-transparent'
-                      : 'opacity-50 cursor-not-allowed border-2 border-transparent'
+                        ? 'bg-green-50 dark:bg-green-900/20 border-2 border-green-500 hover:bg-green-100 dark:hover:bg-green-900/30'
+                        : canAccess
+                          ? 'hover:bg-gray-50 dark:hover:bg-gray-800 border-2 border-transparent'
+                          : 'opacity-50 cursor-not-allowed border-2 border-transparent'
                   } ${canAccess ? 'cursor-pointer' : ''}`}
                   disabled={!canAccess}
                 >
-                  <div className={`flex items-center justify-center w-12 h-12 rounded-full ${
-                    isCompleted
-                      ? 'bg-green-500'
-                      : isActive
-                      ? 'bg-blue-500'
-                      : 'bg-gray-300 dark:bg-gray-600'
-                  } mb-2`}>
+                  <div
+                    className={`flex items-center justify-center w-12 h-12 rounded-full ${
+                      isCompleted
+                        ? 'bg-green-500'
+                        : isActive
+                          ? 'bg-blue-500'
+                          : 'bg-gray-300 dark:bg-gray-600'
+                    } mb-2`}
+                  >
                     {isCompleted ? (
                       <CheckCircleIcon className="w-6 h-6 text-white" />
                     ) : (
-                      <StepIcon className={`w-6 h-6 ${
-                        isActive ? 'text-white' : 'text-gray-500 dark:text-gray-400'
-                      }`} />
+                      <StepIcon
+                        className={`w-6 h-6 ${
+                          isActive
+                            ? 'text-white'
+                            : 'text-gray-500 dark:text-gray-400'
+                        }`}
+                      />
                     )}
                   </div>
-                  
+
                   <div className="text-center">
-                    <h3 className={`text-sm font-medium ${
-                      isActive
-                        ? 'text-blue-700 dark:text-blue-300'
-                        : isCompleted
-                        ? 'text-green-700 dark:text-green-300'
-                        : 'text-gray-700 dark:text-gray-300'
-                    }`}>
+                    <h3
+                      className={`text-sm font-medium ${
+                        isActive
+                          ? 'text-blue-700 dark:text-blue-300'
+                          : isCompleted
+                            ? 'text-green-700 dark:text-green-300'
+                            : 'text-gray-700 dark:text-gray-300'
+                      }`}
+                    >
                       {step.title}
                     </h3>
                     <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
@@ -363,32 +427,65 @@ export default function ProposalWorkflow({
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
             제안 프로세스 완료 요약
           </h3>
-          
+
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="space-y-3">
-              <h4 className="font-medium text-gray-700 dark:text-gray-300">프로젝트 정보</h4>
+              <h4 className="font-medium text-gray-700 dark:text-gray-300">
+                프로젝트 정보
+              </h4>
               <div className="text-sm space-y-1">
-                <p><span className="text-gray-500">프로젝트:</span> {projectTitle}</p>
-                <p><span className="text-gray-500">클라이언트:</span> {rfpAnalysis?.client}</p>
-                <p><span className="text-gray-500">마감일:</span> {rfpAnalysis?.deadline}</p>
+                <p>
+                  <span className="text-gray-500">프로젝트:</span>{' '}
+                  {projectTitle}
+                </p>
+                <p>
+                  <span className="text-gray-500">클라이언트:</span>{' '}
+                  {rfpAnalysis?.client}
+                </p>
+                <p>
+                  <span className="text-gray-500">마감일:</span>{' '}
+                  {rfpAnalysis?.deadline}
+                </p>
               </div>
             </div>
-            
+
             <div className="space-y-3">
-              <h4 className="font-medium text-gray-700 dark:text-gray-300">비용 정보</h4>
+              <h4 className="font-medium text-gray-700 dark:text-gray-300">
+                비용 정보
+              </h4>
               <div className="text-sm space-y-1">
-                <p><span className="text-gray-500">총 예상 시간:</span> {Math.round(costBreakdown.summary.totalHours)}시간</p>
-                <p><span className="text-gray-500">기본 비용:</span> {costBreakdown.summary.totalBaseCost.toLocaleString()}원</p>
-                <p><span className="text-gray-500 font-semibold">총 비용:</span> {costBreakdown.summary.grandTotal.toLocaleString()}원</p>
+                <p>
+                  <span className="text-gray-500">총 예상 시간:</span>{' '}
+                  {Math.round(costBreakdown.summary.totalHours)}시간
+                </p>
+                <p>
+                  <span className="text-gray-500">기본 비용:</span>{' '}
+                  {costBreakdown.summary.totalBaseCost.toLocaleString()}원
+                </p>
+                <p>
+                  <span className="text-gray-500 font-semibold">총 비용:</span>{' '}
+                  {costBreakdown.summary.grandTotal.toLocaleString()}원
+                </p>
               </div>
             </div>
-            
+
             <div className="space-y-3">
-              <h4 className="font-medium text-gray-700 dark:text-gray-300">완료 현황</h4>
+              <h4 className="font-medium text-gray-700 dark:text-gray-300">
+                완료 현황
+              </h4>
               <div className="text-sm space-y-1">
-                <p><span className="text-gray-500">경쟁사 분석:</span> {marketResearch?.competitors.length || 0}개 업체</p>
-                <p><span className="text-gray-500">제안서 섹션:</span> {proposal?.sections.length || 0}개 섹션</p>
-                <p><span className="text-gray-500">작업 항목:</span> {costBreakdown.workItems.length}개</p>
+                <p>
+                  <span className="text-gray-500">경쟁사 분석:</span>{' '}
+                  {marketResearch?.competitors.length || 0}개 업체
+                </p>
+                <p>
+                  <span className="text-gray-500">제안서 섹션:</span>{' '}
+                  {proposal?.sections.length || 0}개 섹션
+                </p>
+                <p>
+                  <span className="text-gray-500">작업 항목:</span>{' '}
+                  {costBreakdown.workItems.length}개
+                </p>
               </div>
             </div>
           </div>

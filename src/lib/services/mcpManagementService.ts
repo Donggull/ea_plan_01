@@ -85,7 +85,9 @@ class MCPManagementService {
     return data || []
   }
 
-  async createProvider(provider: Omit<MCPProvider, 'id' | 'created_at' | 'updated_at'>): Promise<MCPProvider> {
+  async createProvider(
+    provider: Omit<MCPProvider, 'id' | 'created_at' | 'updated_at'>
+  ): Promise<MCPProvider> {
     const { data, error } = await supabase
       .from('mcp_providers')
       .insert({
@@ -104,7 +106,10 @@ class MCPManagementService {
     return data
   }
 
-  async updateProvider(id: string, updates: Partial<MCPProvider>): Promise<MCPProvider> {
+  async updateProvider(
+    id: string,
+    updates: Partial<MCPProvider>
+  ): Promise<MCPProvider> {
     const { data, error } = await supabase
       .from('mcp_providers')
       .update({
@@ -124,10 +129,7 @@ class MCPManagementService {
   }
 
   async deleteProvider(id: string): Promise<void> {
-    const { error } = await supabase
-      .from('mcp_providers')
-      .delete()
-      .eq('id', id)
+    const { error } = await supabase.from('mcp_providers').delete().eq('id', id)
 
     if (error) {
       console.error('Error deleting MCP provider:', error)
@@ -135,14 +137,53 @@ class MCPManagementService {
     }
   }
 
+  // 활성화된 MCP 도구 조회 (Claude에서 사용할 수 있는 도구들)
+  async getActiveMcpTools(): Promise<
+    Array<{ id: string; name: string; icon: string; description: string }>
+  > {
+    const { data, error } = await supabase
+      .from('mcp_tools')
+      .select(
+        `
+        id,
+        name,
+        display_name,
+        description,
+        provider:mcp_providers!inner(
+          id,
+          icon,
+          is_active
+        )
+      `
+      )
+      .eq('is_active', true)
+      .eq('approval_status', 'approved')
+      .eq('provider.is_active', true)
+      .order('sort_order')
+
+    if (error) {
+      console.error('Error fetching active MCP tools:', error)
+      return []
+    }
+
+    return data.map(tool => ({
+      id: tool.name,
+      name: tool.display_name,
+      icon: tool.provider?.icon || '🔧',
+      description: tool.description || '',
+    }))
+  }
+
   // MCP 도구 관리
   async getTools(providerId?: string): Promise<MCPTool[]> {
     let query = supabase
       .from('mcp_tools')
-      .select(`
+      .select(
+        `
         *,
         provider:mcp_providers(*)
-      `)
+      `
+      )
       .order('sort_order')
       .order('display_name')
 
@@ -163,10 +204,12 @@ class MCPManagementService {
   async getActiveTools(): Promise<MCPTool[]> {
     const { data, error } = await supabase
       .from('mcp_tools')
-      .select(`
+      .select(
+        `
         *,
         provider:mcp_providers!inner(*)
-      `)
+      `
+      )
       .eq('is_active', true)
       .eq('provider.is_active', true)
       .eq('approval_status', 'approved')
@@ -182,7 +225,9 @@ class MCPManagementService {
     return data || []
   }
 
-  async createTool(tool: Omit<MCPTool, 'id' | 'created_at' | 'updated_at' | 'provider'>): Promise<MCPTool> {
+  async createTool(
+    tool: Omit<MCPTool, 'id' | 'created_at' | 'updated_at' | 'provider'>
+  ): Promise<MCPTool> {
     const { data, error } = await supabase
       .from('mcp_tools')
       .insert({
@@ -221,10 +266,7 @@ class MCPManagementService {
   }
 
   async deleteTool(id: string): Promise<void> {
-    const { error } = await supabase
-      .from('mcp_tools')
-      .delete()
-      .eq('id', id)
+    const { error } = await supabase.from('mcp_tools').delete().eq('id', id)
 
     if (error) {
       console.error('Error deleting MCP tool:', error)
@@ -233,7 +275,10 @@ class MCPManagementService {
   }
 
   // 사용자 MCP 설정 관리
-  async getUserSettings(userId: string, projectId?: string): Promise<UserMCPSettings | null> {
+  async getUserSettings(
+    userId: string,
+    projectId?: string
+  ): Promise<UserMCPSettings | null> {
     let query = supabase
       .from('user_mcp_settings')
       .select('*')
@@ -263,7 +308,10 @@ class MCPManagementService {
       defaultSettings?: Record<string, unknown>
     }
   ): Promise<UserMCPSettings> {
-    const existingSettings = await this.getUserSettings(userId, settings.projectId)
+    const existingSettings = await this.getUserSettings(
+      userId,
+      settings.projectId
+    )
 
     if (existingSettings) {
       const { data, error } = await supabase
@@ -308,12 +356,12 @@ class MCPManagementService {
 
   // Claude API와의 MCP 도구 연동을 위한 도구 정보 포맷팅
   formatToolsForClaude(tools: MCPTool[]): Array<{
-    type: string;
+    type: string
     function: {
-      name: string;
-      description: string;
-      parameters: Record<string, unknown>;
-    };
+      name: string
+      description: string
+      parameters: Record<string, unknown>
+    }
   }> {
     return tools.map(tool => ({
       type: 'function',
@@ -377,7 +425,11 @@ class MCPManagementService {
     return data
   }
 
-  async rejectProvider(id: string, approverId: string, reason: string): Promise<MCPProvider> {
+  async rejectProvider(
+    id: string,
+    approverId: string,
+    reason: string
+  ): Promise<MCPProvider> {
     const { data, error } = await supabase
       .from('mcp_providers')
       .update({
@@ -420,7 +472,11 @@ class MCPManagementService {
     return data
   }
 
-  async rejectTool(id: string, approverId: string, reason: string): Promise<MCPTool> {
+  async rejectTool(
+    id: string,
+    approverId: string,
+    reason: string
+  ): Promise<MCPTool> {
     const { data, error } = await supabase
       .from('mcp_tools')
       .update({
@@ -443,14 +499,16 @@ class MCPManagementService {
   }
 
   // 카테고리 관리
-  async getCategories(): Promise<Array<{
-    id: string
-    name: string
-    display_name: string
-    description?: string
-    is_active: boolean
-    sort_order: number
-  }>> {
+  async getCategories(): Promise<
+    Array<{
+      id: string
+      name: string
+      display_name: string
+      description?: string
+      is_active: boolean
+      sort_order: number
+    }>
+  > {
     const { data, error } = await supabase
       .from('mcp_categories')
       .select('*')
@@ -494,12 +552,14 @@ export const MCPRegistrationExamples = {
       description: '로컬 파일 시스템에 접근하여 파일을 읽고 쓸 수 있습니다.',
       icon: '📁',
       connection_type: 'stdio',
-      documentation_url: 'https://modelcontextprotocol.io/docs/tools/filesystem',
+      documentation_url:
+        'https://modelcontextprotocol.io/docs/tools/filesystem',
     },
     {
       name: 'database',
       display_name: '데이터베이스',
-      description: 'PostgreSQL, MySQL 등의 데이터베이스에 쿼리를 실행할 수 있습니다.',
+      description:
+        'PostgreSQL, MySQL 등의 데이터베이스에 쿼리를 실행할 수 있습니다.',
       icon: '🗄️',
       connection_type: 'http',
       documentation_url: 'https://modelcontextprotocol.io/docs/tools/database',
