@@ -46,12 +46,11 @@
       "Bash(npx next:*)",
       "Read(/D:\\d D:/**)",
       "Bash(npm uninstall:*)",
-      "mcp__playwright-stealth__playwright_press_key"
+      "mcp__playwright-stealth__playwright_press_key",
+      "mcp__github-mcp__git-flow"
     ],
     "deny": [],
     "ask": [],
-    "additionalDirectories": [
-      "D:\\"
-    ]
+    "additionalDirectories": ["D:\\"]
   }
 }

@@ -3,7 +3,7 @@
 위 테스트 사이트에서 로그인이 필요한 경우 아이디: test1@example.com 비밀번호: 750100으로 직접 로그인하고 진행해줘.
 **요청한 요건이 완료되면 마지막에는 반드시 github MCP를 활용해서 커밋 하고 푸시해줘**
 
-# Recent Development Updates (2025-08-25)
+# Recent Development Updates (2025-08-28)
 
 - ✅ Fixed project loading errors by updating default user ID in ProjectService
 - ✅ Fixed infinite recursion error in project creation by updating Supabase RLS policies
@@ -15,6 +15,10 @@
 - ✅ Improved error handling and logging in project service
 - ✅ Optimized performance by removing complex joins
 - ✅ Enhanced debugging capabilities with comprehensive console logging
+- ✅ Fixed admin dashboard access issue - updated test1@example.com user to super_admin role
+- ✅ Verified admin dashboard functionality with all tabs (Overview, Workflow Templates, User Management, System Settings)
+- ✅ Confirmed both dg.an@eluocnc.com and test1@example.com users have super_admin privileges
+- ✅ Admin access control working correctly - redirects non-admin users to main dashboard
 
 # 웹·앱 서비스 기획자 통합 플랫폼 PRD
 
