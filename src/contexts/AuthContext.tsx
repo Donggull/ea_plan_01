@@ -155,6 +155,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
     let isMounted = true
     let initialLoadComplete = false
 
+    // 타임아웃 설정: 10초 후에도 loading이 true이면 강제로 false로 설정
+    const loadingTimeout = setTimeout(() => {
+      if (isMounted && loading) {
+        console.warn('Auth loading timeout reached, forcing loading to false')
+        setLoading(false)
+      }
+    }, 10000)
+
     const getInitialSession = async () => {
       console.log('Starting getInitialSession')
 
@@ -167,8 +175,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
           process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
         )
 
-      // 개발 환경이거나 Supabase가 제대로 설정되지 않은 경우 기본 사용자 사용
-      if (process.env.NODE_ENV === 'development' || !isValidSupabase) {
+      // Supabase가 제대로 설정되지 않은 경우 기본 사용자 사용
+      if (!isValidSupabase) {
         if (isMounted) {
           const defaultUserId = 'afd2a12c-75a5-4914-812e-5eedc4fd3a3d'
           const mockUser = {
@@ -190,9 +198,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
           setUser(mockUser)
           setUserProfile(defaultProfile)
           setSession(null) // 개발환경에서는 실제 세션 없이 진행
-          console.log(
-            'Development mode or invalid Supabase: using default user profile'
-          )
+          console.log('Invalid Supabase: using default user profile')
         }
 
         if (isMounted) {
@@ -256,7 +262,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
       )
 
-    if (isValidSupabase && process.env.NODE_ENV !== 'development') {
+    if (isValidSupabase) {
       const {
         data: { subscription },
       } = supabase.auth.onAuthStateChange(async (event, session) => {
@@ -288,12 +294,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
       return () => {
         isMounted = false
+        clearTimeout(loadingTimeout)
         subscription.unsubscribe()
       }
     }
 
     return () => {
       isMounted = false
+      clearTimeout(loadingTimeout)
     }
   }, [fetchUserProfile])
 
